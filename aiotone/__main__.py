@@ -4,10 +4,11 @@ import asyncio
 import time
 from typing import List, Optional, Tuple
 
-from attr import dataclass
+from attr import dataclass, Factory
 import click
 import uvloop
 
+from .metronome import Metronome
 from .midi import MidiOut, NOTE_OFF, NOTE_ON, CLOCK, START, STOP, get_ports
 
 
@@ -24,7 +25,7 @@ MidiMessage = Tuple[MidiPacket, EventDelta, TimeStamp]
 class Performance:
     drums: MidiOut
     bass: MidiOut
-    pulse_delta: float = 0.02  # 125 BPM (0.02 / 60 / 24 pulses per quarter note)
+    metronome: Metronome = Factory(Metronome)
 
     async def play_drum(
         self, note: int, pulses: int, volume: int = 127, decay: float = 0.5
@@ -48,8 +49,7 @@ class Performance:
         await self.wait(rest_length)
 
     async def wait(self, pulses: int) -> None:
-        for _ in range(pulses):
-            await asyncio.sleep(self.pulse_delta)
+        await self.metronome.wait(pulses)
 
 
 @click.command()
@@ -91,7 +91,6 @@ async def midi_consumer(
     queue: asyncio.Queue[MidiMessage], performance: Performance
 ) -> None:
     drums: Optional[asyncio.Task] = None
-    last_msg: MidiPacket = [0]
     while True:
         msg, delta, sent_time = await queue.get()
         latency = time.time() - sent_time
@@ -99,10 +98,10 @@ async def midi_consumer(
             print(f"{msg}\tevent delta: {delta:.4f}\tlatency: {latency:.4f}")
         if msg[0] == CLOCK:
             performance.bass.send_message(msg)
-            if last_msg[0] == CLOCK:
-                performance.pulse_delta = delta
+            await performance.metronome.tick()
         elif msg[0] == START:
             performance.bass.send_message(msg)
+            await performance.metronome.reset()
             if drums is None:
                 drums = asyncio.create_task(drum_machine(performance))
         elif msg[0] == STOP:
@@ -110,7 +109,6 @@ async def midi_consumer(
             if drums is not None:
                 drums.cancel()
                 drums = None
-        last_msg = msg
 
 
 async def drum_machine(performance: Performance) -> None:
