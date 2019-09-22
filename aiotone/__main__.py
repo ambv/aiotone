@@ -6,8 +6,9 @@ from typing import List, Optional, Tuple
 
 from attr import dataclass
 import click
-from rtmidi import MidiIn, MidiOut
 import uvloop
+
+from .midi import MidiOut, NOTE_OFF, NOTE_ON, CLOCK, START, STOP, get_ports
 
 
 __version__ = "19.9.0"
@@ -17,23 +18,6 @@ EventDelta = float  # in seconds
 TimeStamp = float  # time.time()
 MidiPacket = List[int]
 MidiMessage = Tuple[MidiPacket, EventDelta, TimeStamp]
-
-
-NOTE_OFF = 0b10000000
-NOTE_ON = 0b10010000
-POLY_AFTERTOUCH = 0b10100000
-CONTROL_CHANGE = 0b10110000
-PROGRAM_CHANGE = 0b11000000
-CHAN_AFTERTOUCH = 0b11010000
-PITCH_BEND = 0b11100000
-SYSEX = 0b11110000
-SYSEX_RT = 0b11111000
-PANIC = 0b11111111
-CLOCK = 0b11111000
-START = 0b11111010
-STOP = 0b11111100
-
-STRIP_CHANNEL = 0b11110000
 
 
 @dataclass
@@ -78,8 +62,12 @@ async def async_main() -> None:
     queue: asyncio.Queue[MidiMessage] = asyncio.Queue(maxsize=256)
     loop = asyncio.get_event_loop()
 
-    from_circuit, to_circuit = get_ports("Circuit", clock_source=True)
-    from_mono_station, to_mono_station = get_ports("Circuit Mono Station")
+    try:
+        from_circuit, to_circuit = get_ports("Circuit", clock_source=True)
+        from_mono_station, to_mono_station = get_ports("Circuit Mono Station")
+    except ValueError as port:
+        click.secho(f"{port} not connected", fg="red", err=True)
+        raise click.Abort
 
     def midi_callback(msg, data=None):
         sent_time = time.time()
@@ -147,29 +135,6 @@ async def drum_machine(performance: Performance) -> None:
             await performance.play_drum(op_hat, 12)
 
     await asyncio.gather(bass_drum(), snare_drum(), hihats())
-
-
-def get_ports(port_name: str, *, clock_source: bool = False) -> Tuple[MidiIn, MidiOut]:
-    midi_in = MidiIn()
-    midi_out = MidiOut()
-
-    midi_in_ports = midi_in.get_ports()
-    midi_out_ports = midi_out.get_ports()
-    try:
-        midi_in.open_port(midi_in_ports.index(port_name))
-    except ValueError:
-        click.secho(f"{port_name} (in) not connected", fg="red", err=True)
-        raise click.Abort
-
-    if clock_source:
-        midi_in.ignore_types(timing=False)
-    try:
-        midi_out.open_port(midi_out_ports.index(port_name))
-    except ValueError:
-        click.secho(f"{port_name} (out) not connected", fg="red", err=True)
-        raise click.Abort
-
-    return midi_in, midi_out
 
 
 if __name__ == "__main__":
