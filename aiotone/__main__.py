@@ -94,25 +94,32 @@ async def async_main() -> None:
     from_circuit.set_callback(midi_callback)
     context = Context(drums=to_circuit, bass=to_mono_station)
     try:
-        await midi_printer(queue, context)
+        await midi_consumer(queue, context)
     except asyncio.CancelledError:
         from_circuit.cancel_callback()
 
 
-async def midi_printer(queue: asyncio.Queue[MidiMessage], context: Context) -> None:
+async def midi_consumer(queue: asyncio.Queue[MidiMessage], context: Context) -> None:
     drums: Optional[asyncio.Task] = None
     last_msg: MidiPacket = [0]
     while True:
         msg, delta, sent_time = await queue.get()
         latency = time.time() - sent_time
-        print(f"{msg}\tevent delta: {delta:.4f}\tlatency: {latency:.4f}")
-        if msg[0] == CLOCK and last_msg[0] == CLOCK:
-            context.tick = delta
-        if msg[0] == START and drums is None:
-            drums = asyncio.create_task(drum_machine(context))
-        if msg[0] == STOP and drums is not None:
-            drums.cancel()
-            drums = None
+        if __debug__:
+            print(f"{msg}\tevent delta: {delta:.4f}\tlatency: {latency:.4f}")
+        if msg[0] == CLOCK:
+            context.bass.send_message(msg)
+            if last_msg[0] == CLOCK:
+                context.tick = delta
+        elif msg[0] == START:
+            context.bass.send_message(msg)
+            if drums is None:
+                drums = asyncio.create_task(drum_machine(context))
+        elif msg[0] == STOP:
+            context.bass.send_message(msg)
+            if drums is not None:
+                drums.cancel()
+                drums = None
         last_msg = msg
 
 
