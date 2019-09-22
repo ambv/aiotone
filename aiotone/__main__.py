@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import time
-from typing import Any, List, Optional, Tuple
+from typing import List, Optional, Tuple
 
 from attr import dataclass
 import click
@@ -37,27 +37,27 @@ STRIP_CHANNEL = 0b11110000
 
 
 @dataclass
-class Context:
+class Performance:
     drums: MidiOut
     bass: MidiOut
-    tick: float = 0.02  # 125 BPM (0.02 / 60 / 24 pulses per quarter note)
+    pulse_delta: float = 0.02  # 125 BPM (0.02 / 60 / 24 pulses per quarter note)
 
     async def play_drum(
-        self, note: int, length: int, volume: int = 127, decay: float = 0.5
+        self, note: int, pulses: int, volume: int = 127, decay: float = 0.5
     ) -> None:
-        await self.play(self.drums, 9, note, length, volume, decay)
+        await self.play(self.drums, 9, note, pulses, volume, decay)
 
     async def play(
         self,
         out: MidiOut,
         channel: int,
         note: int,
-        length: int,
+        pulses: int,
         volume: int,
         decay: float = 0.5,
     ) -> None:
-        note_on_length = int(round(length * decay, 0))
-        rest_length = length - note_on_length
+        note_on_length = int(round(pulses * decay, 0))
+        rest_length = pulses - note_on_length
         out.send_message([NOTE_ON | channel, note, volume])
         await self.wait(note_on_length)
         out.send_message([NOTE_OFF | channel, note, volume])
@@ -65,7 +65,7 @@ class Context:
 
     async def wait(self, pulses: int) -> None:
         for _ in range(pulses):
-            await asyncio.sleep(self.tick)
+            await asyncio.sleep(self.pulse_delta)
 
 
 @click.command()
@@ -89,17 +89,19 @@ async def async_main() -> None:
                 queue.put_nowait, (midi_message, event_delta, sent_time)
             )
         except BaseException as be:
-            print(f"callback exc: {type(be)} {be}")
+            click.secho(f"callback exc: {type(be)} {be}", fg="red", err=True)
 
     from_circuit.set_callback(midi_callback)
-    context = Context(drums=to_circuit, bass=to_mono_station)
+    performance = Performance(drums=to_circuit, bass=to_mono_station)
     try:
-        await midi_consumer(queue, context)
+        await midi_consumer(queue, performance)
     except asyncio.CancelledError:
         from_circuit.cancel_callback()
 
 
-async def midi_consumer(queue: asyncio.Queue[MidiMessage], context: Context) -> None:
+async def midi_consumer(
+    queue: asyncio.Queue[MidiMessage], performance: Performance
+) -> None:
     drums: Optional[asyncio.Task] = None
     last_msg: MidiPacket = [0]
     while True:
@@ -108,24 +110,22 @@ async def midi_consumer(queue: asyncio.Queue[MidiMessage], context: Context) -> 
         if __debug__:
             print(f"{msg}\tevent delta: {delta:.4f}\tlatency: {latency:.4f}")
         if msg[0] == CLOCK:
-            context.bass.send_message(msg)
+            performance.bass.send_message(msg)
             if last_msg[0] == CLOCK:
-                context.tick = delta
+                performance.pulse_delta = delta
         elif msg[0] == START:
-            context.bass.send_message(msg)
+            performance.bass.send_message(msg)
             if drums is None:
-                drums = asyncio.create_task(drum_machine(context))
+                drums = asyncio.create_task(drum_machine(performance))
         elif msg[0] == STOP:
-            context.bass.send_message(msg)
+            performance.bass.send_message(msg)
             if drums is not None:
                 drums.cancel()
                 drums = None
         last_msg = msg
 
 
-async def drum_machine(context: Context) -> None:
-    on = NOTE_ON | 9  # note on on Channel 10 (0-indexed)
-    off = NOTE_OFF | 9  # note off on Channel 10 (0-indexed)
+async def drum_machine(performance: Performance) -> None:
     b_drum = 60
     s_drum = 62
     cl_hat = 64
@@ -133,18 +133,18 @@ async def drum_machine(context: Context) -> None:
 
     async def bass_drum() -> None:
         while True:
-            await context.play_drum(b_drum, 24)
+            await performance.play_drum(b_drum, 24)
 
     async def snare_drum() -> None:
         while True:
-            await context.wait(24)
-            await context.play_drum(s_drum, 24)
+            await performance.wait(24)
+            await performance.play_drum(s_drum, 24)
 
     async def hihats() -> None:
         while True:
-            await context.play_drum(cl_hat, 6)
-            await context.play_drum(cl_hat, 6)
-            await context.play_drum(op_hat, 12)
+            await performance.play_drum(cl_hat, 6)
+            await performance.play_drum(cl_hat, 6)
+            await performance.play_drum(op_hat, 12)
 
     await asyncio.gather(bass_drum(), snare_drum(), hihats())
 
