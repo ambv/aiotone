@@ -9,9 +9,12 @@ python = "^3.7"
 python-rtmidi = "^1.3"
 uvloop = "^0.13.0"
 click = "^7.0"
-
+black = {version = "^18.3-alpha.0", allows-prereleases = true}
 [tool.poetry.dev-dependencies]
 pytest = "^3.0"
+mypy = "^0.720.0"
+flake8 = "^3.7"
+flake8-bugbear = "^19.8"
 
 [build-system]
 requires = ["poetry>=0.12"]

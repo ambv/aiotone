@@ -24,8 +24,6 @@ from .midi import (
 )
 
 
-__version__ = "19.9.0"
-
 # types
 EventDelta = float  # in seconds
 TimeStamp = float  # time.time()
