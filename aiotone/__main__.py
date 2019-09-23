@@ -109,6 +109,7 @@ async def midi_consumer(
     queue: asyncio.Queue[MidiMessage], performance: Performance
 ) -> None:
     drums: Optional[asyncio.Task] = None
+    bassline: Optional[asyncio.Task] = None
     while True:
         msg, delta, sent_time = await queue.get()
         latency = time.time() - sent_time
@@ -122,12 +123,19 @@ async def midi_consumer(
             await performance.metronome.reset()
             if drums is None:
                 drums = asyncio.create_task(drum_machine(performance))
+            if bassline is None:
+                bassline = asyncio.create_task(analog_synth(performance))
         elif msg[0] == STOP:
             performance.bass.send_message(msg)
             if drums is not None:
                 drums.cancel()
                 drums = None
                 performance.drums.send_message([CONTROL_CHANGE | 9, ALL_NOTES_OFF, 0])
+            if bassline is not None:
+                bassline.cancel()
+                bassline = None
+                performance.bass.send_message([CONTROL_CHANGE | 0, ALL_NOTES_OFF, 0])
+                performance.bass.send_message([CONTROL_CHANGE | 1, ALL_NOTES_OFF, 0])
 
 
 async def drum_machine(performance: Performance) -> None:
@@ -152,6 +160,16 @@ async def drum_machine(performance: Performance) -> None:
             await performance.play_drum(op_hat, 12)
 
     await asyncio.gather(bass_drum(), snare_drum(), hihats())
+
+
+async def analog_synth(performance: Performance) -> None:
+    c2 = 48
+    bb1 = 46
+    g1 = 43
+    f1 = 41
+
+    while True:
+        await performance.play_bass(c2, 96, decay=1.0)
 
 
 if __name__ == "__main__":
