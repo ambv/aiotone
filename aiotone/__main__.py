@@ -36,6 +36,7 @@ class Performance:
     drums: MidiOut
     bass: MidiOut
     metronome: Metronome = Factory(Metronome)
+    last_note: int = 48
 
     async def play_drum(
         self, note: int, pulses: int, volume: int = 127, decay: float = 0.5
@@ -138,6 +139,8 @@ async def midi_consumer(
                 bassline = None
                 performance.bass.send_message([CONTROL_CHANGE | 0, ALL_NOTES_OFF, 0])
                 performance.bass.send_message([CONTROL_CHANGE | 1, ALL_NOTES_OFF, 0])
+        elif msg[0] == NOTE_ON:
+            performance.last_note = msg[1]
 
 
 async def drum_machine(performance: Performance) -> None:
@@ -172,7 +175,7 @@ async def analog_synth(performance: Performance) -> None:
 
     async def key_note() -> None:
         while True:
-            await performance.play_bass(c2, 96, decay=1.0)
+            await performance.play_bass(performance.last_note, 96, decay=1.0)
 
     async def arpeggiator() -> None:
         notes = [c2, f1, g1]
