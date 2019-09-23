@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import asyncio
+import itertools
+import random
 import time
 from typing import List, Optional, Tuple
 
@@ -9,7 +11,17 @@ import click
 import uvloop
 
 from .metronome import Metronome
-from .midi import MidiOut, NOTE_OFF, NOTE_ON, CLOCK, START, STOP, get_ports
+from .midi import (
+    MidiOut,
+    NOTE_OFF,
+    NOTE_ON,
+    CLOCK,
+    START,
+    STOP,
+    CONTROL_CHANGE,
+    ALL_NOTES_OFF,
+    get_ports,
+)
 
 
 __version__ = "19.9.0"
@@ -26,11 +38,17 @@ class Performance:
     drums: MidiOut
     bass: MidiOut
     metronome: Metronome = Factory(Metronome)
+    last_note: int = 48
 
     async def play_drum(
         self, note: int, pulses: int, volume: int = 127, decay: float = 0.5
     ) -> None:
         await self.play(self.drums, 9, note, pulses, volume, decay)
+
+    async def play_bass(
+        self, note: int, pulses: int, volume: int = 127, decay: float = 0.5
+    ) -> None:
+        await self.play(self.bass, 0, note, pulses, volume, decay)
 
     async def play(
         self,
@@ -80,17 +98,23 @@ async def async_main() -> None:
             click.secho(f"callback exc: {type(be)} {be}", fg="red", err=True)
 
     from_circuit.set_callback(midi_callback)
+    from_mono_station.close_port()  # we won't be using that one now
     performance = Performance(drums=to_circuit, bass=to_mono_station)
     try:
         await midi_consumer(queue, performance)
     except asyncio.CancelledError:
         from_circuit.cancel_callback()
+        to_circuit.send_message([STOP])
+        to_mono_station.send_message([STOP])
+        to_mono_station.send_message([CONTROL_CHANGE | 0, ALL_NOTES_OFF, 0])
+        to_mono_station.send_message([CONTROL_CHANGE | 1, ALL_NOTES_OFF, 0])
 
 
 async def midi_consumer(
     queue: asyncio.Queue[MidiMessage], performance: Performance
 ) -> None:
     drums: Optional[asyncio.Task] = None
+    bassline: Optional[asyncio.Task] = None
     while True:
         msg, delta, sent_time = await queue.get()
         latency = time.time() - sent_time
@@ -104,11 +128,21 @@ async def midi_consumer(
             await performance.metronome.reset()
             if drums is None:
                 drums = asyncio.create_task(drum_machine(performance))
+            if bassline is None:
+                bassline = asyncio.create_task(analog_synth(performance))
         elif msg[0] == STOP:
             performance.bass.send_message(msg)
             if drums is not None:
                 drums.cancel()
                 drums = None
+                performance.drums.send_message([CONTROL_CHANGE | 9, ALL_NOTES_OFF, 0])
+            if bassline is not None:
+                bassline.cancel()
+                bassline = None
+                performance.bass.send_message([CONTROL_CHANGE | 0, ALL_NOTES_OFF, 0])
+                performance.bass.send_message([CONTROL_CHANGE | 1, ALL_NOTES_OFF, 0])
+        elif msg[0] == NOTE_ON:
+            performance.last_note = msg[1]
 
 
 async def drum_machine(performance: Performance) -> None:
@@ -133,6 +167,30 @@ async def drum_machine(performance: Performance) -> None:
             await performance.play_drum(op_hat, 12)
 
     await asyncio.gather(bass_drum(), snare_drum(), hihats())
+
+
+async def analog_synth(performance: Performance) -> None:
+    c2 = 48
+    bb1 = 46
+    g1 = 43
+    f1 = 41
+
+    async def key_note() -> None:
+        while True:
+            await performance.play_bass(performance.last_note, 96, decay=1.0)
+
+    async def arpeggiator() -> None:
+        notes = [c2 + 24, f1 + 24, g1 + 24]
+        length = 0
+        for note in itertools.cycle(notes):
+            current = random.choice((6, 6, 6, 12))
+            if length % 96 == 0:
+                await performance.wait(current)
+            else:
+                await performance.play_bass(note, current, volume=32, decay=0.5)
+            length += current
+
+    await asyncio.gather(key_note(), arpeggiator())
 
 
 if __name__ == "__main__":
