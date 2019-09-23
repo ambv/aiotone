@@ -7,5 +7,9 @@
     "python.testing.unittestEnabled": false,
     "python.testing.nosetestsEnabled": false,
     "python.testing.pytestEnabled": true,
-    "python.pythonPath": "/Users/ambv/.venvs/aiotone/bin/python"
+    "python.pythonPath": "/Users/ambv/.venvs/aiotone/bin/python",
+    "workbench.colorTheme": "Default Light+",
+    "editor.cursorStyle": "block",
+    "editor.fontSize": 16,
+    "editor.fontFamily": "Inconsolata"
 }
