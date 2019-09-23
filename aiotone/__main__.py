@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import asyncio
+import itertools
+import random
 import time
 from typing import List, Optional, Tuple
 
@@ -168,8 +170,25 @@ async def analog_synth(performance: Performance) -> None:
     g1 = 43
     f1 = 41
 
-    while True:
-        await performance.play_bass(c2, 96, decay=1.0)
+    async def key_note() -> None:
+        while True:
+            await performance.play_bass(c2, 96, decay=1.0)
+
+    async def arpeggiator() -> None:
+        notes = [c2, f1, g1]
+        length = 0
+        for note in itertools.cycle(notes):
+            octave = random.choice((12, 24, 24, 36))
+            current = random.choice((6, 6, 6, 12))
+            if length % 96 == 0:
+                await performance.wait(current)
+            else:
+                await performance.play_bass(
+                    note + octave, current, volume=32, decay=0.5
+                )
+            length += current
+
+    await asyncio.gather(key_note(), arpeggiator())
 
 
 if __name__ == "__main__":
