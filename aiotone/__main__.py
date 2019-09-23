@@ -138,8 +138,22 @@ async def drum_machine(performance: Performance) -> None:
     cl_hat = 64
     op_hat = 65
 
-    while True:
-        await performance.play_drum(b_drum, 24)
+    async def bass_drum() -> None:
+        while True:
+            await performance.play_drum(b_drum, 24)
+
+    async def snare_drum() -> None:
+        while True:
+            await performance.wait(24)
+            await performance.play_drum(s_drum, 24)
+
+    async def hihats() -> None:
+        while True:
+            await performance.play_drum(cl_hat, 6)
+            await performance.play_drum(cl_hat, 6)
+            await performance.play_drum(op_hat, 12)
+
+    await asyncio.gather(bass_drum(), snare_drum(), hihats())
 
 
 if __name__ == "__main__":
