@@ -5,7 +5,7 @@ from typing import Tuple
 from rtmidi import MidiIn, MidiOut
 
 
-# MIDI constants
+# MIDI messages
 NOTE_OFF = 0b10000000
 NOTE_ON = 0b10010000
 POLY_AFTERTOUCH = 0b10100000
@@ -19,6 +19,9 @@ PANIC = 0b11111111
 CLOCK = 0b11111000
 START = 0b11111010
 STOP = 0b11111100
+
+# MIDI special values
+ALL_NOTES_OFF = 0b01111011  # use with CONTROL_CHANGE
 
 # Operations on MIDI constants
 STRIP_CHANNEL = 0b11110000
