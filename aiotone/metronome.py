@@ -25,6 +25,9 @@ class Metronome:
     countdowns_lock: asyncio.Lock = Factory(asyncio.Lock)
 
     async def wait(self, pulses: int) -> None:
+        if pulses == 0:
+            return
+
         countdown = Countdown(pulses)
         async with self.countdowns_lock:
             self.countdowns.append(countdown)
