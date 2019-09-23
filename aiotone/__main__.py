@@ -1,16 +1,13 @@
 from __future__ import annotations
 
 import asyncio
-import itertools
-import random
 import time
 from typing import List, Optional, Tuple
 
-from attr import dataclass, Factory
+from attr import dataclass
 import click
 import uvloop
 
-from .metronome import Metronome
 from .midi import (
     MidiOut,
     NOTE_OFF,
@@ -35,8 +32,7 @@ MidiMessage = Tuple[MidiPacket, EventDelta, TimeStamp]
 class Performance:
     drums: MidiOut
     bass: MidiOut
-    metronome: Metronome = Factory(Metronome)
-    last_note: int = 48
+    pulse_delta: float = 0.02  # 125 BPM (0.02 / 60 / 24 pulses per quarter note)
 
     async def play_drum(
         self, note: int, pulses: int, volume: int = 127, decay: float = 0.5
@@ -65,7 +61,8 @@ class Performance:
         await self.wait(rest_length)
 
     async def wait(self, pulses: int) -> None:
-        await self.metronome.wait(pulses)
+        for _ in range(pulses):
+            await asyncio.sleep(self.pulse_delta)
 
 
 @click.command()
@@ -112,7 +109,7 @@ async def midi_consumer(
     queue: asyncio.Queue[MidiMessage], performance: Performance
 ) -> None:
     drums: Optional[asyncio.Task] = None
-    bassline: Optional[asyncio.Task] = None
+    last_msg: MidiPacket = [0]
     while True:
         msg, delta, sent_time = await queue.get()
         latency = time.time() - sent_time
@@ -120,27 +117,19 @@ async def midi_consumer(
             print(f"{msg}\tevent delta: {delta:.4f}\tlatency: {latency:.4f}")
         if msg[0] == CLOCK:
             performance.bass.send_message(msg)
-            await performance.metronome.tick()
+            if last_msg[0] == CLOCK:
+                performance.pulse_delta = delta
         elif msg[0] == START:
             performance.bass.send_message(msg)
-            await performance.metronome.reset()
             if drums is None:
                 drums = asyncio.create_task(drum_machine(performance))
-            if bassline is None:
-                bassline = asyncio.create_task(analog_synth(performance))
         elif msg[0] == STOP:
             performance.bass.send_message(msg)
             if drums is not None:
                 drums.cancel()
                 drums = None
                 performance.drums.send_message([CONTROL_CHANGE | 9, ALL_NOTES_OFF, 0])
-            if bassline is not None:
-                bassline.cancel()
-                bassline = None
-                performance.bass.send_message([CONTROL_CHANGE | 0, ALL_NOTES_OFF, 0])
-                performance.bass.send_message([CONTROL_CHANGE | 1, ALL_NOTES_OFF, 0])
-        elif msg[0] == NOTE_ON:
-            performance.last_note = msg[1]
+        last_msg = msg
 
 
 async def drum_machine(performance: Performance) -> None:
@@ -149,46 +138,8 @@ async def drum_machine(performance: Performance) -> None:
     cl_hat = 64
     op_hat = 65
 
-    async def bass_drum() -> None:
-        while True:
-            await performance.play_drum(b_drum, 24)
-
-    async def snare_drum() -> None:
-        while True:
-            await performance.wait(24)
-            await performance.play_drum(s_drum, 24)
-
-    async def hihats() -> None:
-        while True:
-            await performance.play_drum(cl_hat, 6)
-            await performance.play_drum(cl_hat, 6)
-            await performance.play_drum(op_hat, 12)
-
-    await asyncio.gather(bass_drum(), snare_drum(), hihats())
-
-
-async def analog_synth(performance: Performance) -> None:
-    c2 = 48
-    bb1 = 46
-    g1 = 43
-    f1 = 41
-
-    async def key_note() -> None:
-        while True:
-            await performance.play_bass(performance.last_note, 96, decay=1.0)
-
-    async def arpeggiator() -> None:
-        notes = [c2 + 24, f1 + 24, g1 + 24]
-        length = 0
-        for note in itertools.cycle(notes):
-            current = random.choice((6, 6, 6, 12))
-            if length % 96 == 0:
-                await performance.wait(current)
-            else:
-                await performance.play_bass(note, current, volume=32, decay=0.5)
-            length += current
-
-    await asyncio.gather(key_note(), arpeggiator())
+    while True:
+        await performance.play_drum(b_drum, 24)
 
 
 if __name__ == "__main__":
