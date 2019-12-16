@@ -1,49 +1,4 @@
-"""
-This is a module which allows controlling two Moog Mother 32 synthesizers as a single
-rich instrument.
-
-It's got the following features:
-- dispatches NOTE_ON and NOTE_OFF events to both Mothers at the same time, allowing for
-  real rich chorus;
-- dispatches MOD_WHEEL to the first Mother's MOD_WHEEL (which you can use via the ASSIGN
-  CV output);
-- dispatches EXPRESSION_PEDAL to the second Mother's MOD_WHEEL (which you can use via
-  the ASSIGN CV output);
-- allows for controlling portamento during MIDI performance either using legato notes
-  or the damper pedal (if the mode is "sustain", the pedal will still sustain the notes
-  played, if the mode is "damper" then it will no longer sustain notes, only control
-  portamento).
-
-To use this yourself, you will need:
-
-- two Mother 32 synthesizers, let's call them Red and Blue
-- MIDI connections to both Mothers, let's say Red on Channel 2, Blue on Channel 3
-- an IAC port called "IAC aiotone" which you can configure in Audio MIDI Setup on macOS
-- an Ableton project which will be configured as follows:
-    - an External Instrument MIDI track for Red:
-        - MIDI FROM: IAC (IAC aiotone) Ch. 11
-        - MIDI TO: [your audio interface] Ch. 2
-        - Audio From: [your audio interface] [input with a connection from Red's Line
-          Out]
-        - Turn MONITOR to IN
-        - Panning: ALL LEFT
-    - an External Instrument MIDI track for Blue:
-        - MIDI FROM: IAC (IAC aiotone) Ch. 12
-        - MIDI TO: [your audio interface] Ch. 3
-        - Audio From: [your audio interface] [input with a connection from Blue's Line
-          Out]
-        - Turn MONITOR to IN
-        - Panning: ALL RIGHT
-    - an empty MIDI track to actually play the intrument
-        - MIDI FROM: [your audio interface] Ch. 1
-        - MIDI TO: IAC (IAC aiotone) Ch. 1
-
-You can customize the ports by editing aiotone-redblue.ini.
-
-With this setup, you record notes on the empty MIDI track and `aiotone` dispatches them.
-If you'd like to "freeze" the MIDI so you don't need aiotone enabled anymore, just
-record the MIDI on the MIDI tracks for Red and Blue.
-"""
+"""See the docstring to main()."""
 
 from __future__ import annotations
 
@@ -191,11 +146,94 @@ class Performance:
 @click.command()
 @click.option(
     "--config",
+    help="Read configuration from this file",
     default=str(CURRENT_DIR / "aiotone-redblue.ini"),
     type=click.Path(exists=True, file_okay=True, dir_okay=False),
     show_default=True,
 )
-def main(config) -> None:
+@click.option(
+    "--make-config",
+    help="Write a new configuration file to standard output",
+    is_flag=True,
+)
+def main(config: str, make_config: bool) -> None:
+    """
+    This is a module which allows controlling two Moog Mother 32 synthesizers as
+    a single rich instrument.
+
+    It's got the following features:
+
+    - dispatches NOTE_ON and NOTE_OFF events to both Mothers at the same time, allowing
+      for real rich chorus;
+
+    - dispatches MOD_WHEEL to the first Mother's MOD_WHEEL (which you can use via the
+      ASSIGN CV output);
+
+    - dispatches EXPRESSION_PEDAL to the second Mother's MOD_WHEEL (which you can use
+      via the ASSIGN CV output);
+
+    - allows for controlling portamento during MIDI performance either using legato
+      notes or the damper pedal (if the mode is "sustain", the pedal will still sustain
+      the notes played, if the mode is "damper" then it will no longer sustain notes,
+      only control portamento).
+
+    To use this yourself, you will need:
+
+    - two Mother 32 synthesizers, let's call them Red and Blue
+
+    - MIDI connections to both Mothers, let's say Red on Channel 2, Blue on Channel 3
+
+    - an IAC port called "IAC aiotone" which you can configure in Audio MIDI Setup on
+      macOS
+
+    - an Ableton project which will be configured as follows:
+
+        - an External Instrument MIDI track for Red:
+
+            - MIDI FROM: IAC (IAC aiotone) Ch. 11
+
+            - MIDI TO: [your audio interface] Ch. 2
+
+            - Audio From: [your audio interface] [input with a connection from Red's
+              Line Out]
+
+            - Turn MONITOR to IN
+
+            - Panning: ALL LEFT
+
+        - an External Instrument MIDI track for Blue:
+
+            - MIDI FROM: IAC (IAC aiotone) Ch. 12
+
+            - MIDI TO: [your audio interface] Ch. 3
+
+            - Audio From: [your audio interface] [input with a connection from Blue's
+              Line Out]
+
+            - Turn MONITOR to IN
+
+            - Panning: ALL RIGHT
+
+        - an empty MIDI track to actually play the intrument
+
+            - MIDI FROM: [your audio interface] Ch. 1
+
+            - MIDI TO: IAC (IAC aiotone) Ch. 1
+
+    You can customize the ports by creating a config file.  Use `--make-config` to
+    output a new config to stdout.
+
+    Then run `python -m aiotone.redblue --config=PATH_TO_YOUR_CONFIG_FILE`.
+
+    With this setup, you record notes on the empty MIDI track and `aiotone` dispatches
+    them.  If you'd like to "freeze" the MIDI so you don't need aiotone enabled anymore,
+    just record the MIDI on the MIDI tracks for Red and Blue.
+    """
+    if make_config:
+        with open(CURRENT_DIR / "aiotone-redblue.ini") as f:
+            print(f.read())
+        return
+
     asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
     asyncio.run(async_main(config))
 
