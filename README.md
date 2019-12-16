@@ -11,6 +11,10 @@ $ source /tmp/aiotone/bin/activate
 (aiotone)$ poetry install
 ```
 
+If you don't have Poetry installed yet, check out
+https://python-poetry.org/.
+
+
 DISCLAIMER: tested on macOS only.
 
 
