@@ -11,14 +11,19 @@ $ source /tmp/aiotone/bin/activate
 (aiotone)$ poetry install
 ```
 
-Now you can run:
+DISCLAIMER: tested on macOS only.
+
+
+## Usage
+
+### Performing on two Moog Mother 32 synthesizers as one instrument
 
 ```
-(aiotone)$ python -m aiotone.circuits
+(aiotone)$ python -m aiotone.redblue --help
 ```
 
-and
+### Sequencing the Novation Circuit + Novation Circuit Mono Station
 
 ```
-(aiotone)$ python -m aiotone.redblue
+(aiotone)$ python -m aiotone.circuits --help
 ```
