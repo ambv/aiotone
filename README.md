@@ -1,2 +1,3 @@
 # aiotone
-Beep beep
+
+MIDI processing tools in AsyncIO.
