@@ -1,3 +1,4 @@
+"""See the docstring of main()."""
 from __future__ import annotations
 
 import asyncio
@@ -70,6 +71,27 @@ class Performance:
 
 @click.command()
 def main() -> None:
+    """
+    Plays a tune on Circuit and Circuit Mono Station:
+
+    - uses the Circuit as the clock master;
+    
+    - uses the Circuit as a drum machine;
+
+    - uses the Mono Station as a paraphonic bass synthesizer.
+
+    To use this:
+    
+    - have the Circuit and the Circuit Mono Station connected to your computer;
+
+    - turn the Circuit and the Circuit Mono Station on and set them both to use empty
+      sessions;
+
+    - have the outs of the Circuit and the Circuit Mono Station connected to a mixer
+      or an audio interface;
+
+    - start the program.  Press Play on the Circuit.
+    """
     asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
     asyncio.run(async_main())
 
