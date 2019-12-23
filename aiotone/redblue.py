@@ -28,6 +28,7 @@ from .midi import (
     SUSTAIN_PEDAL,
     PORTAMENTO,
     PORTAMENTO_TIME,
+    PITCH_BEND,
     ALL_NOTES_OFF,
     STRIP_CHANNEL,
     get_ports,
@@ -49,7 +50,8 @@ CONFIGPARSER_FALSE = {
     for k, v in configparser.ConfigParser.BOOLEAN_STATES.items()  # type: ignore
     if v is False
 }
-PORTAMENTO_MODES = {"damper", "sustain", "legato"} | CONFIGPARSER_FALSE
+SUSTAIN_PEDAL_PORTAMENTO = {"sustain", "damper"}
+PORTAMENTO_MODES = {"legato"} | SUSTAIN_PEDAL_PORTAMENTO | CONFIGPARSER_FALSE
 
 
 @dataclass
@@ -106,6 +108,9 @@ class Performance:
         self.notes.clear()
 
     async def legato_portamento(self) -> None:
+        if not self.portamento == "legato":
+            return
+
         if len(self.notes) > 1:
             await self.cc_both(PORTAMENTO, 127)
             await self.cc_both(PORTAMENTO_TIME, 64)
@@ -113,7 +118,13 @@ class Performance:
             await self.cc_both(PORTAMENTO, 0)
             await self.cc_both(PORTAMENTO_TIME, 0)
 
-    async def damper_portamento(self, value: int) -> None:
+    async def damper_portamento(self, value: int) -> bool:
+        """Handle sustain pedal-driven portamento.
+
+        If returns True, the dispatcher should send regular sustain messages, too."""
+        if self.portamento not in SUSTAIN_PEDAL_PORTAMENTO:
+            return True
+
         if value == 0:
             await self.cc_both(PORTAMENTO, 0)
             await self.cc_both(PORTAMENTO_TIME, 0)
@@ -121,6 +132,25 @@ class Performance:
             await self.cc_both(PORTAMENTO, 127)
             converted_value = int(self.damper_portamento_max * value / 127)
             await self.cc_both(PORTAMENTO_TIME, converted_value)
+
+        return self.portamento == "sustain"
+
+    async def note_on(self, note: int, volume: int) -> None:
+        self.notes.add(note)
+        await self.both(NOTE_ON, note, volume)
+
+    async def note_off(self, note: int) -> None:
+        try:
+            self.notes.remove(note)
+        except KeyError:
+            # Sequencer started when a note-on was already sent.
+            # Alternatively: STOP was sent and all notes were cleared, and note-off
+            # arrived only later.
+            pass
+
+        await self.both(NOTE_OFF, note, 0)
+
+    # Raw commands
 
     async def red(self, event: int, note: int, volume: int) -> None:
         self.red_port.send_message([event | self.red_channel, note, volume])
@@ -326,7 +356,6 @@ async def midi_consumer(
     system_realtime = {START, STOP, SONG_POSITION}
     notes = {NOTE_ON, NOTE_OFF}
     handled_types = system_realtime | notes | {CONTROL_CHANGE}
-    sustain_pedal_portamento = {"sustain", "damper"}
     while True:
         msg, delta, sent_time = await queue.get()
         latency = time.time() - sent_time
@@ -353,29 +382,27 @@ async def midi_consumer(
             elif t == STOP:
                 await performance.stop()
             elif t == NOTE_ON:
-                performance.notes.add(msg[1])
-                if performance.portamento == "legato":
-                    await performance.legato_portamento()
-                await performance.both(NOTE_ON, msg[1], msg[2])
+                await performance.legato_portamento()
+                await performance.note_on(msg[1], msg[2])
             elif t == NOTE_OFF:
-                performance.notes.remove(msg[1])
-                if performance.portamento == "legato":
-                    await performance.legato_portamento()
-                await performance.both(NOTE_OFF, msg[1], msg[2])
+                await performance.legato_portamento()
+                await performance.note_off(msg[1])
             elif t == CONTROL_CHANGE:
                 if msg[1] == MOD_WHEEL:
                     await performance.cc_red(MOD_WHEEL, msg[2])
                 elif msg[1] == EXPRESSION_PEDAL:
                     await performance.cc_blue(MOD_WHEEL, msg[2])
                 elif msg[1] == SUSTAIN_PEDAL:
-                    if performance.portamento in sustain_pedal_portamento:
-                        await performance.damper_portamento(msg[2])
-                        if performance.portamento == "sustain":
-                            await performance.cc_both(SUSTAIN_PEDAL, msg[2])
+                    if await performance.damper_portamento(msg[2]):
+                        await performance.cc_both(SUSTAIN_PEDAL, msg[2])
                 elif msg[1] == ALL_NOTES_OFF:
                     await performance.cc_both(ALL_NOTES_OFF, msg[2])
                 else:
                     print(f"warning: unhandled CC {msg}", file=sys.stderr)
+            elif t == PITCH_BEND:
+                # Note: this does nothing on the Mother 32 firmware 1.0.  We need to
+                # simulate this with virtual note_on events with portamento.
+                await performance.both(PITCH_BEND, msg[1], msg[2])
             else:
                 if st not in handled_types:
                     print(f"warning: unhandled event {msg}", file=sys.stderr)
