@@ -22,6 +22,15 @@ DISCLAIMER: tested on macOS only.
 
 ### Performing on two Moog Mother 32 synthesizers as one instrument
 
+- regular unison mode for rich chorus;
+- power chord mode;
+- duophonic mode: real 2-voice polyphony;
+- legato-controlled glide (or sustain pedal-controlled glide);
+- velocity-controlled accent notes;
+- one Mother receives mod wheel on ASSIGN CV;
+- the other Mother receives expression pedal on ASSIGN CV.
+
+For more information:
 ```
 (aiotone)$ python -m aiotone.redblue --help
 ```
