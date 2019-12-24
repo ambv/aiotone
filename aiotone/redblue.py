@@ -4,10 +4,11 @@ from __future__ import annotations
 
 import asyncio
 import configparser
+from enum import Enum
 from pathlib import Path
 import sys
 import time
-from typing import List, Sequence, Set, Tuple
+from typing import Dict, List, Sequence, Tuple
 
 from attr import dataclass, Factory
 import click
@@ -35,6 +36,7 @@ from .midi import (
     get_out_port,
     silence,
 )
+from .notes import C, Cs, D, Ds, E, F, Fs, G, Gs, A, As, B, Db, Eb, Gb, Ab, Bb  # NoQA
 
 
 # types
@@ -54,6 +56,13 @@ SUSTAIN_PEDAL_PORTAMENTO = {"sustain", "damper"}
 PORTAMENTO_MODES = {"legato"} | SUSTAIN_PEDAL_PORTAMENTO | CONFIGPARSER_FALSE
 
 
+class NoteMode(Enum):
+    REGULAR = 0
+    POWER = 1
+    RED = 2
+    BLUE = 3
+
+
 @dataclass
 class Performance:
     red_port: MidiOut
@@ -64,7 +73,8 @@ class Performance:
     portamento: str
     damper_portamento_max: int
     metronome: Metronome = Factory(Metronome)
-    notes: Set[int] = Factory(set)
+    notes: Dict[int, NoteMode] = Factory(dict)
+    power_chord: bool = False
 
     async def play(
         self,
@@ -136,19 +146,33 @@ class Performance:
         return self.portamento == "sustain"
 
     async def note_on(self, note: int, volume: int) -> None:
-        self.notes.add(note)
-        await self.both(NOTE_ON, note, volume)
+        if note == A[0]:
+            self.power_chord = False
+            return
+
+        if note == B[0]:
+            self.power_chord = True
+            return
+
+        if self.power_chord:
+            self.notes[note] = NoteMode.POWER
+            await self.red(NOTE_ON, note, volume)
+            await self.blue(NOTE_ON, note + 7, volume)
+        else:
+            self.notes[note] = NoteMode.REGULAR
+            await self.both(NOTE_ON, note, volume)
 
     async def note_off(self, note: int) -> None:
-        try:
-            self.notes.remove(note)
-        except KeyError:
-            # Sequencer started when a note-on was already sent.
-            # Alternatively: STOP was sent and all notes were cleared, and note-off
-            # arrived only later.
-            pass
+        if note in (A[0], B[0]):
+            return
 
-        await self.both(NOTE_OFF, note, 0)
+        mode = self.notes.pop(note, NoteMode.REGULAR)
+
+        if mode == NoteMode.POWER:
+            await self.red(NOTE_OFF, note, 0)
+            await self.blue(NOTE_OFF, note + 7, 0)
+        else:
+            await self.both(NOTE_OFF, note, 0)
 
     # Raw commands
 
