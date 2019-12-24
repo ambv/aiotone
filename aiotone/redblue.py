@@ -72,8 +72,15 @@ class Performance:
     start_stop: bool
     portamento: str
     damper_portamento_max: int
+    accent_volume: int
+
+    # Current state of the performance
     metronome: Metronome = Factory(Metronome)
     notes: Dict[int, NoteMode] = Factory(dict)
+    last_expression_value: int = 64
+    is_accent: bool = False
+
+    # Modes
     power_chord: bool = False
 
     async def play(
@@ -154,6 +161,13 @@ class Performance:
             self.power_chord = True
             return
 
+        was_accent = self.is_accent
+        self.is_accent = (
+            was_accent and len(self.notes) > 0
+        ) or volume >= self.accent_volume
+        if self.is_accent != was_accent:
+            await self.expression(self.last_expression_value)
+
         if self.power_chord:
             self.notes[note] = NoteMode.POWER
             await self.red(NOTE_ON, note, volume)
@@ -173,6 +187,19 @@ class Performance:
             await self.blue(NOTE_OFF, note + 7, 0)
         else:
             await self.both(NOTE_OFF, note, 0)
+
+    async def mod_wheel(self, value: int) -> None:
+        await self.cc_red(MOD_WHEEL, value)
+
+    async def expression(self, value: int) -> None:
+        if self.is_accent:
+            if value < 80:
+                value += 24
+            elif value <= 104:
+                value = 104
+        else:
+            self.last_expression_value = value
+        await self.cc_blue(MOD_WHEEL, value)
 
     # Raw commands
 
@@ -226,10 +253,20 @@ def main(config: str, make_config: bool) -> None:
     - dispatches EXPRESSION_PEDAL to the second Mother's MOD_WHEEL (which you can use
       via the ASSIGN CV output);
 
+    - supports ACCENT notes which add +24 to expression when a key is hit strongly and
+      the EXPRESSION_PEDAL is set to 80% or less (the trigger volume is configured
+      by the "accent-volume" setting; accents saturate at 80% expression, for more use
+      the pedal);
+
+    - supports play modes: hit A-0 (lowest key on the 88-key keyboard) to engage regular
+      mode, hit B-0 to engage power chord mode (the second Mother plays the dominant to
+      the first Mother's tonic);
+
     - allows for controlling portamento during MIDI performance either using legato
       notes or the damper pedal (if the mode is "sustain", the pedal will still sustain
       the notes played, if the mode is "damper" then it will no longer sustain notes,
       only control portamento).
+
 
     To use this yourself, you will need:
 
@@ -363,6 +400,7 @@ async def async_main(config: str) -> None:
         start_stop=cfg["from-ableton"].getboolean("start-stop"),
         portamento=cfg["from-ableton"]["portamento"],
         damper_portamento_max=cfg["from-ableton"].getint("damper-portamento-max"),
+        accent_volume=cfg["from-ableton"].getint("accent-volume"),
     )
     try:
         await midi_consumer(queue, performance)
@@ -413,9 +451,9 @@ async def midi_consumer(
                 await performance.note_off(msg[1])
             elif t == CONTROL_CHANGE:
                 if msg[1] == MOD_WHEEL:
-                    await performance.cc_red(MOD_WHEEL, msg[2])
+                    await performance.mod_wheel(msg[2])
                 elif msg[1] == EXPRESSION_PEDAL:
-                    await performance.cc_blue(MOD_WHEEL, msg[2])
+                    await performance.expression(msg[2])
                 elif msg[1] == SUSTAIN_PEDAL:
                     if await performance.damper_portamento(msg[2]):
                         await performance.cc_both(SUSTAIN_PEDAL, msg[2])
