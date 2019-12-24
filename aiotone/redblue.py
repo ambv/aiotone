@@ -78,10 +78,12 @@ class Performance:
     metronome: Metronome = Factory(Metronome)
     notes: Dict[int, NoteMode] = Factory(dict)
     last_expression_value: int = 64
+    last_color: NoteMode = NoteMode.BLUE
     is_accent: bool = False
 
     # Modes
     power_chord: bool = False
+    duophon: bool = False
 
     async def play(
         self,
@@ -155,10 +157,17 @@ class Performance:
     async def note_on(self, note: int, volume: int) -> None:
         if note == A[0]:
             self.power_chord = False
+            self.duophon = False
+            return
+
+        if note == Bb[0]:
+            self.power_chord = False
+            self.duophon = True
             return
 
         if note == B[0]:
             self.power_chord = True
+            self.duophon = False
             return
 
         was_accent = self.is_accent
@@ -172,12 +181,42 @@ class Performance:
             self.notes[note] = NoteMode.POWER
             await self.red(NOTE_ON, note, volume)
             await self.blue(NOTE_ON, note + 7, volume)
+        elif self.duophon:
+            red_notes = 0
+            blue_notes = 0
+            for note_mode in self.notes.values():
+                if note_mode == NoteMode.RED:
+                    red_notes += 1
+                elif note_mode == NoteMode.BLUE:
+                    blue_notes += 1
+
+            if self.last_color == NoteMode.RED:
+                if not blue_notes:
+                    use_channel = NoteMode.BLUE
+                elif not red_notes:
+                    use_channel = NoteMode.RED
+                else:
+                    use_channel = NoteMode.BLUE
+            else:
+                if not red_notes:
+                    use_channel = NoteMode.RED
+                elif not blue_notes:
+                    use_channel = NoteMode.BLUE
+                else:
+                    use_channel = NoteMode.RED
+
+            self.notes[note] = use_channel
+            self.last_color = use_channel
+            if use_channel == NoteMode.RED:
+                await self.red(NOTE_ON, note, volume)
+            else:
+                await self.blue(NOTE_ON, note, volume)
         else:
             self.notes[note] = NoteMode.REGULAR
             await self.both(NOTE_ON, note, volume)
 
     async def note_off(self, note: int) -> None:
-        if note in (A[0], B[0]):
+        if note in (A[0], Bb[0], B[0]):
             return
 
         mode = self.notes.pop(note, NoteMode.REGULAR)
@@ -185,6 +224,10 @@ class Performance:
         if mode == NoteMode.POWER:
             await self.red(NOTE_OFF, note, 0)
             await self.blue(NOTE_OFF, note + 7, 0)
+        elif mode == NoteMode.RED:
+            await self.red(NOTE_OFF, note, 0)
+        elif mode == NoteMode.BLUE:
+            await self.blue(NOTE_OFF, note, 0)
         else:
             await self.both(NOTE_OFF, note, 0)
 
@@ -260,7 +303,8 @@ def main(config: str, make_config: bool) -> None:
 
     - supports play modes: hit A-0 (lowest key on the 88-key keyboard) to engage regular
       mode, hit B-0 to engage power chord mode (the second Mother plays the dominant to
-      the first Mother's tonic);
+      the first Mother's tonic), hit Bb-0 to engage duophonic mode (the first and the
+      second Mother play notes interchangeably, giving you real 2-voice polyphony);
 
     - allows for controlling portamento during MIDI performance either using legato
       notes or the damper pedal (if the mode is "sustain", the pedal will still sustain
