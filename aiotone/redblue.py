@@ -237,9 +237,9 @@ class Performance:
     async def expression(self, value: int) -> None:
         if self.is_accent:
             if value < 80:
-                value += 24
-            elif value <= 104:
-                value = 104
+                value += 32
+            elif value <= 112:
+                value = 112
         else:
             self.last_expression_value = value
         await self.cc_blue(MOD_WHEEL, value)
@@ -297,8 +297,8 @@ def main(config: str, make_config: bool) -> None:
       via the ASSIGN CV output);
 
     - supports ACCENT notes which add +24 to expression when a key is hit strongly and
-      the EXPRESSION_PEDAL is set to 80% or less (the trigger volume is configured
-      by the "accent-volume" setting; accents saturate at 80% expression, for more use
+      the EXPRESSION_PEDAL is set to 87.5% or less (the trigger volume is configured
+      by the "accent-volume" setting; accents saturate at 87.5% expression, for more use
       the pedal);
 
     - supports play modes: hit A-0 (lowest key on the 88-key keyboard) to engage regular
