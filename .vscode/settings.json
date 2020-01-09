@@ -1,11 +1,10 @@
 {
     "editor.formatOnSave": true,
     "editor.minimap.enabled": false,
-    "python.testing.pytestArgs": [
-        "tests"
-    ],
+    "python.formatting.provider": "black",
     "python.testing.unittestEnabled": false,
     "python.testing.nosetestsEnabled": false,
-    "python.testing.pytestEnabled": true,
-    "python.pythonPath": "/Users/ambv/.venvs/aiotone/bin/python"
+    "python.testing.pytestEnabled": false,
+    "python.linting.mypyEnabled": true,
+    "python.pythonPath": "/Users/ambv/.venvs/aiotone/bin/python",
 }
