@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Tuple
+from typing import Iterable, Tuple
 
 from rtmidi import MidiIn, MidiOut
 
@@ -19,12 +19,21 @@ PANIC = 0b11111111
 CLOCK = 0b11111000
 START = 0b11111010
 STOP = 0b11111100
+SONG_POSITION = 0b11110010
 
-# MIDI special values
-ALL_NOTES_OFF = 0b01111011  # use with CONTROL_CHANGE
+# MIDI special values (use with CONTROL_CHANGE)
+ALL_NOTES_OFF = 0b01111011
+MOD_WHEEL = 0b00000001
+EXPRESSION_PEDAL = 0b00001011
+SUSTAIN_PEDAL = 0b01000000
+PORTAMENTO = 0b01000001
+PORTAMENTO_TIME = 0b00000101
 
 # Operations on MIDI constants
 STRIP_CHANNEL = 0b11110000
+
+
+ALL_CHANNELS = range(16)
 
 
 def get_ports(port_name: str, *, clock_source: bool = False) -> Tuple[MidiIn, MidiOut]:
@@ -46,3 +55,23 @@ def get_ports(port_name: str, *, clock_source: bool = False) -> Tuple[MidiIn, Mi
         raise ValueError(port_name) from None
 
     return midi_in, midi_out
+
+
+def get_out_port(port_name: str) -> MidiOut:
+    midi_out = MidiOut()
+    midi_out_ports = midi_out.get_ports()
+    try:
+        midi_out.open_port(midi_out_ports.index(port_name))
+    except ValueError:
+        raise ValueError(port_name) from None
+
+    return midi_out
+
+
+def silence(
+    port: MidiOut, *, stop: bool = True, channels: Iterable[int] = ALL_CHANNELS
+) -> None:
+    if stop:
+        port.send_message([STOP])
+    for channel in channels:
+        port.send_message([CONTROL_CHANGE | channel, ALL_NOTES_OFF, 0])
