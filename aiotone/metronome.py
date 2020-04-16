@@ -1,7 +1,7 @@
 from __future__ import annotations
+from typing import *
 
 import asyncio
-from typing import List
 
 from attr import dataclass, Factory
 

@@ -1,8 +1,8 @@
 from __future__ import annotations
+from typing import *
 
 import asyncio
 import time
-from typing import List, Optional, Tuple
 
 from attr import dataclass
 import click
@@ -66,7 +66,7 @@ class Performance:
 
 @click.command()
 def main() -> None:
-    asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
+    uvloop.install()
     asyncio.run(async_main())
 
 
