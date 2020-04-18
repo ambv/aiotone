@@ -22,6 +22,19 @@ class Performance:
     drums: MidiOut
     bass: MidiOut
 
+    async def play_drum(self, note: int, volume: int = 127, decay: float = 0.5) -> None:
+        await self.play(self.drums, channel=9, note=note, volume=volume, decay=decay)
+
+    async def play(
+        self, out: MidiOut, channel: int, note: int, volume: int, decay: float = 0.5
+    ) -> None:
+        note_on_length = int(round(1.0 * decay, 0))
+        rest_length = 1.0 - note_on_length
+        out.send_message([NOTE_ON | channel, note, volume])
+        await asyncio.sleep(note_on_length)
+        out.send_message([NOTE_OFF | channel, note, volume])
+        await asyncio.sleep(rest_length)
+
 
 async def async_main() -> None:
     queue: asyncio.Queue[MidiMessage] = asyncio.Queue(maxsize=256)
@@ -78,14 +91,12 @@ async def midi_consumer(
 
 
 async def drum_machine(performance: Performance) -> None:
-    channel = 9  # MIDI channel #10, usually drums
-    note = 60  # bass drum
-    volume = 127  # very loud
+    b_drum = 60
+    s_drum = 62
+    cl_hat = 64
+    op_hat = 65
     while True:
-        performance.drums.send_message([NOTE_ON | channel, note, volume])
-        await asyncio.sleep(0.5)
-        performance.drums.send_message([NOTE_OFF | channel, note, volume])
-        await asyncio.sleep(0.5)
+        await performance.play_drum(b_drum)
 
 
 @click.command()
