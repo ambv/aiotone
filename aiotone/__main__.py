@@ -21,19 +21,30 @@ MidiMessage = Tuple[MidiPacket, EventDelta, TimeStamp]
 class Performance:
     drums: MidiOut
     bass: MidiOut
+    pulse_delta: float = 0.02  # 125 BPM (0.02 / 60 / 24 pulses per quarter note)
 
-    async def play_drum(self, note: int, volume: int = 127, decay: float = 0.5) -> None:
-        await self.play(self.drums, channel=9, note=note, volume=volume, decay=decay)
+    async def play_drum(
+        self, note: int, pulses: int, volume: int = 127, decay: float = 0.5
+    ) -> None:
+        await self.play(
+            self.drums, channel=9, note=note, pulses=pulses, volume=volume, decay=decay
+        )
 
     async def play(
-        self, out: MidiOut, channel: int, note: int, volume: int, decay: float = 0.5
+        self,
+        out: MidiOut,
+        channel: int,
+        note: int,
+        pulses: int,
+        volume: int,
+        decay: float,
     ) -> None:
-        note_on_length = int(round(1.0 * decay, 0))
-        rest_length = 1.0 - note_on_length
+        note_on_length = int(round(pulses * decay, 0))
+        rest_length = pulses - note_on_length
         out.send_message([NOTE_ON | channel, note, volume])
-        await asyncio.sleep(note_on_length)
+        await asyncio.sleep(note_on_length * self.pulse_delta)
         out.send_message([NOTE_OFF | channel, note, volume])
-        await asyncio.sleep(rest_length)
+        await asyncio.sleep(rest_length * self.pulse_delta)
 
 
 async def async_main() -> None:
@@ -71,6 +82,7 @@ async def midi_consumer(
     queue: asyncio.Queue[MidiMessage], performance: Performance
 ) -> None:
     drums: Optional[asyncio.Task] = None
+    last_pkt: MidiPacket = [0]
     while True:
         pkt, delta, sent_time = await queue.get()
         latency = time.time() - sent_time
@@ -78,6 +90,8 @@ async def midi_consumer(
             click.echo(f"{pkt}\tevent delta: {delta:.4f}\tlatency: {latency:.4f}")
         if pkt[0] == CLOCK:
             performance.bass.send_message(pkt)
+            if last_pkt[0] == CLOCK:
+                performance.pulse_delta = delta
         elif pkt[0] == START:
             performance.bass.send_message(pkt)
             if drums is None:
@@ -88,6 +102,7 @@ async def midi_consumer(
                 drums.cancel()
                 drums = None
                 silence(performance.drums)
+        last_pkt = pkt
 
 
 async def drum_machine(performance: Performance) -> None:
@@ -96,7 +111,7 @@ async def drum_machine(performance: Performance) -> None:
     cl_hat = 64
     op_hat = 65
     while True:
-        await performance.play_drum(b_drum)
+        await performance.play_drum(b_drum, pulses=24)
 
 
 @click.command()
