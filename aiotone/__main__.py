@@ -8,6 +8,7 @@ import attr
 import click
 import uvloop
 
+from .metronome import Metronome
 from .midi import get_ports, silence, MidiOut, CLOCK, START, STOP, NOTE_ON, NOTE_OFF
 
 # types
@@ -21,7 +22,8 @@ MidiMessage = Tuple[MidiPacket, EventDelta, TimeStamp]
 class Performance:
     drums: MidiOut
     bass: MidiOut
-    pulse_delta: float = 0.02  # 125 BPM (0.02 / 60 / 24 pulses per quarter note)
+    # pulse_delta: float = 0.02  # 125 BPM (0.02 / 60 / 24 pulses per quarter note)
+    metronome: Metronome = attr.Factory(Metronome)
 
     async def play_drum(
         self, note: int, pulses: int, volume: int = 127, decay: float = 0.5
@@ -47,7 +49,7 @@ class Performance:
         await self.wait(rest_length)
 
     async def wait(self, pulses: int) -> None:
-        await asyncio.sleep(pulses * self.pulse_delta)
+        await self.metronome.wait(pulses)
 
 
 async def async_main() -> None:
@@ -93,10 +95,10 @@ async def midi_consumer(
             click.echo(f"{pkt}\tevent delta: {delta:.4f}\tlatency: {latency:.4f}")
         if pkt[0] == CLOCK:
             performance.bass.send_message(pkt)
-            if last_pkt[0] == CLOCK:
-                performance.pulse_delta = delta
+            await performance.metronome.tick()
         elif pkt[0] == START:
             performance.bass.send_message(pkt)
+            await performance.metronome.reset()
             if drums is None:
                 drums = asyncio.create_task(drum_machine(performance))
         elif pkt[0] == STOP:
