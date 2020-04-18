@@ -4,6 +4,7 @@ from typing import *
 import asyncio
 
 import click
+import uvloop
 
 from .midi import get_ports
 
@@ -19,6 +20,7 @@ async def async_main() -> None:
 
 @click.command()
 def main() -> None:
+    uvloop.install()
     asyncio.run(async_main())
 
 
