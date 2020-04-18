@@ -7,7 +7,7 @@ import time
 import click
 import uvloop
 
-from .midi import get_ports, silence
+from .midi import get_ports, silence, CLOCK, START, STOP
 
 # types
 EventDelta = float  # in seconds
@@ -52,6 +52,12 @@ async def midi_consumer(queue: asyncio.Queue[MidiMessage]) -> None:
         latency = time.time() - sent_time
         if __debug__:
             click.echo(f"{pkt}\tevent delta: {delta:.4f}\tlatency: {latency:.4f}")
+        if pkt[0] == CLOCK:
+            bass.send_message(pkt)
+        elif pkt[0] == START:
+            bass.send_message(pkt)
+        elif pkt[0] == STOP:
+            bass.send_message(pkt)
 
 
 @click.command()
