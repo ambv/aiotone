@@ -4,16 +4,23 @@ from typing import *
 import asyncio
 import time
 
+import attr
 import click
 import uvloop
 
-from .midi import get_ports, silence, CLOCK, START, STOP
+from .midi import get_ports, silence, MidiOut, CLOCK, START, STOP
 
 # types
 EventDelta = float  # in seconds
 TimeStamp = float  # time.time()
 MidiPacket = List[int]
 MidiMessage = Tuple[MidiPacket, EventDelta, TimeStamp]
+
+
+@attr.dataclass
+class Performance:
+    drums: MidiOut
+    bass: MidiOut
 
 
 async def async_main() -> None:
@@ -38,26 +45,29 @@ async def async_main() -> None:
 
     from_circuit.set_callback(midi_callback)
     from_mono_station.close_port()
+    performance = Performance(drums=to_circuit, bass=to_mono_station)
     try:
-        await midi_consumer(queue)
+        await midi_consumer(queue, performance)
     except asyncio.CancelledError:
         from_circuit.cancel_callback()
         silence(to_circuit)
         silence(to_mono_station)
 
 
-async def midi_consumer(queue: asyncio.Queue[MidiMessage]) -> None:
+async def midi_consumer(
+    queue: asyncio.Queue[MidiMessage], performance: Performance
+) -> None:
     while True:
         pkt, delta, sent_time = await queue.get()
         latency = time.time() - sent_time
         if __debug__:
             click.echo(f"{pkt}\tevent delta: {delta:.4f}\tlatency: {latency:.4f}")
         if pkt[0] == CLOCK:
-            bass.send_message(pkt)
+            performance.bass.send_message(pkt)
         elif pkt[0] == START:
-            bass.send_message(pkt)
+            performance.bass.send_message(pkt)
         elif pkt[0] == STOP:
-            bass.send_message(pkt)
+            performance.bass.send_message(pkt)
 
 
 @click.command()
