@@ -92,7 +92,12 @@ async def midi_consumer(
         pkt, delta, sent_time = await queue.get()
         latency = time.time() - sent_time
         if __debug__:
-            click.echo(f"{pkt}\tevent delta: {delta:.4f}\tlatency: {latency:.4f}")
+            if last_pkt[0] == CLOCK:
+                click.echo("\r" if pkt[0] == CLOCK else "\n", nl=False)
+            click.echo(
+                f"{pkt}\tevent delta: {delta:.4f}\tlatency: {latency:.4f}",
+                nl=pkt[0] != CLOCK,
+            )
         if pkt[0] == CLOCK:
             performance.bass.send_message(pkt)
             await performance.metronome.tick()
