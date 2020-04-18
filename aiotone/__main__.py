@@ -17,6 +17,9 @@ async def async_main() -> None:
         click.secho(f"{port} is not available", fg="red", err=True)
         raise click.Abort
 
+    from_circuit.set_callback(midi_callback)
+    from_mono_station.close_port()
+
 
 @click.command()
 def main() -> None:
