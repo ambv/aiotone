@@ -7,7 +7,7 @@ import time
 import click
 import uvloop
 
-from .midi import get_ports
+from .midi import get_ports, silence
 
 # types
 EventDelta = float  # in seconds
@@ -31,12 +31,19 @@ async def async_main() -> None:
         sent_time = time.time()
         midi_packet, event_delta = msg
         midi_message = (midi_packet, event_delta, sent_time)
-        loop.call_soon_threadsafe(queue.put_nowait, midi_message)
+        try:
+            loop.call_soon_threadsafe(queue.put_nowait, midi_message)
+        except BaseException as be:
+            click.secho(f"callback failed: {be}", fg="red", err=True)
 
     from_circuit.set_callback(midi_callback)
     from_mono_station.close_port()
-
-    await midi_consumer(queue)
+    try:
+        await midi_consumer(queue)
+    except asyncio.CancelledError:
+        from_circuit.cancel_callback()
+        silence(to_circuit)
+        silence(to_mono_station)
 
 
 async def midi_consumer(queue: asyncio.Queue[MidiMessage]) -> None:
