@@ -18,6 +18,7 @@ MidiMessage = Tuple[MidiPacket, EventDelta, TimeStamp]
 
 async def async_main() -> None:
     queue: asyncio.Queue[MidiMessage] = asyncio.Queue(maxsize=256)
+    loop = asyncio.get_event_loop()
 
     try:
         from_circuit, to_circuit = get_ports("Circuit", clock_source=True)
@@ -30,7 +31,7 @@ async def async_main() -> None:
         sent_time = time.time()
         midi_packet, event_delta = msg
         midi_message = (midi_packet, event_delta, sent_time)
-        queue.put_nowait(midi_message)
+        loop.call_soon_threadsafe(queue.put_nowait, midi_message)
 
     from_circuit.set_callback(midi_callback)
     from_mono_station.close_port()
