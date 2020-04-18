@@ -8,7 +8,7 @@ import attr
 import click
 import uvloop
 
-from .midi import get_ports, silence, MidiOut, CLOCK, START, STOP
+from .midi import get_ports, silence, MidiOut, CLOCK, START, STOP, NOTE_ON, NOTE_OFF
 
 # types
 EventDelta = float  # in seconds
@@ -57,6 +57,7 @@ async def async_main() -> None:
 async def midi_consumer(
     queue: asyncio.Queue[MidiMessage], performance: Performance
 ) -> None:
+    drums: Optional[asyncio.Task] = None
     while True:
         pkt, delta, sent_time = await queue.get()
         latency = time.time() - sent_time
@@ -66,8 +67,25 @@ async def midi_consumer(
             performance.bass.send_message(pkt)
         elif pkt[0] == START:
             performance.bass.send_message(pkt)
+            if drums is None:
+                drums = asyncio.create_task(drum_machine(performance))
         elif pkt[0] == STOP:
             performance.bass.send_message(pkt)
+            if drums is not None:
+                drums.cancel()
+                drums = None
+                silence(performance.drums)
+
+
+async def drum_machine(performance: Performance) -> None:
+    channel = 9  # MIDI channel #10, usually drums
+    note = 60  # bass drum
+    volume = 127  # very loud
+    while True:
+        performance.drums.send_message([NOTE_ON | channel, note, volume])
+        await asyncio.sleep(0.5)
+        performance.drums.send_message([NOTE_OFF | channel, note, volume])
+        await asyncio.sleep(0.5)
 
 
 @click.command()
