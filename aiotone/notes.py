@@ -17,6 +17,8 @@ Gb = Fs
 Ab = Gs
 Bb = As
 
-for note in (C, Cs, D, Ds, E, F, Fs, G, Gs, A, As, B):
+all_notes = (C, Cs, D, Ds, E, F, Fs, G, Gs, A, As, B)
+
+for note in all_notes:
     for octave in range(1, 9):
         note.append(note[0] + 12 * octave)
