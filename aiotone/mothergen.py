@@ -54,6 +54,8 @@ CONFIGPARSER_FALSE = {
     for k, v in configparser.ConfigParser.BOOLEAN_STATES.items()  # type: ignore
     if v is False
 }
+REZ = {"rez", "resonance", "modwheel"}
+PORTAMENTO_MODES = REZ | CONFIGPARSER_FALSE
 
 
 class PlayAsyncFunction(Protocol):
@@ -80,13 +82,23 @@ class Performance:
     blue_port: MidiOut
     blue_channel: int
     start_stop: bool
+    portamento: str
+    portamento_max: int
 
     # Current state of the performance
     metronome: Metronome = Factory(Metronome)
     last_expression_value: int = 64
     blue_sequencer: Optional[asyncio.Task] = None
     red_sequencer: Optional[asyncio.Task] = None
-    key: List[int] = C
+    key: List[int] = F
+
+    async def setup(self) -> None:
+        silence(self.red_port, stop=self.start_stop, channels=[self.red_channel])
+        silence(self.blue_port, stop=self.start_stop, channels=[self.blue_channel])
+        await self.cc_red(MOD_WHEEL, 0)
+        await self.cc_blue(MOD_WHEEL, 0)
+        await self.cc_both(PORTAMENTO, 0)
+        await self.cc_both(PORTAMENTO_TIME, 0)
 
     async def play(
         self,
@@ -165,9 +177,9 @@ class Performance:
     ) -> None:
         octaves = range(1, 7)
         speeds = (24, 24, 24, 24, 12, 12)
-        decays = [num / 100 for num in range(20, 90, 2)]
+        decays = [num / 100 for num in range(20, 50, 2)]
         decays.extend(reversed(decays))
-        intervals = (0, 0, 0, 0, 0, 0, 0, 0, 7, 7, 7, 7, 5, 5, 10)
+        intervals = 10 * [0] + 4 * [7] + 2 * [5] + [10]
 
         for decay in itertools.cycle(decays):
             oct = random.choice(octaves)
@@ -186,6 +198,16 @@ class Performance:
 
     async def mod_wheel(self, value: int) -> None:
         await self.cc_red(MOD_WHEEL, value)
+        if self.portamento not in REZ:
+            return
+
+        if value == 0:
+            await self.cc_both(PORTAMENTO, 0)
+            await self.cc_both(PORTAMENTO_TIME, 0)
+        else:
+            await self.cc_both(PORTAMENTO, 127)
+            converted_value = int(self.portamento_max * value / 127)
+            await self.cc_both(PORTAMENTO_TIME, converted_value)
 
     async def expression(self, value: int) -> None:
         self.last_expression_value = value
@@ -307,26 +329,41 @@ async def async_main(config: str) -> None:
             click.secho(f"{port} not connected", fg="red", err=True)
             raise click.Abort
 
+    porta_mode = cfg["from-ableton"]["portamento"]
+    if porta_mode not in PORTAMENTO_MODES:
+        click.secho(
+            f"from-ableton/portamento mode not recognized. Got {porta_mode!r}, "
+            f"expected one of {', '.join(PORTAMENTO_MODES)}",
+            fg="red",
+            err=True,
+        )
+        raise click.Abort
+
     performance = Performance(
         red_port=to_mother_red,
         blue_port=to_mother_blue,
         red_channel=cfg["to-mother-red"].getint("channel") - 1,
         blue_channel=cfg["to-mother-blue"].getint("channel") - 1,
         start_stop=cfg["from-ableton"].getboolean("start-stop"),
+        portamento=cfg["from-ableton"]["portamento"],
+        portamento_max=cfg["from-ableton"].getint("portamento-max"),
     )
+
+    await performance.setup()
+
     try:
         await midi_consumer(queue, performance)
     except asyncio.CancelledError:
         from_ableton.cancel_callback()
-        silence(to_ableton)
+        silence(to_ableton, stop=performance.start_stop)
+        silence(to_mother_red, stop=performance.start_stop)
+        silence(to_mother_blue, stop=performance.start_stop)
 
 
 async def midi_consumer(
     queue: asyncio.Queue[MidiMessage], performance: Performance
 ) -> None:
     print("Waiting for MIDI messages...")
-    silence(performance.red_port, channels=[performance.red_channel])
-    silence(performance.blue_port, channels=[performance.blue_channel])
     system_realtime = {START, STOP, SONG_POSITION}
     notes = {NOTE_ON, NOTE_OFF}
     handled_types = system_realtime | notes | {CONTROL_CHANGE}
