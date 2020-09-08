@@ -40,3 +40,20 @@ For more information:
 ```
 (aiotone)$ python -m aiotone.circuits --help
 ```
+
+See this talk for a full tutorial: https://www.youtube.com/watch?v=02CLD-42VdI
+
+### Self-generating sequences for two Moog Mother 32 synthesizers and one Moog Subharmonicon
+
+- the idea is to have a generative sequence that can still be modulated
+  with incoming MIDI signal from the musician;
+- so far very simple but will be extended;
+- the musician controls pitch bend, expression, and damper pedal
+  (I personally have them patched to control resonance, cutoff, and glide
+  of the synthesizers);
+- the musician can transpose the generated sequences on the fly.
+
+For more information see:
+```
+(aiotone)$ python -m aiotone.mothergen --help
+```
