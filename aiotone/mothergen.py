@@ -98,13 +98,13 @@ class Performance:
 
     def __attrs_post_init__(self) -> None:
         self.play_red = functools.partial(
-            self.play, out=self.red_port, channel=self.red_channel
+            self.play, out=self.red_port, channel=self.red_channel, color="red"
         )
         self.play_blue = functools.partial(
-            self.play, out=self.blue_port, channel=self.blue_channel
+            self.play, out=self.blue_port, channel=self.blue_channel, color="blue"
         )
         self.play_green = functools.partial(
-            self.play, out=self.green_port, channel=self.green_channel
+            self.play, out=self.green_port, channel=self.green_channel, color="green"
         )
 
     async def setup(self) -> None:
@@ -127,11 +127,14 @@ class Performance:
         *,
         out: MidiOut,
         channel: int,
+        color: str = "white",
     ) -> None:
+        click.secho(f"-> {[NOTE_ON | channel, note, volume]}", fg=color, bold=True)
         note_on_length = int(round(pulses * decay, 0))
         rest_length = pulses - note_on_length
         out.send_message([NOTE_ON | channel, note, volume])
         await self.wait(note_on_length)
+        click.secho(f"-> {[NOTE_OFF | channel, note, volume]}", fg=color, bold=True)
         out.send_message([NOTE_OFF | channel, note, volume])
         await self.wait(rest_length)
 
@@ -228,7 +231,7 @@ class Performance:
         self.blue_port.send_message([event | self.blue_channel, note, volume])
 
     async def green(self, event: int, note: int, volume: int) -> None:
-        # print("->", event, note, volume)
+        click.secho(f"-> {[event, note, volume]}", fg="green")
         self.green_port.send_message([event | self.green_channel, note, volume])
 
     async def mothers(self, event: int, note: int, volume: int) -> None:
@@ -281,11 +284,15 @@ class Performance:
         - VCA EG DECAY = CC29 0-127 + CC61 0-127
         - Rhythm Generator Logic = CC113 0-63 OR (default) / 64-127 XOR
 
-        16 divider values in subs are encoded like this:
-        - 0-7 = 16
-        - 8-15 = 15
+        Contrary to the manual, the 16 divider values in subs must be encoded like this
+        to have effect on the instrument:
+        - 4 -> step 16
+        - 12 -> step 15
+        - 20 -> step 14
         - ...
-        - 120-127 = 1
+        - 124 -> step 1
+
+        CC values non-quantized like presented above are ignored by the Subharmonicon.
         """
 
         def shift(l: List[int]) -> int:
@@ -297,7 +304,7 @@ class Performance:
         await raw(CC, 4, 64)
         await raw(CC, 36, 64)
         # VCO 2
-        await raw(CC, 12, 64)
+        await raw(CC, 12, 38)
         await raw(CC, 44, 64)
         # VCF attack
         await raw(CC, 23, 0)
@@ -312,12 +319,24 @@ class Performance:
         await raw(CC, 29, 8)
         await raw(CC, 61, 0)
 
-        div = [8 * i for i in range(16)] + [127]
+        # Thanks to Matt Orenstein for pointing out the required offset to make
+        # Subharmonicon accept the value.
+        div = [8 * i + 5 for i in range(16)] + [127]
+
+        async def subharmonics() -> None:
+            val = shift(div)
+            await self.wait(12)
+            await raw(CC, 103, val)
+            await raw(CC, 104, val)
+            await self.wait(12)
+            await raw(CC, 105, val)
+            await raw(CC, 106, val)
+
         while True:
-            await play(self.key[2], 12, 64, 1.0)
-            await self.wait(12)
-            await raw(CC, 103, shift(div))  # doesn't work?
-            await self.wait(12)
+            await asyncio.gather(
+                play(self.key[4], 36, 64, 1.0),
+                subharmonics(),
+            )
 
 
 @click.command()
@@ -483,7 +502,7 @@ async def midi_consumer(
             if t in system_realtime:
                 fg = "blue"
             elif t == CONTROL_CHANGE:
-                fg = "green"
+                fg = "yellow"
             click.secho(
                 f"{msg}\tevent delta: {delta:.4f}\tlatency: {latency:.4f}", fg=fg
             )
