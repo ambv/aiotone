@@ -6,9 +6,25 @@ from array import array
 import math
 import miniaudio
 import time
+import cProfile
+import pstats
+
+
+if TYPE_CHECKING:
+    Audio = Generator[array[int], int, None]
+
+
+# For clarity we're aliasing `next` because we are using it as an initializer of
+# stateful generators to execute until (and including) its first `yield` expression
+# to stop right before assigning a value sent to the generator.  Now the generator
+# is ready to accept `.send(value)`.
+# Note: due to this initialization, the first yield in Audio generators returns an
+# empty array.
+init = next
 
 
 def sine_array(sample_count: int) -> array[int]:
+    """Return a wavetable of length `sample_count` with a single sine cycle."""
     int16_maxvalue = 32767
     numbers = []
     for i in range(sample_count):
@@ -17,73 +33,66 @@ def sine_array(sample_count: int) -> array[int]:
     return array("h", numbers)
 
 
-def endless_sine(sample_count: int) -> Generator[array[int], int, None]:
+def endless_sine(sample_count: int) -> Audio:
     sine = sine_array(sample_count)
     result = array("h")
     want_frames = yield result
-    i = 0
+    result.extend([0] * want_frames)
+    sine_i = 0
     while True:
-        result = array("h")
-        left = want_frames
-        while left:
-            left = want_frames - len(result)
-            result.extend(sine[i : i + left])
-            i += left
-            if i > sample_count - 1:
-                i = 0
-        # print(want_frames, i, len(result))
-        want_frames = yield result
+        for res_i in range(want_frames):
+            result[res_i] = sine[sine_i]
+            sine_i += 1
+            if sine_i == sample_count:
+                sine_i = 0
+        want_frames = yield result[:want_frames]
 
 
-def stereo_mixer() -> Generator[array[int], int, None]:
-    result = array("h")
-    sin = endless_sine(88 * 3)
-    next(sin)
-    sin2 = endless_sine(66 * 3)
-    next(sin2)
-    sin3 = endless_sine(99)
-    next(sin3)
-
+def panning(mono: Audio, pan: float = 0.0) -> Audio:
+    result = init(mono)
     want_frames = yield result
     out_buffer = array("h", [0] * (2 * want_frames))
-
     while True:
-        mono = sin.send(want_frames)
-        mono2 = sin2.send(want_frames)
-        mono3 = sin3.send(want_frames)
+        mono_buffer = mono.send(want_frames)
         for i in range(want_frames):
-            out_buffer[2 * i] = int(
-                0.33 * 0.9 * mono[i] + 0.33 * 0.1 * mono2[i] + 0.33 * 0.5 * mono3[i]
-            )
-            out_buffer[2 * i + 1] = int(
-                0.33 * 0.1 * mono[i] + 0.33 * 0.9 * mono2[i] + 0.33 * 0.5 * mono3[i]
-            )
+            out_buffer[2 * i] = int((-pan + 1) / 2 * mono_buffer[i])
+            out_buffer[2 * i + 1] = int((pan + 1) / 2 * mono_buffer[i])
         want_frames = yield out_buffer[: 2 * want_frames]
 
 
-def trace(gen):
-    r = []
-    s = yield None
-    while True:
-        print(s, len(r))
-        try:
-            r = gen.send(s)
-        except StopIteration:
-            return
-        s = yield r
+def stereo_mixer() -> Audio:
+    voices = [
+        panning(endless_sine(88 * 3), -0.9),
+        panning(endless_sine(66 * 3), 0.9),
+        panning(endless_sine(99), 0),
+        panning(endless_sine(44), 0.5),
+        panning(endless_sine(88 * 4), -0.5),
+    ]
+    num_voices = len(voices)
+    mix_down = 1 / num_voices
+    stereo = [init(v) for v in voices]
+    want_frames = yield stereo[0]
+    out_buffer = array("h", [0] * (2 * want_frames))
+    try:
+        with cProfile.Profile() as pr:
+            while True:
+                stereo = [v.send(want_frames) for v in voices]
+                for i in range(0, 2 * want_frames):
+                    out_buffer[i] = int(sum([mix_down * s[i] for s in stereo]))
+                want_frames = yield out_buffer[: 2 * want_frames]
+    finally:
+        st = pstats.Stats(pr).sort_stats(pstats.SortKey.CALLS)
+        st.print_stats()
+        st.sort_stats(pstats.SortKey.CUMULATIVE)
+        st.print_stats()
 
 
 def main() -> None:
     devices = miniaudio.Devices()
     playbacks = devices.get_playbacks()
     play_id = playbacks[1]["id"]
-    if True:
-        stream = stereo_mixer()
-        next(stream)
-    if False:
-        wav = ".local/wt1.wav"
-        stream = trace(miniaudio.stream_file(wav))
-        next(stream)
+    stream = stereo_mixer()
+    init(stream)
     with miniaudio.PlaybackDevice(
         device_id=play_id,
         nchannels=2,
@@ -93,7 +102,7 @@ def main() -> None:
     ) as dev:
         dev.start(stream)
         while True:
-            time.sleep(0.1)
+            time.sleep(1)
 
 
 if __name__ == "__main__":
