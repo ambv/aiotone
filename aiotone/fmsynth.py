@@ -59,6 +59,27 @@ def endless_sine(sample_count: int) -> Audio:
         want_frames = yield result[:want_frames]
 
 
+def envelope(mono: Audio, a: int, d: int) -> Audio:
+    """Envelope parameters are in samples."""
+    result = init(mono)
+    want_frames = yield result
+
+    out_buffer = array("h", [0] * want_frames)
+    samples_since_reset = 0
+    while True:
+        mono_buffer = mono.send(want_frames)
+        for i in range(want_frames):
+            if samples_since_reset <= a:
+                volume = samples_since_reset / a
+            elif samples_since_reset - a <= d:
+                volume = 1.0 - (samples_since_reset - a) / d
+            else:
+                volume = 0.0
+            out_buffer[i] = int(volume * mono_buffer[i])
+            samples_since_reset += 1
+        want_frames = yield out_buffer[:want_frames]
+
+
 def panning(mono: Audio, pan: float = 0.0) -> Audio:
     result = init(mono)
     want_frames = yield result
@@ -112,11 +133,11 @@ class Synthesizer:
         self.num_voices = len(self.voices)
 
     def _gen_endless_sines(self) -> Iterator[Audio]:
-        yield endless_sine(88 * 3)
-        yield endless_sine(66 * 3)
-        yield endless_sine(99)
-        yield endless_sine(44)
-        yield endless_sine(88 * 4)
+        yield envelope(endless_sine(88 * 3), a=48, d=48000)
+        yield envelope(endless_sine(66 * 3), a=480, d=48000)
+        yield envelope(endless_sine(99), a=4800, d=48000)
+        yield envelope(endless_sine(44), a=96000, d=48000)
+        yield envelope(endless_sine(88 * 4), a=48000, d=48000)
 
 
 async def async_main(synth: Synthesizer) -> None:
@@ -166,7 +187,7 @@ def main(config: str, make_config: bool) -> None:
         output_format=miniaudio.SampleFormat.SIGNED16,
         buffersize_msec=buffer_msec,
     ) as dev:
-        synth = Synthesizer(polyphony=4)
+        synth = Synthesizer(polyphony=5)
         stream = stereo_mixer(synth)
         init(stream)
         dev.start(stream)
