@@ -4,17 +4,20 @@ from typing import *
 
 from array import array
 import asyncio
+import configparser
 import math
-import time
+from pathlib import Path
 import cProfile
 import pstats
 
+import click
 import miniaudio
 import uvloop
 
 
 # We want this to be symmetrical on the + and the - side.
 INT16_MAXVALUE = 32767
+CURRENT_DIR = Path(__file__).parent
 SortKey = pstats.SortKey  # type: ignore
 
 
@@ -127,16 +130,46 @@ async def async_main(synth: Synthesizer) -> None:
         await asyncio.sleep(1)
 
 
-def main() -> None:
+@click.command()
+@click.option(
+    "--config",
+    help="Read configuration from this file",
+    default=str(CURRENT_DIR / "aiotone-fmsynth.ini"),
+    type=click.Path(exists=True, file_okay=True, dir_okay=False),
+    show_default=True,
+)
+@click.option(
+    "--make-config",
+    help="Write a new configuration file to standard output",
+    is_flag=True,
+)
+def main(config: str, make_config: bool) -> None:
+    if make_config:
+        with open(CURRENT_DIR / "aiotone-fmsynth.ini") as f:
+            print(f.read())
+        return
+
+    cfg = configparser.ConfigParser()
+    cfg.read(config)
+
     devices = miniaudio.Devices()
     playbacks = devices.get_playbacks()
-    play_id = playbacks[1]["id"]
+    audio_out = cfg["audio-out"]["out-name"]
+    sample_rate = cfg["audio-out"].getint("sample-rate")
+    buffer_msec = cfg["audio-out"].getint("buffer-msec")
+    for playback in playbacks:
+        if playback["name"] == audio_out:
+            play_id = playback["id"]
+            break
+    else:
+        raise click.UsageError(f"No audio out available called {audio_out}")
+
     with miniaudio.PlaybackDevice(
         device_id=play_id,
         nchannels=2,
-        sample_rate=44100,
+        sample_rate=sample_rate,
         output_format=miniaudio.SampleFormat.SIGNED16,
-        buffersize_msec=10,
+        buffersize_msec=buffer_msec,
     ) as dev:
         synth = Synthesizer(polyphony=4)
         stream = stereo_mixer(synth)
