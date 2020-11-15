@@ -57,3 +57,13 @@ For more information see:
 ```
 (aiotone)$ python -m aiotone.mothergen --help
 ```
+
+### Realtime FM synthesis in pure Python
+
+- this is a work in progress to create a polyphonic 3-operator
+  FM synthesizer following the general Yamaha design;
+- this is pushing Python real hard, your CPU might not be able to
+  do realtime audio with this;
+- as usual, MIDI IN and AUDIO OUT configuration is done through a config file;
+- use [BlackHole](https://github.com/ExistentialAudio/BlackHole/) to
+  route audio to your DAW of choice.

@@ -7,18 +7,18 @@ import asyncio
 import configparser
 import math
 from pathlib import Path
-import cProfile
-import pstats
 
 import click
 import miniaudio
 import uvloop
 
+from . import profiling
+
 
 # We want this to be symmetrical on the + and the - side.
 INT16_MAXVALUE = 32767
 CURRENT_DIR = Path(__file__).parent
-SortKey = pstats.SortKey  # type: ignore
+DEBUG = False
 
 
 if TYPE_CHECKING:
@@ -94,18 +94,12 @@ def stereo_mixer(synth: Synthesizer) -> Audio:
     want_frames = yield stereo[0]
 
     out_buffer = array("h", [0] * (2 * want_frames))
-    try:
-        with cProfile.Profile() as pr:
-            while True:
-                stereo = [v.send(want_frames) for v in synth.voices]
-                for i in range(0, 2 * want_frames):
-                    out_buffer[i] = int(sum([mix_down * s[i] for s in stereo]))
-                want_frames = yield out_buffer[: 2 * want_frames]
-    finally:
-        st = pstats.Stats(pr).sort_stats(SortKey.CALLS)
-        st.print_stats()
-        st.sort_stats(SortKey.CUMULATIVE)
-        st.print_stats()
+    with profiling.maybe(DEBUG):
+        while True:
+            stereo = [v.send(want_frames) for v in synth.voices]
+            for i in range(0, 2 * want_frames):
+                out_buffer[i] = int(sum([mix_down * s[i] for s in stereo]))
+            want_frames = yield out_buffer[: 2 * want_frames]
 
 
 class Synthesizer:
@@ -126,6 +120,7 @@ class Synthesizer:
 
 
 async def async_main(synth: Synthesizer) -> None:
+    # TODO: respond to MIDI like in `redblue` and `mothergen`.
     while True:
         await asyncio.sleep(1)
 
