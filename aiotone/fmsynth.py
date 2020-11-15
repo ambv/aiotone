@@ -3,15 +3,19 @@ from __future__ import annotations
 from typing import *
 
 from array import array
+import asyncio
 import math
-import miniaudio
 import time
 import cProfile
 import pstats
 
+import miniaudio
+import uvloop
+
 
 # We want this to be symmetrical on the + and the - side.
 INT16_MAXVALUE = 32767
+SortKey = pstats.SortKey  # type: ignore
 
 
 if TYPE_CHECKING:
@@ -81,40 +85,52 @@ def auto_pan(mono: Audio, panner: Audio) -> Audio:
         want_frames = yield out_buffer[: 2 * want_frames]
 
 
-def stereo_mixer() -> Audio:
-    voices = [
-        panning(endless_sine(88 * 3), -0.9),
-        panning(endless_sine(66 * 3), 0.9),
-        auto_pan(endless_sine(99), endless_sine(32768)),
-        panning(endless_sine(44), 0.5),
-        panning(endless_sine(88 * 4), -0.5),
-    ]
-    num_voices = len(voices)
-    mix_down = 1 / num_voices
-    stereo = [init(v) for v in voices]
+def stereo_mixer(synth: Synthesizer) -> Audio:
+    mix_down = 1 / synth.num_voices
+    stereo = [init(v) for v in synth.voices]
     want_frames = yield stereo[0]
 
     out_buffer = array("h", [0] * (2 * want_frames))
     try:
         with cProfile.Profile() as pr:
             while True:
-                stereo = [v.send(want_frames) for v in voices]
+                stereo = [v.send(want_frames) for v in synth.voices]
                 for i in range(0, 2 * want_frames):
                     out_buffer[i] = int(sum([mix_down * s[i] for s in stereo]))
                 want_frames = yield out_buffer[: 2 * want_frames]
     finally:
-        st = pstats.Stats(pr).sort_stats(pstats.SortKey.CALLS)
+        st = pstats.Stats(pr).sort_stats(SortKey.CALLS)
         st.print_stats()
-        st.sort_stats(pstats.SortKey.CUMULATIVE)
+        st.sort_stats(SortKey.CUMULATIVE)
         st.print_stats()
+
+
+class Synthesizer:
+    def __init__(self, *, polyphony: int) -> None:
+        endless_sines = self._gen_endless_sines()
+        self.panning = [(2 * i / (polyphony - 1) - 1) for i in range(polyphony)]
+        self.voices = [
+            panning(next(endless_sines), self.panning[i]) for i in range(polyphony)
+        ]
+        self.num_voices = len(self.voices)
+
+    def _gen_endless_sines(self) -> Iterator[Audio]:
+        yield endless_sine(88 * 3)
+        yield endless_sine(66 * 3)
+        yield endless_sine(99)
+        yield endless_sine(44)
+        yield endless_sine(88 * 4)
+
+
+async def async_main(synth: Synthesizer) -> None:
+    while True:
+        await asyncio.sleep(1)
 
 
 def main() -> None:
     devices = miniaudio.Devices()
     playbacks = devices.get_playbacks()
     play_id = playbacks[1]["id"]
-    stream = stereo_mixer()
-    init(stream)
     with miniaudio.PlaybackDevice(
         device_id=play_id,
         nchannels=2,
@@ -122,10 +138,16 @@ def main() -> None:
         output_format=miniaudio.SampleFormat.SIGNED16,
         buffersize_msec=10,
     ) as dev:
+        synth = Synthesizer(polyphony=4)
+        stream = stereo_mixer(synth)
+        init(stream)
         dev.start(stream)
-        while True:
-            time.sleep(1)
+        try:
+            asyncio.run(async_main(synth))
+        except KeyboardInterrupt:
+            pass
 
 
 if __name__ == "__main__":
+    uvloop.install()
     main()
