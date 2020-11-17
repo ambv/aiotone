@@ -1,19 +1,45 @@
 #!/usr/bin/env python3
+"""See the docstring to main()."""
+
 from __future__ import annotations
 from typing import *
 
 from array import array
 import asyncio
+from collections import defaultdict
 import configparser
 from dataclasses import dataclass
 import math
 from pathlib import Path
+import time
 
 import click
 import miniaudio
 import uvloop
 
 from . import profiling
+from .midi import (
+    MidiOut,
+    NOTE_OFF,
+    NOTE_ON,
+    CLOCK,
+    START,
+    STOP,
+    SONG_POSITION,
+    CONTROL_CHANGE,
+    MOD_WHEEL,
+    MOD_WHEEL_LSB,
+    EXPRESSION_PEDAL,
+    EXPRESSION_PEDAL_LSB,
+    SUSTAIN_PEDAL,
+    PORTAMENTO,
+    PORTAMENTO_TIME,
+    PITCH_BEND,
+    ALL_NOTES_OFF,
+    STRIP_CHANNEL,
+    get_ports,
+    silence,
+)
 
 
 # We want this to be symmetrical on the + and the - side.
@@ -24,6 +50,10 @@ DEBUG = False
 
 if TYPE_CHECKING:
     Audio = Generator[array[int], int, None]
+    EventDelta = float  # in seconds
+    TimeStamp = float  # time.time()
+    MidiPacket = List[int]
+    MidiMessage = Tuple[MidiPacket, EventDelta, TimeStamp]
 
 
 # For clarity we're aliasing `next` because we are using it as an initializer of
@@ -99,6 +129,7 @@ class Synthesizer:
         operators = self._gen_operators()
         self.panning = [(2 * i / (polyphony - 1) - 1) for i in range(polyphony)]
         self.voices = [next(operators) for i in range(polyphony)]
+        self._note_on_counter = 0
 
     def stereo_out(self) -> Audio:
         """A stereo mixer."""
@@ -127,6 +158,42 @@ class Synthesizer:
             yield Operator(endless_sine(99), a=4800, d=48000)
             yield Operator(endless_sine(44), a=96000, d=48000)
             yield Operator(endless_sine(88 * 4), a=48000, d=48000)
+
+    # MIDI support
+
+    async def clock(self) -> None:
+        ...
+
+    async def start(self) -> None:
+        ...
+
+    async def stop(self) -> None:
+        ...
+
+    async def note_on(self, note: int, volume: int) -> None:
+        self.voices[self._note_on_counter % self.polyphony].reset = True
+        self._note_on_counter += 1
+
+    async def note_off(self, note: int, volume: int) -> None:
+        ...
+
+    async def pitch_bend(self, value: int) -> None:
+        """Value range: 0 - 16384"""
+        ...
+
+    async def mod_wheel(self, value: int) -> None:
+        """Value range: 0 - 16384"""
+        ...
+
+    async def expression(self, value: int) -> None:
+        """Value range: 0 - 16384"""
+        ...
+
+    async def sustain(self, value: int) -> None:
+        ...
+
+    async def all_notes_off(self, value: int) -> None:
+        ...
 
 
 @dataclass
@@ -177,16 +244,93 @@ class Operator:
             want_frames = yield out_buffer[:want_frames]
 
 
-async def async_main(synth: Synthesizer) -> None:
-    # TODO: respond to MIDI like in `redblue` and `mothergen`.
-    i = 0
+async def async_main(synth: Synthesizer, cfg: Mapping[str, str]) -> None:
+    queue: asyncio.Queue[MidiMessage] = asyncio.Queue(maxsize=256)
+    loop = asyncio.get_event_loop()
+
+    if int(cfg.get("channel", "")) != 1:
+        raise click.UsageError("midi-in channel must be 1, sorry")
+
+    try:
+        midi_in, midi_out = get_ports(cfg["port-name"], clock_source=True)
+    except ValueError as port:
+        raise click.UsageError(f"midi-in port {port} not connected")
+
+    def midi_callback(msg, data=None):
+        sent_time = time.time()
+        midi_message, event_delta = msg
+        try:
+            loop.call_soon_threadsafe(
+                queue.put_nowait, (midi_message, event_delta, sent_time)
+            )
+        except BaseException as be:
+            click.secho(f"callback exc: {type(be)} {be}", fg="red", err=True)
+
+    midi_in.set_callback(midi_callback)
+    midi_out.close_port()  # we won't be using that one now
+
+    try:
+        await midi_consumer(queue, synth)
+    except asyncio.CancelledError:
+        midi_in.cancel_callback()
+
+
+async def midi_consumer(queue: asyncio.Queue[MidiMessage], synth: Synthesizer) -> None:
+    click.echo("Waiting for MIDI messages...")
+    system_realtime = {START, STOP, SONG_POSITION}
+    notes = {NOTE_ON, NOTE_OFF}
+    handled_types = system_realtime | notes | {CONTROL_CHANGE}
+    last: Dict[int, int] = defaultdict(int)  # last CC value
     while True:
-        if i % (synth.polyphony / 2) == 0:
-            await asyncio.sleep(2.5)
+        msg, delta, sent_time = await queue.get()
+        latency = time.time() - sent_time
+        # Note hack below. We are matching the default which is channel 1 only.
+        # This is what we want.
+        t = msg[0]
+        if t == CLOCK:
+            await synth.clock()
         else:
-            await asyncio.sleep(0.1)
-        synth.voices[i % synth.polyphony].reset = True
-        i += 1
+            st = t & STRIP_CHANNEL
+            if st == STRIP_CHANNEL:  # system realtime message didn't have a channel
+                st = t
+            if __debug__ and st == t:
+                fg = "white"
+                if t in system_realtime:
+                    fg = "blue"
+                elif t == CONTROL_CHANGE:
+                    fg = "green"
+                click.secho(
+                    f"{msg}\tevent delta: {delta:.4f}\tlatency: {latency:.4f}", fg=fg
+                )
+            if t == START:
+                await synth.start()
+            elif t == STOP:
+                await synth.stop()
+            elif t == NOTE_ON:
+                await synth.note_on(msg[1], msg[2])
+            elif t == NOTE_OFF:
+                await synth.note_off(msg[1], msg[2])
+            elif t == CONTROL_CHANGE:
+                last[msg[1]] = msg[2]
+                if msg[1] == MOD_WHEEL:
+                    await synth.mod_wheel(128 * msg[2] + last[MOD_WHEEL_LSB])
+                elif msg[1] == MOD_WHEEL_LSB:
+                    await synth.mod_wheel(128 * last[MOD_WHEEL] + msg[2])
+                if msg[1] == EXPRESSION_PEDAL:
+                    await synth.expression(128 * msg[2] + last[EXPRESSION_PEDAL_LSB])
+                elif msg[1] == EXPRESSION_PEDAL_LSB:
+                    await synth.expression(128 * last[EXPRESSION_PEDAL] + msg[2])
+                elif msg[1] == SUSTAIN_PEDAL:
+                    await synth.sustain(msg[2])
+                elif msg[1] == ALL_NOTES_OFF:
+                    await synth.all_notes_off(msg[2])
+                else:
+                    click.secho(f"warning: unhandled CC {msg}", err=True)
+            elif t == PITCH_BEND:
+                await synth.pitch_bend(128 * msg[1] + msg[2])
+            else:
+                if st not in handled_types:
+                    click.secho(f"warning: unhandled event {msg}", err=True)
 
 
 @click.command()
@@ -203,6 +347,42 @@ async def async_main(synth: Synthesizer) -> None:
     is_flag=True,
 )
 def main(config: str, make_config: bool) -> None:
+    """
+    This is a module which implements realtime polyphonic FM synthesis in Python
+    controllable by MIDI. Note that this is very CPU-intensive.
+
+    It's got the following features:
+
+    - configurable polyphony;
+
+    - AD envelope (no sustain yet);
+
+    - dispatches MIDI IN events like NOTE_ON and NOTE_OFF events to the synthesizer.
+
+    To use this yourself, you will need:
+
+    - a MIDI IN port, can be virtual (I'm using IAC in Audio MIDI Setup on macOS);
+
+    - an AUDIO OUT, can be virtual (I'm using BlackHole on macOS);
+
+    - a DAW project which will be configured as follows (Renoise as an example):
+
+        - a MIDI Instrument in the DAW configured to output notes to the MIDI port that
+          fmsynth listens on (I call my virtual MIDI port "IAC fmsynth");
+
+        - a #Line Input routing in the DAW configured to catch audio from the out that
+          fmsynth (like "BlackHole 16ch 1+2");
+
+        - turn on "MIDI Return Mode" to compensate latency;
+
+        - in Ableton Live use "External Instrument" to do this in one place and
+          automatically compensate latency.
+
+    You can customize the ports by creating a config file.  Use `--make-config` to
+    output a new config to stdout.
+
+    Then run `python -m aiotone.fmsynth --config=PATH_TO_YOUR_CONFIG_FILE`.
+    """
     if make_config:
         with open(CURRENT_DIR / "aiotone-fmsynth.ini") as f:
             print(f.read())
@@ -235,7 +415,7 @@ def main(config: str, make_config: bool) -> None:
         init(stream)
         dev.start(stream)
         try:
-            asyncio.run(async_main(synth))
+            asyncio.run(async_main(synth, cfg["midi-in"]))
         except KeyboardInterrupt:
             pass
 
