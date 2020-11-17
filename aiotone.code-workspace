@@ -12,7 +12,10 @@
 		"python.testing.pytestEnabled": false,
 		"python.linting.mypyEnabled": true,
 		"cSpell.words": [
-			"nchannels"
+			"aiotone",
+			"fmsynth",
+			"nchannels",
+			"secho"
 		],
 	}
 }
