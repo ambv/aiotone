@@ -8,7 +8,7 @@ from array import array
 import asyncio
 from collections import defaultdict
 import configparser
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import math
 from pathlib import Path
 import time
@@ -40,6 +40,7 @@ from .midi import (
     get_ports,
     silence,
 )
+from .notes import note_to_freq
 
 
 # We want this to be symmetrical on the + and the - side.
@@ -74,22 +75,6 @@ def sine_array(sample_count: int) -> array[int]:
     return array("h", numbers)
 
 
-def endless_sine(sample_count: int) -> Audio:
-    sine = sine_array(sample_count)
-    result = array("h")
-    want_frames = yield result
-
-    result.extend([0] * want_frames)
-    sine_i = 0
-    while True:
-        for res_i in range(want_frames):
-            result[res_i] = sine[sine_i]
-            sine_i += 1
-            if sine_i == sample_count:
-                sine_i = 0
-        want_frames = yield result[:want_frames]
-
-
 def panning(mono: Audio, pan: float = 0.0) -> Audio:
     result = init(mono)
     want_frames = yield result
@@ -119,9 +104,15 @@ def auto_pan(mono: Audio, panner: Audio) -> Audio:
         want_frames = yield out_buffer[: 2 * want_frames]
 
 
+@dataclass
 class Synthesizer:
-    def __init__(self, *, polyphony: int) -> None:
-        self.polyphony = polyphony
+    polyphony: int
+    sample_rate: int
+    panning: List[float] = field(init=False)
+    voices: List[Operator] = field(init=False)
+    _note_on_counter = 0
+
+    def __post_init__(self) -> None:
         self.reset_voices()
 
     def reset_voices(self) -> None:
@@ -153,11 +144,9 @@ class Synthesizer:
 
     def _gen_operators(self) -> Iterator[Operator]:
         while True:
-            yield Operator(endless_sine(88 * 3), a=48, d=48000)
-            yield Operator(endless_sine(66 * 3), a=480, d=48000)
-            yield Operator(endless_sine(99), a=4800, d=48000)
-            yield Operator(endless_sine(44), a=96000, d=48000)
-            yield Operator(endless_sine(88 * 4), a=48000, d=48000)
+            yield Operator(
+                wave=sine_array(2048), sample_rate=self.sample_rate, a=48, d=48000
+            )
 
     # MIDI support
 
@@ -170,11 +159,17 @@ class Synthesizer:
     async def stop(self) -> None:
         ...
 
-    async def note_on(self, note: int, volume: int) -> None:
-        self.voices[self._note_on_counter % self.polyphony].reset = True
+    async def note_on(self, note: int, velocity: int) -> None:
+        try:
+            pitch = note_to_freq[note]
+        except KeyError:
+            return
+
+        volume = velocity / 127
+        self.voices[self._note_on_counter % self.polyphony].note_on(pitch, volume)
         self._note_on_counter += 1
 
-    async def note_off(self, note: int, volume: int) -> None:
+    async def note_off(self, note: int, velocity: int) -> None:
         ...
 
     async def pitch_bend(self, value: int) -> None:
@@ -198,22 +193,31 @@ class Synthesizer:
 
 @dataclass
 class Operator:
-    wave: Audio
+    wave: array[int]
+    sample_rate: int  # like: 44100
     a: int  # in number of samples
     d: int  # in number of samples
-    volume: float = 0.0  # 0.0 - 1.0; current volume, not used for relative attenuation
+    volume: float = 1.0  # 0.0 - 1.0; relative attenuation
+    pitch: float = 440.0  # Hz
     samples_since_reset: int = -1
+    current_volume: float = 0.0
     reset: bool = False
 
-    def mono_out(self) -> Audio:
-        """A resettable envelope."""
-        result = init(self.wave)
-        want_frames = yield result
+    def note_on(self, pitch: float, volume: float) -> None:
+        self.reset = True
+        self.pitch = pitch
+        self.volume = volume
 
-        out_buffer = array("h", [0] * want_frames)
+    def mono_out(self) -> Audio:
+        """With variable pitch and a resettable envelope."""
+        out_buffer = array("h")
+        want_frames = yield out_buffer
+
+        out_buffer.extend([0] * want_frames)
+        w_i = 0.0
         while True:
             wave = self.wave
-            volume = self.volume
+            envelope = self.current_volume
             a = self.a
             d = self.d
             samples_since_reset = self.samples_since_reset
@@ -221,26 +225,30 @@ class Operator:
                 for i in range(want_frames):
                     out_buffer[i] = 0
             else:
-                mono_buffer = wave.send(want_frames)
+                w = self.wave
+                w_len = len(self.wave)
+                sample_rate = self.sample_rate
                 for i in range(want_frames):
                     if samples_since_reset <= a:
-                        volume = samples_since_reset / a
+                        envelope = samples_since_reset / a
                     elif samples_since_reset - a <= d:
-                        volume = 1.0 - (samples_since_reset - a) / d
+                        envelope = 1.0 - (samples_since_reset - a) / d
                     else:
-                        volume = 0.0
-                    out_buffer[i] = int(volume * mono_buffer[i])
+                        envelope = 0.0
+                    out_buffer[i] = int(self.volume * envelope * w[round(w_i) % w_len])
+                    w_i += w_len * self.pitch / sample_rate
                     samples_since_reset += 1
             if self.reset:
                 self.reset = False
                 self.samples_since_reset = 0
-                self.volume = 0.0
-            elif volume > 0:
+                self.current_volume = 0.0
+            elif envelope > 0:
                 self.samples_since_reset = samples_since_reset
-                self.volume = volume
+                self.current_volume = envelope
             else:
                 self.samples_since_reset = -1
-                self.volume = 0.0
+                self.current_volume = 0.0
+                w_i = 0.0
             want_frames = yield out_buffer[:want_frames]
 
 
@@ -410,7 +418,7 @@ def main(config: str, make_config: bool) -> None:
         output_format=miniaudio.SampleFormat.SIGNED16,
         buffersize_msec=buffer_msec,
     ) as dev:
-        synth = Synthesizer(polyphony=10)
+        synth = Synthesizer(sample_rate=sample_rate, polyphony=8)
         stream = synth.stereo_out()
         init(stream)
         dev.start(stream)
