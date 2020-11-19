@@ -109,7 +109,7 @@ class Synthesizer:
     polyphony: int
     sample_rate: int
     panning: List[float] = field(init=False)
-    voices: List[Operator] = field(init=False)
+    voices: List[Modulator] = field(init=False)
     _note_on_counter = 0
 
     def __post_init__(self) -> None:
@@ -117,9 +117,11 @@ class Synthesizer:
 
     def reset_voices(self) -> None:
         polyphony = self.polyphony
-        operators = self._gen_operators()
         self.panning = [(2 * i / (polyphony - 1) - 1) for i in range(polyphony)]
-        self.voices = [next(operators) for i in range(polyphony)]
+        self.voices = [
+            Modulator(wave=sine_array(2048), sample_rate=self.sample_rate)
+            for i in range(polyphony)
+        ]
         self._note_on_counter = 0
 
     def stereo_out(self) -> Audio:
@@ -141,12 +143,6 @@ class Synthesizer:
                 for i in range(0, 2 * want_frames):
                     out_buffer[i] = int(sum([mix_down * s[i] for s in stereo]))
                 want_frames = yield out_buffer[: 2 * want_frames]
-
-    def _gen_operators(self) -> Iterator[Operator]:
-        while True:
-            yield Operator(
-                wave=sine_array(2048), sample_rate=self.sample_rate, a=48, d=48000
-            )
 
     # MIDI support
 
@@ -230,8 +226,11 @@ class Operator:
                 sample_rate = self.sample_rate
                 for i in range(want_frames):
                     if samples_since_reset <= a:
-                        envelope = samples_since_reset / a
-                    elif samples_since_reset - a <= d:
+                        if a == 0:
+                            envelope = 1.0
+                        else:
+                            envelope = samples_since_reset / a
+                    elif samples_since_reset - a <= d and d > 0:
                         envelope = 1.0 - (samples_since_reset - a) / d
                     else:
                         envelope = 0.0
@@ -249,6 +248,93 @@ class Operator:
                 self.samples_since_reset = -1
                 self.current_volume = 0.0
                 w_i = 0.0
+            want_frames = yield out_buffer[:want_frames]
+
+
+@dataclass
+class Modulator:
+    r"""A three-operator modulator. Algorithms:
+
+       *
+    [3]             *         *               *
+     |     [2]   [3]      _[3]_            [3]
+    [2]     |__ __|      |     |            |               *
+     |         |        [1]   [2]    [1]   [2]   [1] [2] [3]
+    [1]       [1]        |__ __|      |__ __|     |___|___|
+     |         |            |            |            |
+
+    * - with feedback
+    """
+
+    wave: array[int]
+    sample_rate: int
+    algorithm: int = 0
+    feedback: float = 0.1
+    rate1: float = 1.0  # detune by adding cents
+    rate2: float = 2.01
+    rate3: float = 0.5
+    op1: Operator = field(init=False)
+    op2: Operator = field(init=False)
+    op3: Operator = field(init=False)
+
+    def __post_init__(self) -> None:
+        self.reset_operators()
+
+    def reset_operators(self) -> None:
+        self.op1 = Operator(
+            wave=self.wave, sample_rate=self.sample_rate, a=48, d=self.sample_rate
+        )
+        self.op2 = Operator(
+            wave=self.wave,
+            sample_rate=self.sample_rate,
+            a=480,
+            d=4800,
+            volume=0.5,
+        )
+        self.op3 = Operator(
+            wave=self.wave,
+            sample_rate=self.sample_rate,
+            a=4800,
+            d=self.sample_rate,
+            volume=0.2,
+        )
+
+    def note_on(self, pitch: float, volume: float) -> None:
+        self.op1.note_on(pitch * self.rate1, volume)
+        self.op2.note_on(pitch * self.rate2, volume)
+        self.op3.note_on(pitch * self.rate3, volume)
+
+    def mono_out(self) -> Audio:
+        out_buffer = array("h")
+        op1 = self.op1.mono_out()
+        op2 = self.op2.mono_out()
+        op3 = self.op3.mono_out()
+        init(op1)
+        init(op2)
+        init(op3)
+        want_frames = yield out_buffer
+
+        out_buffer.extend([0] * want_frames)
+        while True:
+            out1 = op1.send(want_frames)
+            out2 = op2.send(want_frames)
+            out3 = op3.send(want_frames)
+            for i in range(want_frames):
+                algo = self.algorithm
+                o1 = out1[i]
+                o2 = out2[i]
+                o3_f = out3[i] + self.feedback * out3[i]
+                if algo == 0:
+                    out_mix = o1 + o2 + o3_f
+                elif algo == 1:
+                    out_mix = o1 + (0.5 * o2 + 0.5 * o3_f)
+                elif algo == 2:
+                    out_mix = 0.5 * (o1 + o3_f) + 0.5 * (o2 + o3_f)
+                elif algo == 3:
+                    out_mix = 0.5 * o1 + 0.5 * (o2 + o3_f)
+                else:
+                    out_mix = 0.3333 * o1 + 0.3333 * o2 + 0.3333 * o3_f
+                out_buffer[i] = max(min(int(out_mix), INT16_MAXVALUE), -INT16_MAXVALUE)
             want_frames = yield out_buffer[:want_frames]
 
 
@@ -418,7 +504,7 @@ def main(config: str, make_config: bool) -> None:
         output_format=miniaudio.SampleFormat.SIGNED16,
         buffersize_msec=buffer_msec,
     ) as dev:
-        synth = Synthesizer(sample_rate=sample_rate, polyphony=8)
+        synth = Synthesizer(sample_rate=sample_rate, polyphony=4)
         stream = synth.stereo_out()
         init(stream)
         dev.start(stream)
