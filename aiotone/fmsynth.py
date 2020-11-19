@@ -268,11 +268,11 @@ class Modulator:
 
     wave: array[int]
     sample_rate: int
-    algorithm: int = 0
-    feedback: float = 0.1
+    algorithm: int = 3
+    feedback: float = 0.66
     rate1: float = 1.0  # detune by adding cents
     rate2: float = 2.01
-    rate3: float = 0.5
+    rate3: float = 5.0
     op1: Operator = field(init=False)
     op2: Operator = field(init=False)
     op3: Operator = field(init=False)
@@ -287,16 +287,16 @@ class Modulator:
         self.op2 = Operator(
             wave=self.wave,
             sample_rate=self.sample_rate,
-            a=480,
-            d=4800,
-            volume=0.5,
+            a=48,
+            d=12000,
+            volume=0.8,
         )
         self.op3 = Operator(
             wave=self.wave,
             sample_rate=self.sample_rate,
-            a=4800,
-            d=self.sample_rate,
-            volume=0.2,
+            a=48,
+            d=240,
+            volume=0.1,
         )
 
     def note_on(self, pitch: float, volume: float) -> None:
