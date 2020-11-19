@@ -13,6 +13,7 @@
 		"python.linting.mypyEnabled": true,
 		"cSpell.words": [
 			"aiotone",
+			"algo",
 			"fmsynth",
 			"nchannels",
 			"secho"
