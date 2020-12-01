@@ -1,3 +1,6 @@
+# Taken from github.com/sirk390/wxasync/ under the MIT license.
+# Copyright 2018-2020 Christian Bodt <sirk390@gmail.com>
+
 from asyncio.events import get_event_loop
 import asyncio
 import wx
