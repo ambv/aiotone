@@ -13,6 +13,7 @@ from wx._adv import PropertySheetDialog
 
 IS_MAC = platform.system() == "Darwin"
 
+
 class WxAsyncApp(wx.App):
     def __init__(self, warn_on_cancel_callback=False, loop=None):
         self.loop = loop or get_event_loop()
@@ -24,7 +25,8 @@ class WxAsyncApp(wx.App):
         self.SetExitOnFrameDelete(True)
 
     async def MainLoop(self):
-        # inspired by https://github.com/wxWidgets/Phoenix/blob/master/samples/mainloop/mainloop.py
+        # inspired by
+        # https://github.com/wxWidgets/Phoenix/blob/master/samples/mainloop/mainloop.py
         evtloop = wx.GUIEventLoop()
         with wx.EventLoopActivator(evtloop):
             while not self.exiting:
@@ -42,28 +44,49 @@ class WxAsyncApp(wx.App):
     def ExitMainLoop(self):
         self.exiting = True
 
-    def AsyncBind(self, event_binder, async_callback, object, source=None, id=wx.ID_ANY, id2=wx.ID_ANY):
-        """Bind a coroutine to a wx Event. Note that when wx object is destroyed, any coroutine still running will be cancelled automatically.
-        """ 
+    def AsyncBind(
+        self,
+        event_binder,
+        async_callback,
+        object,
+        source=None,
+        id=wx.ID_ANY,
+        id2=wx.ID_ANY,
+    ):
+        """Bind a coroutine to a wx Event. Note that when wx object is destroyed, any
+        coroutine still running will be cancelled automatically."""
         if not iscoroutinefunction(async_callback):
             raise Exception("async_callback is not a coroutine function")
-        # We restrict the object to wx.Windows to be able to cancel the coroutines on EVT_WINDOW_DESTROY, even if wx.Bind works with any wx.EvtHandler
+        # We restrict the object to wx.Windows to be able to cancel the coroutines on
+        # EVT_WINDOW_DESTROY, even if wx.Bind works with any wx.EvtHandler
         if not isinstance(object, wx.Window):
             raise Exception("object must be a wx.Window")
         if object not in self.BoundObjects:
             self.BoundObjects[object] = defaultdict(list)
-            object.Bind(wx.EVT_WINDOW_DESTROY, lambda event: self.OnDestroy(event, object), object)
+            object.Bind(
+                wx.EVT_WINDOW_DESTROY,
+                lambda event: self.OnDestroy(event, object),
+                object,
+            )
         self.BoundObjects[object][event_binder.typeId].append(async_callback)
-        object.Bind(event_binder, lambda event: self.OnEvent(event, object, event_binder.typeId), source=source, id=id, id2=id2)
+        object.Bind(
+            event_binder,
+            lambda event: self.OnEvent(event, object, event_binder.typeId),
+            source=source,
+            id=id,
+            id2=id2,
+        )
 
     def StartCoroutine(self, coroutine, obj):
-        """Start and attach a coroutine to a wx object. When object is destroyed, the coroutine will be cancelled automatically.
-        """ 
+        """Start and attach a coroutine to a wx object. When object is destroyed, the
+        coroutine will be cancelled automatically."""
         if asyncio.iscoroutinefunction(coroutine):
             coroutine = coroutine()
         if obj not in self.BoundObjects:
             self.BoundObjects[obj] = defaultdict(list)
-            obj.Bind(wx.EVT_WINDOW_DESTROY, lambda event: self.OnDestroy(event, obj), obj)
+            obj.Bind(
+                wx.EVT_WINDOW_DESTROY, lambda event: self.OnDestroy(event, obj), obj
+            )
         task = self.loop.create_task(coroutine)
         task.add_done_callback(self.OnTaskCompleted)
         task.obj = obj
@@ -109,19 +132,21 @@ def StartCoroutine(coroutine, obj):
 
 
 async def AsyncShowModal(dlg):
-    loop = asyncio.get_running_loop()    
+    loop = asyncio.get_running_loop()
     return await loop.run_in_executor(None, dlg.ShowModal)
-        
+
 
 async def AsyncShow(dlg):
     closed = Event()
+
     def end_dialog(return_code):
         dlg.SetReturnCode(return_code)
         dlg.Hide()
         closed.set()
+
     async def on_button(event):
         # Same code as in wxwidgets:/src/common/dlgcmn.cpp:OnButton
-        # to automatically handle OK, CANCEL, APPLY,... buttons 
+        # to automatically handle OK, CANCEL, APPLY,... buttons
         id = event.GetId()
         if id == dlg.GetAffirmativeId():
             if dlg.Validate() and dlg.TransferDataFromWindow():
@@ -129,13 +154,17 @@ async def AsyncShow(dlg):
         elif id == wx.ID_APPLY:
             if dlg.Validate():
                 dlg.TransferDataFromWindow()
-        elif id == dlg.GetEscapeId() or (id == wx.ID_CANCEL and dlg.GetEscapeId() == wx.ID_ANY):
+        elif id == dlg.GetEscapeId() or (
+            id == wx.ID_CANCEL and dlg.GetEscapeId() == wx.ID_ANY
+        ):
             end_dialog(wx.ID_CANCEL)
         else:
             event.Skip()
+
     async def on_close(event):
         closed.set()
         dlg.Hide()
+
     AsyncBind(wx.EVT_CLOSE, on_close, dlg)
     AsyncBind(wx.EVT_BUTTON, on_button, dlg)
     dlg.Show()
@@ -144,9 +173,15 @@ async def AsyncShow(dlg):
 
 
 async def AsyncShowDialog(dlg):
-    if type(dlg) in [HtmlHelpDialog, wx.TextEntryDialog, wx.MultiChoiceDialog, wx.NumberEntryDialog, wx.PrintAbortDialog, 
-                     PropertySheetDialog, wx.RearrangeDialog, wx.SingleChoiceDialog]:
+    if type(dlg) in [
+        HtmlHelpDialog,
+        wx.TextEntryDialog,
+        wx.MultiChoiceDialog,
+        wx.NumberEntryDialog,
+        wx.PrintAbortDialog,
+        PropertySheetDialog,
+        wx.RearrangeDialog,
+        wx.SingleChoiceDialog,
+    ]:
         return await AsyncShow(dlg)
     return await AsyncShowModal(dlg)
-
-
