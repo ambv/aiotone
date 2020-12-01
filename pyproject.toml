@@ -11,6 +11,7 @@ uvloop = "^0.14.0"
 click = "^7.0"
 black = "^20.8b1"
 miniaudio = "^1.37"
+wxPython = "^4.1.1"
 [tool.poetry.dev-dependencies]
 pytest = "^3.0"
 mypy = "^0.750"
