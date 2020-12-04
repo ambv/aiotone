@@ -27,22 +27,29 @@ class WxAsyncApp(wx.App):
         super(WxAsyncApp, self).__init__()
         self.SetExitOnFrameDelete(True)
 
-    async def MainLoop(self):
-        # inspired by
-        # https://github.com/wxWidgets/Phoenix/blob/master/samples/mainloop/mainloop.py
-        evtloop = wx.GUIEventLoop()
-        with wx.EventLoopActivator(evtloop):
-            while not self.exiting:
-                if IS_MAC:
-                    # evtloop.Pending() just returns True on MacOs
+    if IS_MAC:
+
+        async def MainLoop(self):
+            evtloop = wx.GUIEventLoop()
+            with wx.EventLoopActivator(evtloop):
+                while not self.exiting:
                     evtloop.DispatchTimeout(0)
-                else:
+                    await asyncio.sleep(0.005)
+                    self.ProcessPendingEvents()
+                    evtloop.ProcessIdle()
+
+    else:
+
+        async def MainLoop(self):
+            evtloop = wx.GUIEventLoop()
+            with wx.EventLoopActivator(evtloop):
+                while not self.exiting:
                     while evtloop.Pending():
                         evtloop.Dispatch()
                         await asyncio.sleep(0)
-                await asyncio.sleep(0.005)
-                self.ProcessPendingEvents()
-                evtloop.ProcessIdle()
+                    await asyncio.sleep(0.005)
+                    self.ProcessPendingEvents()
+                    evtloop.ProcessIdle()
 
     def ExitMainLoop(self):
         self.exiting = True
