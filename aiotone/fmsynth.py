@@ -109,7 +109,7 @@ class Synthesizer:
     polyphony: int
     sample_rate: int
     panning: List[float] = field(init=False)
-    voices: List[Modulator] = field(init=False)
+    voices: List[AmplitudeModulator] = field(init=False)
     _note_on_counter = 0
 
     def __post_init__(self) -> None:
@@ -119,7 +119,7 @@ class Synthesizer:
         polyphony = self.polyphony
         self.panning = [(2 * i / (polyphony - 1) - 1) for i in range(polyphony)]
         self.voices = [
-            Modulator(wave=sine_array(2048), sample_rate=self.sample_rate)
+            AmplitudeModulator(wave=sine_array(2048), sample_rate=self.sample_rate)
             for i in range(polyphony)
         ]
         self._note_on_counter = 0
@@ -252,7 +252,7 @@ class Operator:
 
 
 @dataclass
-class Modulator:
+class AmplitudeModulator:
     r"""A three-operator modulator. Algorithms:
 
        *
