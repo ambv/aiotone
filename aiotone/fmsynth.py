@@ -45,12 +45,14 @@ from .notes import note_to_freq
 
 # We want this to be symmetrical on the + and the - side.
 INT16_MAXVALUE = 32767
+MAX_BUFFER = 2400  # 5 ms at 48000 Hz
 CURRENT_DIR = Path(__file__).parent
 DEBUG = False
 
 
 if TYPE_CHECKING:
     Audio = Generator[array[int], int, None]
+    FMAudio = Generator[array[int], array[int], None]
     EventDelta = float  # in seconds
     TimeStamp = float  # time.time()
     MidiPacket = List[int]
@@ -104,12 +106,16 @@ def auto_pan(mono: Audio, panner: Audio) -> Audio:
         want_frames = yield out_buffer[: 2 * want_frames]
 
 
+def saturate(value: float) -> int:
+    return max(min(int(value), INT16_MAXVALUE), -INT16_MAXVALUE)
+
+
 @dataclass
 class Synthesizer:
     polyphony: int
     sample_rate: int
     panning: List[float] = field(init=False)
-    voices: List[AmplitudeModulator] = field(init=False)
+    voices: List[PhaseModulator] = field(init=False)
     _note_on_counter = 0
 
     def __post_init__(self) -> None:
@@ -119,7 +125,7 @@ class Synthesizer:
         polyphony = self.polyphony
         self.panning = [(2 * i / (polyphony - 1) - 1) for i in range(polyphony)]
         self.voices = [
-            AmplitudeModulator(wave=sine_array(2048), sample_rate=self.sample_rate)
+            PhaseModulator(wave=sine_array(2048), sample_rate=self.sample_rate)
             for i in range(polyphony)
         ]
         self._note_on_counter = 0
@@ -197,19 +203,21 @@ class Operator:
     pitch: float = 440.0  # Hz
     samples_since_reset: int = -1
     current_volume: float = 0.0
+    current_velocity: float = 0.0
     reset: bool = False
 
     def note_on(self, pitch: float, volume: float) -> None:
         self.reset = True
         self.pitch = pitch
-        self.volume = volume
+        self.current_velocity = volume
 
-    def mono_out(self) -> Audio:
+    def mono_out(self) -> FMAudio:
         """With variable pitch and a resettable envelope."""
         out_buffer = array("h")
-        want_frames = yield out_buffer
+        modulator = yield out_buffer
+        mod_len = len(modulator)
 
-        out_buffer.extend([0] * want_frames)
+        out_buffer.extend([0] * MAX_BUFFER)
         w_i = 0.0
         while True:
             wave = self.wave
@@ -218,13 +226,13 @@ class Operator:
             d = self.d
             samples_since_reset = self.samples_since_reset
             if samples_since_reset == -1:
-                for i in range(want_frames):
+                for i in range(mod_len):
                     out_buffer[i] = 0
             else:
                 w = self.wave
                 w_len = len(self.wave)
                 sample_rate = self.sample_rate
-                for i in range(want_frames):
+                for i, mod in enumerate(modulator):
                     if samples_since_reset <= a:
                         if a == 0:
                             envelope = 1.0
@@ -234,7 +242,14 @@ class Operator:
                         envelope = 1.0 - (samples_since_reset - a) / d
                     else:
                         envelope = 0.0
-                    out_buffer[i] = int(self.volume * envelope * w[round(w_i) % w_len])
+                    mod_scaled = mod * w_len / INT16_MAXVALUE
+                    out_buffer[i] = int(
+                        self.current_velocity
+                        * self.volume
+                        * envelope
+                        * w[round(w_i + mod_scaled) % w_len]
+                    )
+                    # Here's our new index
                     w_i += w_len * self.pitch / sample_rate
                     samples_since_reset += 1
             if self.reset:
@@ -248,7 +263,112 @@ class Operator:
                 self.samples_since_reset = -1
                 self.current_volume = 0.0
                 w_i = 0.0
-            want_frames = yield out_buffer[:want_frames]
+            modulator = yield out_buffer[:mod_len]
+            mod_len = len(modulator)
+
+
+@dataclass
+class PhaseModulator:
+    r"""A three-operator modulator. Algorithms:
+
+       *
+    [3]             *         *               *
+     |     [2]   [3]      _[3]_            [3]
+    [2]     |__ __|      |     |            |               *
+     |         |        [1]   [2]    [1]   [2]   [1] [2] [3]
+    [1]       [1]        |__ __|      |__ __|     |___|___|
+     |         |            |            |            |
+
+    * - with feedback
+    """
+
+    wave: array[int]
+    sample_rate: int
+    algorithm: int = 3
+    feedback: float = 0.66
+    rate1: float = 1.002  # detune by adding cents
+    rate2: float = 1.0
+    rate3: float = 19.0
+    op1: Operator = field(init=False)
+    op2: Operator = field(init=False)
+    op3: Operator = field(init=False)
+
+    def __post_init__(self) -> None:
+        self.reset_operators()
+
+    def reset_operators(self) -> None:
+        self.op1 = Operator(
+            wave=self.wave,
+            sample_rate=self.sample_rate,
+            a=48,
+            d=int(0.75 * self.sample_rate),
+            volume=0.75 * 0.6,
+        )
+        self.op2 = Operator(
+            wave=self.wave,
+            sample_rate=self.sample_rate,
+            a=48,
+            d=self.sample_rate,
+            volume=0.54 * 0.6,
+        )
+        self.op3 = Operator(
+            wave=self.wave,
+            sample_rate=self.sample_rate,
+            a=24,
+            d=int(self.sample_rate / 12),
+            volume=0.56 * 0.25,
+        )
+
+    def note_on(self, pitch: float, volume: float) -> None:
+        self.op1.note_on(pitch * self.rate1, volume)
+        self.op2.note_on(pitch * self.rate2, volume)
+        self.op3.note_on(pitch * self.rate3, volume)
+
+    def mono_out(self) -> Audio:
+        out_buffer = array("h")
+        zero_buffer = array("h")
+        zero_buffer.extend([0] * MAX_BUFFER)
+
+        op1 = self.op1.mono_out()
+        op2 = self.op2.mono_out()
+        op3 = self.op3.mono_out()
+        init(op1)
+        init(op2)
+        init(op3)
+        want_frames = yield out_buffer
+
+        out_buffer.extend([0] * MAX_BUFFER)
+        while True:
+            algo = self.algorithm
+            out3 = op3.send(zero_buffer[:want_frames])
+            if algo == 0:
+                out2 = op2.send(out3)
+                out1 = op1.send(out2)
+                want_frames = yield out1
+            elif algo == 1:
+                out2 = op2.send(zero_buffer[:want_frames])
+                for i in range(want_frames):
+                    out_buffer[i] = saturate(out3[i] + out2[i])
+                out1 = op1.send(out_buffer[:want_frames])
+                want_frames = yield out1
+            elif algo == 2:
+                out2 = op2.send(out3)
+                out1 = op1.send(out3)
+                for i in range(want_frames):
+                    out_buffer[i] = saturate(out1[i] + out2[i])
+                want_frames = yield out_buffer[:want_frames]
+            elif algo == 3:
+                out2 = op2.send(out3)
+                out1 = op1.send(zero_buffer[:want_frames])
+                for i in range(want_frames):
+                    out_buffer[i] = saturate(out1[i] + out2[i])
+                want_frames = yield out_buffer[:want_frames]
+            else:
+                out2 = op2.send(zero_buffer[:want_frames])
+                out1 = op1.send(zero_buffer[:want_frames])
+                for i in range(want_frames):
+                    out_buffer[i] = saturate(out1[i] + out2[i] + out3[i])
+                want_frames = yield out_buffer[:want_frames]
 
 
 @dataclass
@@ -490,6 +610,7 @@ def main(config: str, make_config: bool) -> None:
     audio_out = cfg["audio-out"]["out-name"]
     sample_rate = cfg["audio-out"].getint("sample-rate")
     buffer_msec = cfg["audio-out"].getint("buffer-msec")
+    polyphony = cfg["audio-out"].getint("polyphony")
     for playback in playbacks:
         if playback["name"] == audio_out:
             play_id = playback["id"]
@@ -504,7 +625,7 @@ def main(config: str, make_config: bool) -> None:
         output_format=miniaudio.SampleFormat.SIGNED16,
         buffersize_msec=buffer_msec,
     ) as dev:
-        synth = Synthesizer(sample_rate=sample_rate, polyphony=4)
+        synth = Synthesizer(sample_rate=sample_rate, polyphony=polyphony)
         stream = synth.stereo_out()
         init(stream)
         dev.start(stream)
