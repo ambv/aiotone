@@ -135,6 +135,8 @@ class Synthesizer:
     panning: List[float] = field(init=False)
     voices: List[PhaseModulator] = field(init=False)
     _voices_lru: List[int] = field(init=False)  # list of `voices` indexes
+    _sustain: int = field(init=False)
+    _released_on_sustain: Set[int] = field(init=False)
 
     def __post_init__(self) -> None:
         self.reset_voices()
@@ -152,6 +154,8 @@ class Synthesizer:
             for i in range(polyphony)
         ]
         self._voices_lru = [i for i in range(polyphony)]
+        self._sustain = 0
+        self._released_on_sustain = set()
 
     def stereo_out(self) -> Audio:
         """A stereo mixer."""
@@ -219,6 +223,10 @@ class Synthesizer:
         except KeyError:
             return
 
+        if self._sustain > 32:
+            self._released_on_sustain.add(pitch)
+            return
+
         volume = velocity / 127
         for v in self.voices:
             v.note_off(pitch, volume)
@@ -236,10 +244,15 @@ class Synthesizer:
         ...
 
     async def sustain(self, value: int) -> None:
-        ...
+        if self._sustain > 32 and value < 32:
+            for pitch in self._released_on_sustain:
+                for v in self.voices:
+                    v.note_off(pitch, 0)
+            self._released_on_sustain.clear()
+        self._sustain = value
 
     async def all_notes_off(self, value: int) -> None:
-        ...
+        self.reset_voices()
 
 
 @dataclass
