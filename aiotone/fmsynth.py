@@ -77,6 +77,24 @@ def sine_array(sample_count: int) -> array[int]:
     return array("h", numbers)
 
 
+def sine12_array(sample_count: int) -> array[int]:
+    """Return a monophonic signed 16-bit wavetable with a single cycle of a 1+2 sine.
+
+    A 1+2 sine is a sine wave modulated by its first harmonic.
+    """
+    numbers = []
+    for i in range(sample_count):
+        current = round(
+            INT16_MAXVALUE
+            * (
+                0.5 * math.sin(i / sample_count * math.tau)
+                + 0.5 * math.sin(2 * i / sample_count * math.tau)
+            )
+        )
+        numbers.append(current)
+    return array("h", numbers)
+
+
 def panning(mono: Audio, pan: float = 0.0) -> Audio:
     result = init(mono)
     want_frames = yield result
@@ -125,7 +143,12 @@ class Synthesizer:
         polyphony = self.polyphony
         self.panning = [(2 * i / (polyphony - 1) - 1) for i in range(polyphony)]
         self.voices = [
-            PhaseModulator(wave=sine_array(2048), sample_rate=self.sample_rate)
+            PhaseModulator(
+                wave1=sine12_array(2048),
+                wave2=sine_array(2048),
+                wave3=sine_array(2048),
+                sample_rate=self.sample_rate,
+            )
             for i in range(polyphony)
         ]
         self._note_on_counter = 0
@@ -282,11 +305,13 @@ class PhaseModulator:
     * - with feedback
     """
 
-    wave: array[int]
+    wave1: array[int]
+    wave2: array[int]
+    wave3: array[int]
     sample_rate: int
     algorithm: int = 3
     feedback: float = 0.66
-    rate1: float = 1.002  # detune by adding cents
+    rate1: float = 1.003  # detune by adding cents
     rate2: float = 1.0
     rate3: float = 19.0
     op1: Operator = field(init=False)
@@ -298,21 +323,21 @@ class PhaseModulator:
 
     def reset_operators(self) -> None:
         self.op1 = Operator(
-            wave=self.wave,
+            wave=self.wave1,
             sample_rate=self.sample_rate,
             a=48,
             d=int(0.75 * self.sample_rate),
             volume=0.75 * 0.6,
         )
         self.op2 = Operator(
-            wave=self.wave,
+            wave=self.wave2,
             sample_rate=self.sample_rate,
             a=48,
             d=self.sample_rate,
             volume=0.54 * 0.6,
         )
         self.op3 = Operator(
-            wave=self.wave,
+            wave=self.wave3,
             sample_rate=self.sample_rate,
             a=24,
             d=int(self.sample_rate / 12),
