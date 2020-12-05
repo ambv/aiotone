@@ -136,7 +136,7 @@ class Synthesizer:
     voices: List[PhaseModulator] = field(init=False)
     _voices_lru: List[int] = field(init=False)  # list of `voices` indexes
     _sustain: int = field(init=False)
-    _released_on_sustain: Set[int] = field(init=False)
+    _released_on_sustain: Set[float] = field(init=False)
 
     def __post_init__(self) -> None:
         self.reset_voices()
@@ -158,8 +158,17 @@ class Synthesizer:
         self._released_on_sustain = set()
 
     def stereo_out(self) -> Audio:
-        """A stereo mixer."""
+        """A resettable stereo mixer."""
 
+        want_frames = 0
+        while True:
+            try:
+                yield from self._stereo_out(want_frames)
+            except EOFError as eof:
+                print(eof.args[0])
+                want_frames = eof.args[1]
+
+    def _stereo_out(self, want_frames: int = 0) -> Audio:
         voices = [
             panning(self.voices[i].mono_out(), self.panning[i])
             for i in range(self.polyphony)
@@ -167,11 +176,15 @@ class Synthesizer:
 
         mix_down = 1 / self.polyphony
         stereo = [init(v) for v in voices]
-        want_frames = yield stereo[0]
+        if want_frames == 0:
+            want_frames = yield stereo[0]
+        id_voices = id(self.voices)
 
         out_buffer = array("h", [0] * (2 * want_frames))
         with profiling.maybe(DEBUG):
             while True:
+                if id(self.voices) != id_voices:
+                    raise EOFError("Voices have been reset", want_frames)
                 stereo = [v.send(want_frames) for v in voices]
                 for i in range(0, 2 * want_frames):
                     out_buffer[i] = int(sum([mix_down * s[i] for s in stereo]))
