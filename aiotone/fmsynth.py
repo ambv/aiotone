@@ -198,18 +198,30 @@ class Synthesizer:
             v = voices[vi]
             if v.is_silent():
                 lru.append(lru.pop(vli))
-                print(note, vi, "silent")
                 break
         else:
-            # If no voices were unused, just take the least recently used one.
-            vi = lru.pop(0)
-            v = voices[vi]
-            lru.append(vi)
-            print(note, vi, "lru")
+            # Look again for released voices.
+            for vli, vi in enumerate(lru):
+                v = voices[vi]
+                if v.is_released():
+                    lru.append(lru.pop(vli))
+                    break
+            else:
+                # If no voices were unused, just take the least recently used one.
+                vi = lru.pop(0)
+                v = voices[vi]
+                lru.append(vi)
         v.note_on(pitch, volume)
 
     async def note_off(self, note: int, velocity: int) -> None:
-        ...
+        try:
+            pitch = note_to_freq[note]
+        except KeyError:
+            return
+
+        volume = velocity / 127
+        for v in self.voices:
+            v.note_off(pitch, volume)
 
     async def pitch_bend(self, value: int) -> None:
         """Value range: 0 - 16384"""
@@ -236,17 +248,25 @@ class Operator:
     sample_rate: int  # like: 44100
     a: int  # in number of samples
     d: int  # in number of samples
+    s: float  # 0.0 - 1.0; relative volume
+    r: int  # in number of samples
     volume: float = 1.0  # 0.0 - 1.0; relative attenuation
     pitch: float = 440.0  # Hz
+
+    # Current state of the operator, modified during `mono_out()`
     samples_since_reset: int = -1
     current_volume: float = 0.0
     current_velocity: float = 0.0
     reset: bool = False
+    released: bool = False
 
     def note_on(self, pitch: float, volume: float) -> None:
         self.reset = True
         self.pitch = pitch
         self.current_velocity = volume
+
+    def note_off(self, pitch: float, volume: float) -> None:
+        self.released = True
 
     def mono_out(self) -> FMAudio:
         """With variable pitch and a resettable envelope."""
@@ -261,6 +281,8 @@ class Operator:
             envelope = self.current_volume
             a = self.a
             d = self.d
+            s = self.s
+            r = self.r
             samples_since_reset = self.samples_since_reset
             if samples_since_reset == -1:
                 for i in range(mod_len):
@@ -270,13 +292,22 @@ class Operator:
                 w_len = len(self.wave)
                 sample_rate = self.sample_rate
                 for i, mod in enumerate(modulator):
-                    if samples_since_reset <= a:
+                    # Release
+                    if self.released:
+                        if envelope <= 0 or r == 0:
+                            envelope = 0
+                        else:
+                            envelope -= 1 / r
+                    # Attack
+                    elif samples_since_reset <= a:
                         if a == 0:
                             envelope = 1.0
                         else:
                             envelope = samples_since_reset / a
+                    # Decay
                     elif samples_since_reset - a <= d and d > 0:
                         envelope = 1.0 - (samples_since_reset - a) / d
+                    # Silence
                     else:
                         envelope = 0.0
                     mod_scaled = mod * w_len / INT16_MAXVALUE
@@ -291,6 +322,7 @@ class Operator:
                     samples_since_reset += 1
             if self.reset:
                 self.reset = False
+                self.released = False
                 self.samples_since_reset = 0
                 self.current_volume = 0.0
             elif envelope > 0:
@@ -336,6 +368,7 @@ class PhaseModulator:
     op1: Operator = field(init=False)
     op2: Operator = field(init=False)
     op3: Operator = field(init=False)
+    last_pitch_played: float = field(init=False)
 
     def __post_init__(self) -> None:
         self.reset_operators()
@@ -345,14 +378,18 @@ class PhaseModulator:
             wave=self.wave1,
             sample_rate=self.sample_rate,
             a=48,
-            d=int(0.75 * self.sample_rate),
+            d=3 * self.sample_rate,
+            s=0.0,
+            r=int(0.25 * self.sample_rate),
             volume=0.75 * 0.6,
         )
         self.op2 = Operator(
             wave=self.wave2,
             sample_rate=self.sample_rate,
             a=48,
-            d=self.sample_rate,
+            d=4 * self.sample_rate,
+            s=0.0,
+            r=int(0.5 * self.sample_rate),
             volume=0.54 * 0.6,
         )
         self.op3 = Operator(
@@ -360,16 +397,30 @@ class PhaseModulator:
             sample_rate=self.sample_rate,
             a=24,
             d=int(self.sample_rate / 12),
+            s=0.0,
+            r=int(self.sample_rate / 12),
             volume=0.56 * 0.25,
         )
+        self.last_pitch_played = 0.0
 
     def is_silent(self) -> bool:
+        # This is oversimplified, only the carrier operators should be considered here.
         return self.op1.is_silent() and self.op2.is_silent() and self.op3.is_silent()
 
     def note_on(self, pitch: float, volume: float) -> None:
+        self.last_pitch_played = pitch
         self.op1.note_on(pitch * self.rate1, volume)
         self.op2.note_on(pitch * self.rate2, volume)
         self.op3.note_on(pitch * self.rate3, volume)
+
+    def note_off(self, pitch: float, volume: float) -> None:
+        if pitch != self.last_pitch_played:
+            return
+
+        self.op1.note_off(pitch * self.rate1, volume)
+        self.op2.note_off(pitch * self.rate2, volume)
+        self.op3.note_off(pitch * self.rate3, volume)
+        self.last_pitch_played = 0.0
 
     def mono_out(self) -> Audio:
         out_buffer = array("h")
@@ -417,6 +468,9 @@ class PhaseModulator:
                     out_buffer[i] = saturate(out1[i] + out2[i] + out3[i])
                 want_frames = yield out_buffer[:want_frames]
 
+    def is_released(self) -> bool:
+        return self.last_pitch_played == 0.0
+
 
 @dataclass
 class AmplitudeModulator:
@@ -449,13 +503,20 @@ class AmplitudeModulator:
 
     def reset_operators(self) -> None:
         self.op1 = Operator(
-            wave=self.wave, sample_rate=self.sample_rate, a=48, d=self.sample_rate
+            wave=self.wave,
+            sample_rate=self.sample_rate,
+            a=48,
+            d=self.sample_rate,
+            s=0.0,
+            r=self.sample_rate,
         )
         self.op2 = Operator(
             wave=self.wave,
             sample_rate=self.sample_rate,
             a=48,
             d=12000,
+            s=0.0,
+            r=12000,
             volume=0.8,
         )
         self.op3 = Operator(
@@ -463,6 +524,8 @@ class AmplitudeModulator:
             sample_rate=self.sample_rate,
             a=48,
             d=240,
+            s=0.0,
+            r=240,
             volume=0.1,
         )
 
