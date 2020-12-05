@@ -134,7 +134,7 @@ class Synthesizer:
     sample_rate: int
     panning: List[float] = field(init=False)
     voices: List[PhaseModulator] = field(init=False)
-    _note_on_counter = 0
+    _voices_lru: List[int] = field(init=False)  # list of `voices` indexes
 
     def __post_init__(self) -> None:
         self.reset_voices()
@@ -151,7 +151,7 @@ class Synthesizer:
             )
             for i in range(polyphony)
         ]
-        self._note_on_counter = 0
+        self._voices_lru = [i for i in range(polyphony)]
 
     def stereo_out(self) -> Audio:
         """A stereo mixer."""
@@ -191,8 +191,22 @@ class Synthesizer:
             return
 
         volume = velocity / 127
-        self.voices[self._note_on_counter % self.polyphony].note_on(pitch, volume)
-        self._note_on_counter += 1
+        voices = self.voices
+        lru = self._voices_lru
+        v: PhaseModulator
+        for vli, vi in enumerate(lru):
+            v = voices[vi]
+            if v.is_silent():
+                lru.append(lru.pop(vli))
+                print(note, vi, "silent")
+                break
+        else:
+            # If no voices were unused, just take the least recently used one.
+            vi = lru.pop(0)
+            v = voices[vi]
+            lru.append(vi)
+            print(note, vi, "lru")
+        v.note_on(pitch, volume)
 
     async def note_off(self, note: int, velocity: int) -> None:
         ...
@@ -289,6 +303,11 @@ class Operator:
             modulator = yield out_buffer[:mod_len]
             mod_len = len(modulator)
 
+    def is_silent(self) -> bool:
+        return (
+            not self.reset and self.samples_since_reset < 0 and self.current_volume == 0
+        )
+
 
 @dataclass
 class PhaseModulator:
@@ -343,6 +362,9 @@ class PhaseModulator:
             d=int(self.sample_rate / 12),
             volume=0.56 * 0.25,
         )
+
+    def is_silent(self) -> bool:
+        return self.op1.is_silent() and self.op2.is_silent() and self.op3.is_silent()
 
     def note_on(self, pitch: float, volume: float) -> None:
         self.op1.note_on(pitch * self.rate1, volume)
