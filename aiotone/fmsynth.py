@@ -555,7 +555,7 @@ async def midi_consumer(queue: asyncio.Queue[MidiMessage], synth: Synthesizer) -
                     await synth.mod_wheel(128 * msg[2] + last[MOD_WHEEL_LSB])
                 elif msg[1] == MOD_WHEEL_LSB:
                     await synth.mod_wheel(128 * last[MOD_WHEEL] + msg[2])
-                if msg[1] == EXPRESSION_PEDAL:
+                elif msg[1] == EXPRESSION_PEDAL:
                     await synth.expression(128 * msg[2] + last[EXPRESSION_PEDAL_LSB])
                 elif msg[1] == EXPRESSION_PEDAL_LSB:
                     await synth.expression(128 * last[EXPRESSION_PEDAL] + msg[2])
