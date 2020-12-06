@@ -429,7 +429,13 @@ class PhaseModulator:
         self.last_pitch_played = 0.0
 
     def is_silent(self) -> bool:
-        # This is oversimplified, only the carrier operators should be considered here.
+        algo = self.algorithm
+        if algo == 0 or algo == 1:
+            return self.op1.is_silent()
+
+        if algo == 2 or algo == 3:
+            return self.op1.is_silent() and self.op2.is_silent()
+
         return self.op1.is_silent() and self.op2.is_silent() and self.op3.is_silent()
 
     def note_on(self, pitch: float, volume: float) -> None:
