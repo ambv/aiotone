@@ -207,23 +207,26 @@ class Synthesizer:
         voices = self.voices
         lru = self._voices_lru
         v: PhaseModulator
+        first_released = None
         for vli, vi in enumerate(lru):
             v = voices[vi]
             if v.is_silent():
                 lru.append(lru.pop(vli))
                 break
+            elif first_released is None and v.is_released():
+                first_released = vli
         else:
-            # Look again for released voices.
-            for vli, vi in enumerate(lru):
-                v = voices[vi]
-                if v.is_released():
-                    lru.append(lru.pop(vli))
-                    break
+            if first_released is not None:
+                # The first released voice is the most likely to be the least disrupted
+                # by cutting it short.
+                vli = first_released
             else:
-                # If no voices were unused, just take the least recently used one.
-                vi = lru.pop(0)
-                v = voices[vi]
-                lru.append(vi)
+                # If no voices were unused nor released, just take the least recently
+                # used one.
+                vli = 0
+            vi = lru.pop(vli)
+            v = voices[vi]
+            lru.append(vi)
         v.note_on(pitch, volume)
 
     async def note_off(self, note: int, velocity: int) -> None:
