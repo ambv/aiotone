@@ -6,8 +6,13 @@ from cpython cimport array
 import array
 
 
-cpdef saturate(double value):
-    return max(min(int(value), INT16_MAXVALUE), -INT16_MAXVALUE)
+cpdef int16_t saturate(double value):
+    cdef int32_t ival = <int32_t>value
+    if ival > INT16_MAXVALUE:
+        return INT16_MAXVALUE
+    if ival < -INT16_MAXVALUE:
+        return -INT16_MAXVALUE
+    return <int16_t>ival
 
 
 cpdef calculate_panning(double pan, array.array mono, array.array stereo, int32_t want_frames):
