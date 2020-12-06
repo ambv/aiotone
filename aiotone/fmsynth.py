@@ -99,7 +99,7 @@ def panning(mono: Audio, pan: float = 0.0) -> Audio:
     result = init(mono)
     want_frames = yield result
 
-    out_buffer = array("h", [0] * (2 * want_frames))
+    out_buffer = array("h", [0] * (2 * MAX_BUFFER))
     while True:
         mono_buffer = mono.send(want_frames)
         for i in range(want_frames):
@@ -113,7 +113,7 @@ def auto_pan(mono: Audio, panner: Audio) -> Audio:
     result = init(panner)
     want_frames = yield result
 
-    out_buffer = array("h", [0] * (2 * want_frames))
+    out_buffer = array("h", [0] * (2 * MAX_BUFFER))
     while True:
         mono_buffer = mono.send(want_frames)
         panning = panner.send(want_frames)
@@ -180,7 +180,7 @@ class Synthesizer:
             want_frames = yield stereo[0]
         id_voices = id(self.voices)
 
-        out_buffer = array("h", [0] * (2 * want_frames))
+        out_buffer = array("h", [0] * (2 * MAX_BUFFER))
         with profiling.maybe(DEBUG):
             while True:
                 if id(self.voices) != id_voices:
@@ -449,9 +449,8 @@ class PhaseModulator:
         self.last_pitch_played = 0.0
 
     def mono_out(self) -> Audio:
-        out_buffer = array("h")
-        zero_buffer = array("h")
-        zero_buffer.extend([0] * MAX_BUFFER)
+        out_buffer = array("h", [0] * MAX_BUFFER)
+        zero_buffer = array("h", [0] * MAX_BUFFER)
 
         op1 = self.op1.mono_out()
         op2 = self.op2.mono_out()
@@ -461,7 +460,6 @@ class PhaseModulator:
         init(op3)
         want_frames = yield out_buffer
 
-        out_buffer.extend([0] * MAX_BUFFER)
         while True:
             algo = self.algorithm
             out3 = op3.send(zero_buffer[:want_frames])
@@ -561,7 +559,8 @@ class AmplitudeModulator:
         self.op3.note_on(pitch * self.rate3, volume)
 
     def mono_out(self) -> Audio:
-        out_buffer = array("h")
+        out_buffer = array("h", [0] * MAX_BUFFER)
+        zero_buffer = array("h", [0] * MAX_BUFFER)
         op1 = self.op1.mono_out()
         op2 = self.op2.mono_out()
         op3 = self.op3.mono_out()
@@ -570,11 +569,10 @@ class AmplitudeModulator:
         init(op3)
         want_frames = yield out_buffer
 
-        out_buffer.extend([0] * want_frames)
         while True:
-            out1 = op1.send(want_frames)
-            out2 = op2.send(want_frames)
-            out3 = op3.send(want_frames)
+            out1 = op1.send(zero_buffer[:want_frames])
+            out2 = op2.send(zero_buffer[:want_frames])
+            out3 = op3.send(zero_buffer[:want_frames])
             for i in range(want_frames):
                 algo = self.algorithm
                 o1 = out1[i]
