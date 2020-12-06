@@ -42,7 +42,7 @@ from .midi import (
 )
 from .notes import note_to_freq
 
-from .fm import saturate
+from .fm import calculate_panning, saturate
 
 
 # We want this to be symmetrical on the + and the - side.
@@ -104,9 +104,7 @@ def panning(mono: Audio, pan: float = 0.0) -> Audio:
     out_buffer = array("h", [0] * (2 * MAX_BUFFER))
     while True:
         mono_buffer = mono.send(want_frames)
-        for i in range(want_frames):
-            out_buffer[2 * i] = int((-pan + 1) / 2 * mono_buffer[i])
-            out_buffer[2 * i + 1] = int((pan + 1) / 2 * mono_buffer[i])
+        calculate_panning(pan, mono_buffer, out_buffer, want_frames)
         want_frames = yield out_buffer[: 2 * want_frames]
 
 
