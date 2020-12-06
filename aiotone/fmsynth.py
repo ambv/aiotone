@@ -42,6 +42,8 @@ from .midi import (
 )
 from .notes import note_to_freq
 
+from .fm import saturate
+
 
 # We want this to be symmetrical on the + and the - side.
 INT16_MAXVALUE = 32767
@@ -122,10 +124,6 @@ def auto_pan(mono: Audio, panner: Audio) -> Audio:
             out_buffer[2 * i] = int((-pan + 1) / 2 * mono_buffer[i])
             out_buffer[2 * i + 1] = int((pan + 1) / 2 * mono_buffer[i])
         want_frames = yield out_buffer[: 2 * want_frames]
-
-
-def saturate(value: float) -> int:
-    return max(min(int(value), INT16_MAXVALUE), -INT16_MAXVALUE)
 
 
 @dataclass
