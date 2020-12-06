@@ -14,8 +14,10 @@
 		"cSpell.words": [
 			"aiotone",
 			"algo",
+			"dtype",
 			"fmsynth",
 			"nchannels",
+			"ndarray",
 			"secho"
 		],
 	}
