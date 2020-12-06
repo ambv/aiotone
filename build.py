@@ -2,6 +2,7 @@ import os
 import shutil
 from distutils.command.build_ext import build_ext
 from distutils.core import Distribution, Extension
+from pathlib import Path
 
 from Cython.Build import cythonize
 
@@ -12,15 +13,19 @@ libraries = ["m"]
 
 
 def build():
+    cython_sources = []
+    cython_sources.extend(Path("aiotone").glob("*.pyx"))
+
     extensions = [
         Extension(
-            "*",
-            ["aiotone/*.pyx"],
+            "aiotone." + path.with_suffix("").name,
+            [str(path)],
             extra_compile_args=compile_args,
             extra_link_args=link_args,
             include_dirs=include_dirs,
             libraries=libraries,
         )
+        for path in cython_sources
     ]
     ext_modules = cythonize(
         extensions,
