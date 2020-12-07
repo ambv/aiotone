@@ -420,11 +420,11 @@ class PhaseModulator:
         self.op3 = Operator(
             wave=self.wave3,
             sample_rate=self.sample_rate,
-            a=24,
-            d=int(self.sample_rate / 12),
+            a=48,
+            d=int(self.sample_rate / 9),
             s=0.0,
-            r=int(self.sample_rate / 12),
-            volume=0.56 * 0.25,
+            r=int(self.sample_rate / 9),
+            volume=0.56 * 0.4,
         )
         self.last_pitch_played = 0.0
 
