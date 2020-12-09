@@ -744,7 +744,14 @@ def main(config: str, make_config: bool) -> None:
     cfg = configparser.ConfigParser()
     cfg.read(config)
 
-    devices = miniaudio.Devices()
+    # Apparently, miniaudio (at least on Linux) doesn't enumerate devices across all backends.
+    # So if we want to use a device on a non-default backend, we need to specify the backend.
+    backend_name = cfg["audio-out"].get("backend")
+    if backend_name:
+        backend = getattr(miniaudio.Backend, backend_name)
+        devices = miniaudio.Devices([backend])
+    else:
+        devices = miniaudio.Devices()
     playbacks = devices.get_playbacks()
     audio_out = cfg["audio-out"]["out-name"]
     sample_rate = cfg["audio-out"].getint("sample-rate")
