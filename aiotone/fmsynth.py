@@ -660,7 +660,10 @@ async def midi_consumer(queue: asyncio.Queue[MidiMessage], synth: Synthesizer) -
             elif t == STOP:
                 await synth.stop()
             elif t == NOTE_ON:
-                await synth.note_on(msg[1], msg[2])
+                if msg[2] == 0: # velocity of zero means "note off"
+                    await synth.note_off(msg[1], msg[2])
+                else:
+                    await synth.note_on(msg[1], msg[2])
             elif t == NOTE_OFF:
                 await synth.note_off(msg[1], msg[2])
             elif t == CONTROL_CHANGE:
