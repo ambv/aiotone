@@ -67,3 +67,17 @@ For more information see:
 - as usual, MIDI IN and AUDIO OUT configuration is done through a config file;
 - use [BlackHole](https://github.com/ExistentialAudio/BlackHole/) to
   route audio to your DAW of choice.
+
+For more information see:
+```
+(aiotone)$ python -m aiotone.fmsynth --help
+```
+
+## Help, how do I use this?
+
+You will need to figure out the names of your MIDI ports
+(and, in the case of the FM synth, the name of your audio port).
+
+You can run `python -m aiotone.lsdev` to list all the audio
+and MIDI ports detected on your system, so that you know what
+to enter in your `.ini` configuration file.
