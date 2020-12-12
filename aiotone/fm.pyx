@@ -20,3 +20,71 @@ cpdef calculate_panning(double pan, array.array mono, array.array stereo, int32_
     for i in range(want_frames):
             stereo.data.as_shorts[2 * i] = <int16_t>((-pan + 1) / 2 * mono.data.as_shorts[i])
             stereo.data.as_shorts[2 * i + 1] = <int16_t>((pan + 1) / 2 * mono.data.as_shorts[i])
+
+
+cdef class Envelope:
+    cdef int a  # in number of samples
+    cdef int d  # in number of samples
+    cdef double s  # 0.0 - 1.0; relative volume
+    cdef int r  # in number of samples
+
+    cdef bint released  # bint: Cython boolean int
+    cdef int samples_since_reset
+    cdef double current_value
+
+    def __init__(self, int a, int d, double s, int r):
+        self.a = a
+        self.d = d
+        self.s = s
+        self.r = r
+        self.released = False
+        self.samples_since_reset = -1  # not flowing
+        self.current_value = 0.0
+
+    def reset(self):
+        self.released = False
+        self.samples_since_reset = 0
+        self.current_value = 0.0
+
+    def release(self):
+        self.released = True
+
+    def advance(self):
+        cdef double envelope = self.current_value
+        cdef int samples_since_reset = self.samples_since_reset
+        cdef int a = self.a
+        cdef int d = self.d
+        cdef double s = self.s
+        cdef int r = self.r
+
+        if samples_since_reset == -1:
+            return 0.0
+
+        samples_since_reset += 1
+        # Release
+        if self.released:
+            if envelope <= 0 or r == 0:
+                envelope = 0.0
+                samples_since_reset = -1
+            else:
+                envelope -= 1 / r
+        # Attack
+        elif samples_since_reset <= a:
+            if a == 0:
+                envelope = 1.0
+            else:
+                envelope = samples_since_reset / a
+        # Decay
+        elif samples_since_reset - a <= d and d > 0:
+            envelope = 1.0 - (samples_since_reset - a) / d
+        # Silence
+        else:
+            envelope = 0.0
+            samples_since_reset = -1
+
+        self.samples_since_reset = samples_since_reset
+        self.current_value = envelope
+        return envelope
+
+    def is_silent(self):
+        return self.samples_since_reset < 0 and self.current_value == 0

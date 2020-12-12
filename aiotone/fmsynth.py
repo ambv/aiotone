@@ -42,7 +42,7 @@ from .midi import (
 )
 from .notes import note_to_freq
 
-from .fm import calculate_panning, saturate
+from .fm import calculate_panning, saturate, Envelope
 
 
 # We want this to be symmetrical on the + and the - side.
@@ -271,19 +271,14 @@ class Synthesizer:
 class Operator:
     wave: array[int]
     sample_rate: int  # like: 44100
-    a: int  # in number of samples
-    d: int  # in number of samples
-    s: float  # 0.0 - 1.0; relative volume
-    r: int  # in number of samples
+    envelope: Envelope
     volume: float = 1.0  # 0.0 - 1.0; relative attenuation
     pitch: float = 440.0  # Hz
 
     # Current state of the operator, modified during `mono_out()`
     samples_since_reset: int = -1
-    current_volume: float = 0.0
     current_velocity: float = 0.0
     reset: bool = False
-    released: bool = False
 
     def note_on(self, pitch: float, volume: float) -> None:
         self.reset = True
@@ -291,7 +286,7 @@ class Operator:
         self.current_velocity = volume
 
     def note_off(self, pitch: float, volume: float) -> None:
-        self.released = True
+        self.envelope.release()
 
     def mono_out(self) -> FMAudio:
         """With variable pitch and a resettable envelope."""
@@ -300,70 +295,35 @@ class Operator:
         mod_len = len(modulator)
 
         out_buffer.extend([0] * MAX_BUFFER)
+        envelope = self.envelope
         w_i = 0.0
         while True:
-            wave = self.wave
-            envelope = self.current_volume
-            a = self.a
-            d = self.d
-            s = self.s
-            r = self.r
-            samples_since_reset = self.samples_since_reset
-            if samples_since_reset == -1:
+            if envelope.is_silent():
                 for i in range(mod_len):
                     out_buffer[i] = 0
+                w_i = 0.0
             else:
                 w = self.wave
                 w_len = len(self.wave)
                 sample_rate = self.sample_rate
                 for i, mod in enumerate(modulator):
-                    # Release
-                    if self.released:
-                        if envelope <= 0 or r == 0:
-                            envelope = 0
-                        else:
-                            envelope -= 1 / r
-                    # Attack
-                    elif samples_since_reset <= a:
-                        if a == 0:
-                            envelope = 1.0
-                        else:
-                            envelope = samples_since_reset / a
-                    # Decay
-                    elif samples_since_reset - a <= d and d > 0:
-                        envelope = 1.0 - (samples_since_reset - a) / d
-                    # Silence
-                    else:
-                        envelope = 0.0
                     mod_scaled = mod * w_len / INT16_MAXVALUE
                     out_buffer[i] = int(
                         self.current_velocity
                         * self.volume
-                        * envelope
+                        * envelope.advance()
                         * w[round(w_i + mod_scaled) % w_len]
                     )
                     # Here's our new index
                     w_i += w_len * self.pitch / sample_rate
-                    samples_since_reset += 1
             if self.reset:
                 self.reset = False
-                self.released = False
-                self.samples_since_reset = 0
-                self.current_volume = 0.0
-            elif envelope > 0:
-                self.samples_since_reset = samples_since_reset
-                self.current_volume = envelope
-            else:
-                self.samples_since_reset = -1
-                self.current_volume = 0.0
-                w_i = 0.0
+                envelope.reset()
             modulator = yield out_buffer[:mod_len]
             mod_len = len(modulator)
 
     def is_silent(self) -> bool:
-        return (
-            not self.reset and self.samples_since_reset < 0 and self.current_volume == 0
-        )
+        return not self.reset and self.envelope.is_silent()
 
 
 @dataclass
@@ -402,28 +362,34 @@ class PhaseModulator:
         self.op1 = Operator(
             wave=self.wave1,
             sample_rate=self.sample_rate,
-            a=48,
-            d=3 * self.sample_rate,
-            s=0.0,
-            r=int(0.25 * self.sample_rate),
+            envelope=Envelope(
+                a=48,
+                d=3 * self.sample_rate,
+                s=0.0,
+                r=int(0.25 * self.sample_rate),
+            ),
             volume=0.75 * 0.6,
         )
         self.op2 = Operator(
             wave=self.wave2,
             sample_rate=self.sample_rate,
-            a=48,
-            d=4 * self.sample_rate,
-            s=0.0,
-            r=int(0.5 * self.sample_rate),
+            envelope=Envelope(
+                a=48,
+                d=4 * self.sample_rate,
+                s=0.0,
+                r=int(0.5 * self.sample_rate),
+            ),
             volume=0.54 * 0.6,
         )
         self.op3 = Operator(
             wave=self.wave3,
             sample_rate=self.sample_rate,
-            a=48,
-            d=int(self.sample_rate / 9),
-            s=0.0,
-            r=int(self.sample_rate / 9),
+            envelope=Envelope(
+                a=48,
+                d=int(self.sample_rate / 9),
+                s=0.0,
+                r=int(self.sample_rate / 9),
+            ),
             volume=0.56 * 0.4,
         )
         self.last_pitch_played = 0.0
@@ -660,7 +626,7 @@ async def midi_consumer(queue: asyncio.Queue[MidiMessage], synth: Synthesizer) -
             elif t == STOP:
                 await synth.stop()
             elif t == NOTE_ON:
-                if msg[2] == 0: # velocity of zero means "note off"
+                if msg[2] == 0:  # velocity of zero means "note off"
                     await synth.note_off(msg[1], msg[2])
                 else:
                     await synth.note_on(msg[1], msg[2])
