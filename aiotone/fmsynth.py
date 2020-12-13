@@ -97,6 +97,15 @@ def sine12_array(sample_count: int) -> array[int]:
     return array("h", numbers)
 
 
+def saw_array(sample_count: int) -> array[int]:
+    """Return a monophonic signed 16-bit wavetable with a single sawtooth wave cycle."""
+    numbers = []
+    for i in range(sample_count):
+        current = round(-INT16_MAXVALUE + (i / sample_count) * (2 * INT16_MAXVALUE))
+        numbers.append(current)
+    return array("h", numbers)
+
+
 def panning(mono: Audio, pan: float = 0.0) -> Audio:
     result = init(mono)
     want_frames = yield result
@@ -142,9 +151,10 @@ class Synthesizer:
         self.panning = [(2 * i / (polyphony - 1) - 1) for i in range(polyphony)]
         self.voices = [
             PhaseModulator(
-                wave1=sine12_array(2048),
-                wave2=sine_array(2048),
+                wave1=saw_array(2048),
+                wave2=sine12_array(2048),
                 wave3=sine_array(2048),
+                wave4=sine_array(2048),
                 sample_rate=self.sample_rate,
             )
             for i in range(polyphony)
@@ -269,31 +279,55 @@ class Synthesizer:
 
 @dataclass
 class PhaseModulator:
-    r"""A three-operator modulator. Algorithms:
+    r"""A 4-operator modulator. Algorithms:
 
-       *
-    [3]             *         *               *
-     |     [2]   [3]      _[3]_            [3]
-    [2]     |__ __|      |     |            |               *
-     |         |        [1]   [2]    [1]   [2]   [1] [2] [3]
-    [1]       [1]        |__ __|      |__ __|     |___|___|
-     |         |            |            |            |
+      4
+      |        3     4      3               4
+      3        |__ __|      |             __|__
+      |           |         2     4      2     3     2   3   4
+      2           2         |__ __|      |__ __|     |___|___|
+      |           |            |            |            |
+     <1>         <1>          <1>          <1>          <1>
 
-    * - with feedback
+    alg.0       alg.1        alg.2        alg.3        alg.4
+
+                          4
+            4             |
+            |             3
+            3           __|__           3     4
+            |          |     |          |     |
+     <1> + <2>        <1> + <2>        <1> + <2>
+
+       alg.5            alg.6            alg.7
+
+
+            4                       4
+       _____|_____                __|__                     4
+      |     |     |              |     |                    |
+     <1> + <2> + <3>      <1> + <2> + <3>      <1> + <2> + <3>
+
+          alg.8                alg.9                alg.10
+
+
+    <1> + <2> + <3> + <4>
+
+           alg.11
     """
 
     wave1: array[int]
     wave2: array[int]
     wave3: array[int]
+    wave4: array[int]
     sample_rate: int
-    algorithm: int = 3
-    feedback: float = 0.66
-    rate1: float = 1.003  # detune by adding cents
-    rate2: float = 1.0
-    rate3: float = 19.0
+    algorithm: int = 10
+    rate1: float = 1.998  # detune by adding/removing cents
+    rate2: float = 1.003
+    rate3: float = 1.0
+    rate4: float = 19.0
     op1: Operator = field(init=False)
     op2: Operator = field(init=False)
     op3: Operator = field(init=False)
+    op4: Operator = field(init=False)
     last_pitch_played: float = field(init=False)
 
     def __post_init__(self) -> None:
@@ -304,6 +338,17 @@ class PhaseModulator:
             wave=self.wave1,
             sample_rate=self.sample_rate,
             envelope=Envelope(
+                a=int(0.1 * self.sample_rate),
+                d=2 * self.sample_rate,
+                s=0.0,
+                r=int(0.33 * self.sample_rate),
+            ),
+            volume=0.03 * 0.4,
+        )
+        self.op2 = Operator(
+            wave=self.wave2,
+            sample_rate=self.sample_rate,
+            envelope=Envelope(
                 a=48,
                 d=3 * self.sample_rate,
                 s=0.0,
@@ -311,8 +356,8 @@ class PhaseModulator:
             ),
             volume=0.75 * 0.6,
         )
-        self.op2 = Operator(
-            wave=self.wave2,
+        self.op3 = Operator(
+            wave=self.wave3,
             sample_rate=self.sample_rate,
             envelope=Envelope(
                 a=48,
@@ -322,8 +367,8 @@ class PhaseModulator:
             ),
             volume=0.54 * 0.6,
         )
-        self.op3 = Operator(
-            wave=self.wave3,
+        self.op4 = Operator(
+            wave=self.wave4,
             sample_rate=self.sample_rate,
             envelope=Envelope(
                 a=48,
@@ -350,6 +395,7 @@ class PhaseModulator:
         self.op1.note_on(pitch * self.rate1, volume)
         self.op2.note_on(pitch * self.rate2, volume)
         self.op3.note_on(pitch * self.rate3, volume)
+        self.op4.note_on(pitch * self.rate4, volume)
 
     def note_off(self, pitch: float, volume: float) -> None:
         if pitch != self.last_pitch_played:
@@ -358,6 +404,7 @@ class PhaseModulator:
         self.op1.note_off(pitch * self.rate1, volume)
         self.op2.note_off(pitch * self.rate2, volume)
         self.op3.note_off(pitch * self.rate3, volume)
+        self.op4.note_off(pitch * self.rate4, volume)
         self.last_pitch_played = 0.0
 
     def mono_out(self) -> Audio:
@@ -367,41 +414,97 @@ class PhaseModulator:
         op1 = self.op1.mono_out()
         op2 = self.op2.mono_out()
         op3 = self.op3.mono_out()
+        op4 = self.op4.mono_out()
         init(op1)
         init(op2)
         init(op3)
+        init(op4)
         want_frames = yield out_buffer
 
         while True:
             algo = self.algorithm
-            out3 = op3.send(zero_buffer[:want_frames])
+            out4 = op4.send(zero_buffer[:want_frames])
             if algo == 0:
+                out3 = op3.send(out4)
                 out2 = op2.send(out3)
                 out1 = op1.send(out2)
                 want_frames = yield out1
             elif algo == 1:
-                out2 = op2.send(zero_buffer[:want_frames])
+                out3 = op3.send(zero_buffer[:want_frames])
                 for i in range(want_frames):
-                    out_buffer[i] = saturate(out3[i] + out2[i])
-                out1 = op1.send(out_buffer[:want_frames])
+                    out_buffer[i] = saturate(out3[i] + out4[i])
+                out2 = op2.send(out_buffer[:want_frames])
+                out1 = op1.send(out2)
                 want_frames = yield out1
             elif algo == 2:
+                out3 = op3.send(zero_buffer[:want_frames])
+                out2 = op2.send(out3)
+                for i in range(want_frames):
+                    out_buffer[i] = saturate(out2[i] + out4[i])
+                out1 = op1.send(out2)
+                want_frames = yield out1
+            elif algo == 3:
+                out3 = op3.send(out4)
+                out2 = op2.send(out4)
+                for i in range(want_frames):
+                    out_buffer[i] = saturate(out2[i] + out3[i])
+                out1 = op1.send(out2)
+                want_frames = yield out1
+            elif algo == 4:
+                out3 = op3.send(zero_buffer[:want_frames])
+                out2 = op2.send(zero_buffer[:want_frames])
+                for i in range(want_frames):
+                    out_buffer[i] = saturate(out2[i] + out3[i] + out4[i])
+                out1 = op1.send(out_buffer[:want_frames])
+                want_frames = yield out1
+            elif algo == 5:
+                out3 = op3.send(out4)
+                out2 = op2.send(out3)
+                out1 = op1.send(zero_buffer[:want_frames])
+                for i in range(want_frames):
+                    out_buffer[i] = saturate(out1[i] + out2[i])
+                want_frames = yield out_buffer[:want_frames]
+            elif algo == 6:
+                out3 = op3.send(out4)
                 out2 = op2.send(out3)
                 out1 = op1.send(out3)
                 for i in range(want_frames):
                     out_buffer[i] = saturate(out1[i] + out2[i])
                 want_frames = yield out_buffer[:want_frames]
-            elif algo == 3:
-                out2 = op2.send(out3)
-                out1 = op1.send(zero_buffer[:want_frames])
+            elif algo == 7:
+                out3 = op3.send(zero_buffer[:want_frames])
+                out2 = op2.send(out4)
+                out1 = op1.send(out3)
                 for i in range(want_frames):
                     out_buffer[i] = saturate(out1[i] + out2[i])
                 want_frames = yield out_buffer[:want_frames]
-            else:
+            elif algo == 8:
+                out3 = op3.send(out4)
+                out2 = op2.send(out4)
+                out1 = op1.send(out4)
+                for i in range(want_frames):
+                    out_buffer[i] = saturate(out1[i] + out2[i] + out3[i])
+                want_frames = yield out_buffer[:want_frames]
+            elif algo == 9:
+                out3 = op3.send(out4)
+                out2 = op2.send(out4)
+                out1 = op1.send(zero_buffer[:want_frames])
+                for i in range(want_frames):
+                    out_buffer[i] = saturate(out1[i] + out2[i] + out3[i])
+                want_frames = yield out_buffer[:want_frames]
+            elif algo == 10:
+                out3 = op3.send(out4)
                 out2 = op2.send(zero_buffer[:want_frames])
                 out1 = op1.send(zero_buffer[:want_frames])
                 for i in range(want_frames):
                     out_buffer[i] = saturate(out1[i] + out2[i] + out3[i])
+                want_frames = yield out_buffer[:want_frames]
+            else:
+                out3 = op3.send(zero_buffer[:want_frames])
+                out2 = op2.send(zero_buffer[:want_frames])
+                out1 = op1.send(zero_buffer[:want_frames])
+                for i in range(want_frames):
+                    out_buffer[i] = saturate(out1[i] + out2[i] + out3[i] + out4[i])
                 want_frames = yield out_buffer[:want_frames]
 
     def is_released(self) -> bool:
@@ -526,6 +629,8 @@ def main(config: str, make_config: bool) -> None:
 
     - efficient Operator implementation with sample-precise pitch, velocity, volume,
       and modulation control (feedback not implemented yet);
+
+    - a 4-operator modulator with 12 algorithms inspired by Reface DX;
 
     - dispatches MIDI IN events like NOTE_ON and NOTE_OFF events to the synthesizer.
 

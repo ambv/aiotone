@@ -1,6 +1,6 @@
 # aiotone
 
-MIDI processing tools in AsyncIO.
+Audio synthesis and MIDI processing tools in AsyncIO.
 
 ## Installation
 
@@ -19,6 +19,28 @@ DISCLAIMER: tested on macOS only.
 
 
 ## Usage
+
+### Realtime FM synthesis in pure Python
+
+- this is work-in-progress polyphonic 4-operator FM synthesizer following
+  the general Yamaha design;
+- this is pushing Python real hard, your CPU might not be able to
+  do realtime audio with this, if that's the case: decrease polyphony;
+- as usual, MIDI IN and AUDIO OUT configuration is done through a config file;
+- tested under macOS and Linux (both PulseAudio and ALSA) where we were
+  able to achieve 8+ voices of polyphony without buffer underruns;
+- use something like
+  [BlackHole](https://github.com/ExistentialAudio/BlackHole/) to route
+  audio to your DAW of choice.
+
+For more information see:
+```
+(aiotone)$ python -m aiotone.fmsynth --help
+```
+
+Available algorithms:
+
+![Available FM algorithms](docs/fmsynth-4op-algorithms.gif)
 
 ### Performing on two Moog Mother 32 synthesizers as one instrument
 
@@ -56,24 +78,6 @@ See this talk for a full tutorial: https://www.youtube.com/watch?v=02CLD-42VdI
 For more information see:
 ```
 (aiotone)$ python -m aiotone.mothergen --help
-```
-
-### Realtime FM synthesis in pure Python
-
-- this is work-in-progress polyphonic 3-operator FM synthesizer following
-  the general Yamaha design;
-- this is pushing Python real hard, your CPU might not be able to
-  do realtime audio with this, if that's the case: decrease polyphony;
-- as usual, MIDI IN and AUDIO OUT configuration is done through a config file;
-- tested under macOS and Linux (both PulseAudio and ALSA) where we were
-  able to achieve 8+ voices of polyphony without buffer underruns;
-- use something like
-  [BlackHole](https://github.com/ExistentialAudio/BlackHole/) to route
-  audio to your DAW of choice.
-
-For more information see:
-```
-(aiotone)$ python -m aiotone.fmsynth --help
 ```
 
 ## Help, how do I use this?
