@@ -238,6 +238,9 @@ class Synthesizer:
             v = voices[vi]
             lru.append(vi)
         v.note_on(pitch, volume)
+        if self._sustain > 32:
+            self._released_on_sustain.discard(pitch)
+            return
 
     async def note_off(self, note: int, velocity: int) -> None:
         try:
@@ -343,7 +346,7 @@ class PhaseModulator:
                 s=0.0,
                 r=int(0.33 * self.sample_rate),
             ),
-            volume=0.03 * 0.4,
+            volume=0.02 * 0.4,
         )
         self.op2 = Operator(
             wave=self.wave2,
