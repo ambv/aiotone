@@ -66,7 +66,7 @@ For more information see:
   do realtime audio with this, if that's the case: decrease polyphony;
 - as usual, MIDI IN and AUDIO OUT configuration is done through a config file;
 - tested under macOS and Linux (both PulseAudio and ALSA) where we were
-  able to achieve 8 voices of polyphony without buffer underruns;
+  able to achieve 8+ voices of polyphony without buffer underruns;
 - use something like
   [BlackHole](https://github.com/ExistentialAudio/BlackHole/) to route
   audio to your DAW of choice.

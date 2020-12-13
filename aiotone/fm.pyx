@@ -1,6 +1,9 @@
 DEF INT16_MAXVALUE = 32767
+DEF MAX_BUFFER = 2400  # 5 ms at 48000 Hz
 
+cimport cython
 from libc.stdint cimport int16_t, int32_t
+from libc.math cimport lround
 
 from cpython cimport array
 import array
@@ -49,7 +52,7 @@ cdef class Envelope:
     def release(self):
         self.released = True
 
-    def advance(self):
+    cpdef advance(self):
         cdef double envelope = self.current_value
         cdef int samples_since_reset = self.samples_since_reset
         cdef int a = self.a or 1
@@ -86,5 +89,88 @@ cdef class Envelope:
         self.current_value = envelope
         return envelope
 
-    def is_silent(self):
+    cpdef is_silent(self):
         return self.samples_since_reset < 0 and self.current_value == 0
+
+
+cdef class Operator:
+    cdef array.array wave
+    cdef int sample_rate  # like: 44100
+    cdef Envelope envelope
+    cdef double volume  # 0.0 - 1.0; relative attenuation
+    cdef double pitch  # Hz
+
+    # Current state of the operator, modified during `mono_out()`
+    cdef double current_velocity
+    cdef bint reset
+
+    def __init__(
+        self,
+        array.array wave,
+        int sample_rate,  # Hz, like: 44100
+        Envelope envelope,
+        double volume = 1.0,  # 0.0 - 1.0; relative attenuation
+        double pitch = 440.0,  # Hz
+    ):
+        self.wave = wave
+        self.sample_rate = sample_rate
+        self.envelope = envelope
+        self.volume = volume
+        self.pitch = pitch
+        self.current_velocity = 0.0
+        self.reset = False
+
+    def note_on(self, double pitch, double volume):
+        self.reset = True
+        self.pitch = pitch
+        self.current_velocity = volume
+
+    def note_off(self, double pitch, double volume):
+        self.envelope.release()
+
+    def mono_out(self):
+        """With variable pitch and a resettable envelope."""
+        cdef array.array modulator
+        cdef int mod_len
+        cdef array.array out_buffer = array.array("h")
+        cdef double w_i = 0.0
+
+        modulator = yield out_buffer
+        mod_len = len(modulator)
+        out_buffer.extend([0] * MAX_BUFFER)
+        while True:
+            w_i = self.modulate(out_buffer, modulator, w_i)
+            if self.reset:
+                self.reset = False
+                self.envelope.reset()
+            modulator = yield out_buffer[:mod_len]
+            mod_len = len(modulator)
+
+    @cython.cdivision(True)
+    cpdef modulate(self, array.array out_buffer, array.array modulator, double w_i):
+        cdef int i
+        cdef int16_t mod
+        cdef double mod_scaled
+        cdef int sr = self.sample_rate
+        cdef int16_t[:] w = self.wave
+        cdef int w_len = len(w)
+        envelope = self.envelope
+
+        if envelope.is_silent():
+            for i in range(len(modulator)):
+                out_buffer[i] = 0
+            return 0.0
+
+        for i, mod in enumerate(modulator):
+            mod_scaled = mod * w_len / INT16_MAXVALUE
+            out_buffer.data.as_shorts[i] = saturate(
+                self.current_velocity
+                * self.volume
+                * envelope.advance()
+                * w[lround(w_i + mod_scaled) % w_len]
+            )
+            w_i += w_len * <double>self.pitch / sr
+        return w_i
+
+    def is_silent(self):
+        return not self.reset and self.envelope.is_silent()

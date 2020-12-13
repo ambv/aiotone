@@ -42,7 +42,7 @@ from .midi import (
 )
 from .notes import note_to_freq
 
-from .fm import calculate_panning, saturate, Envelope
+from .fm import calculate_panning, saturate, Envelope, Operator
 
 
 # We want this to be symmetrical on the + and the - side.
@@ -265,65 +265,6 @@ class Synthesizer:
 
     async def all_notes_off(self, value: int) -> None:
         self.reset_voices()
-
-
-@dataclass
-class Operator:
-    wave: array[int]
-    sample_rate: int  # like: 44100
-    envelope: Envelope
-    volume: float = 1.0  # 0.0 - 1.0; relative attenuation
-    pitch: float = 440.0  # Hz
-
-    # Current state of the operator, modified during `mono_out()`
-    samples_since_reset: int = -1
-    current_velocity: float = 0.0
-    reset: bool = False
-
-    def note_on(self, pitch: float, volume: float) -> None:
-        self.reset = True
-        self.pitch = pitch
-        self.current_velocity = volume
-
-    def note_off(self, pitch: float, volume: float) -> None:
-        self.envelope.release()
-
-    def mono_out(self) -> FMAudio:
-        """With variable pitch and a resettable envelope."""
-        out_buffer = array("h")
-        modulator = yield out_buffer
-        mod_len = len(modulator)
-
-        out_buffer.extend([0] * MAX_BUFFER)
-        envelope = self.envelope
-        w_i = 0.0
-        while True:
-            if envelope.is_silent():
-                for i in range(mod_len):
-                    out_buffer[i] = 0
-                w_i = 0.0
-            else:
-                w = self.wave
-                w_len = len(self.wave)
-                sample_rate = self.sample_rate
-                for i, mod in enumerate(modulator):
-                    mod_scaled = mod * w_len / INT16_MAXVALUE
-                    out_buffer[i] = int(
-                        self.current_velocity
-                        * self.volume
-                        * envelope.advance()
-                        * w[round(w_i + mod_scaled) % w_len]
-                    )
-                    # Here's our new index
-                    w_i += w_len * self.pitch / sample_rate
-            if self.reset:
-                self.reset = False
-                envelope.reset()
-            modulator = yield out_buffer[:mod_len]
-            mod_len = len(modulator)
-
-    def is_silent(self) -> bool:
-        return not self.reset and self.envelope.is_silent()
 
 
 @dataclass
