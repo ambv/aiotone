@@ -161,7 +161,8 @@ cdef class Operator:
                 out_buffer[i] = 0
             return 0.0
 
-        for i, mod in enumerate(modulator):
+        for i in range(len(modulator)):
+            mod = modulator.data.as_shorts[i]
             mod_scaled = mod * w_len / INT16_MAXVALUE
             out_buffer.data.as_shorts[i] = saturate(
                 self.current_velocity
