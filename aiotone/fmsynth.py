@@ -671,13 +671,13 @@ async def midi_consumer(queue: asyncio.Queue[MidiMessage], synth: Synthesizer) -
 def main(config: str, make_config: bool) -> None:
     """
     This is a module which implements realtime polyphonic FM synthesis in Python
-    controllable by MIDI. Note that this is very CPU-intensive.
+    controllable by MIDI.  Note that this is very CPU-intensive.
 
     It's got the following features:
 
     - configurable polyphony;
 
-    - AD envelope (no sustain yet);
+    - efficient sample-precise ADSR envelope;
 
     - dispatches MIDI IN events like NOTE_ON and NOTE_OFF events to the synthesizer.
 

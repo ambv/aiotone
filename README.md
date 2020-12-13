@@ -60,13 +60,16 @@ For more information see:
 
 ### Realtime FM synthesis in pure Python
 
-- this is a work in progress to create a polyphonic 3-operator
-  FM synthesizer following the general Yamaha design;
+- this is work-in-progress polyphonic 3-operator FM synthesizer following
+  the general Yamaha design;
 - this is pushing Python real hard, your CPU might not be able to
-  do realtime audio with this;
+  do realtime audio with this, if that's the case: decrease polyphony;
 - as usual, MIDI IN and AUDIO OUT configuration is done through a config file;
-- use [BlackHole](https://github.com/ExistentialAudio/BlackHole/) to
-  route audio to your DAW of choice.
+- tested under macOS and Linux (both PulseAudio and ALSA) where we were
+  able to achieve 8 voices of polyphony without buffer underruns;
+- use something like
+  [BlackHole](https://github.com/ExistentialAudio/BlackHole/) to route
+  audio to your DAW of choice.
 
 For more information see:
 ```

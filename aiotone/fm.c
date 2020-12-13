@@ -2340,15 +2340,14 @@ static PyObject *__pyx_pf_7aiotone_2fm_8Envelope_6advance(struct __pyx_obj_7aiot
   int __pyx_v_samples_since_reset;
   int __pyx_v_a;
   int __pyx_v_d;
-  CYTHON_UNUSED double __pyx_v_s;
+  double __pyx_v_s;
   int __pyx_v_r;
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   double __pyx_t_1;
   int __pyx_t_2;
   int __pyx_t_3;
-  int __pyx_t_4;
-  PyObject *__pyx_t_5 = NULL;
+  PyObject *__pyx_t_4 = NULL;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
@@ -2359,7 +2358,7 @@ static PyObject *__pyx_pf_7aiotone_2fm_8Envelope_6advance(struct __pyx_obj_7aiot
  *     def advance(self):
  *         cdef double envelope = self.current_value             # <<<<<<<<<<<<<<
  *         cdef int samples_since_reset = self.samples_since_reset
- *         cdef int a = self.a
+ *         cdef int a = self.a or 1
  */
   __pyx_t_1 = __pyx_v_self->current_value;
   __pyx_v_envelope = __pyx_t_1;
@@ -2368,7 +2367,7 @@ static PyObject *__pyx_pf_7aiotone_2fm_8Envelope_6advance(struct __pyx_obj_7aiot
  *     def advance(self):
  *         cdef double envelope = self.current_value
  *         cdef int samples_since_reset = self.samples_since_reset             # <<<<<<<<<<<<<<
- *         cdef int a = self.a
+ *         cdef int a = self.a or 1
  *         cdef int d = self.d
  */
   __pyx_t_2 = __pyx_v_self->samples_since_reset;
@@ -2377,28 +2376,34 @@ static PyObject *__pyx_pf_7aiotone_2fm_8Envelope_6advance(struct __pyx_obj_7aiot
   /* "aiotone/fm.pyx":55
  *         cdef double envelope = self.current_value
  *         cdef int samples_since_reset = self.samples_since_reset
- *         cdef int a = self.a             # <<<<<<<<<<<<<<
+ *         cdef int a = self.a or 1             # <<<<<<<<<<<<<<
  *         cdef int d = self.d
  *         cdef double s = self.s
  */
-  __pyx_t_2 = __pyx_v_self->a;
+  if (!__pyx_v_self->a) {
+  } else {
+    __pyx_t_2 = __pyx_v_self->a;
+    goto __pyx_L3_bool_binop_done;
+  }
+  __pyx_t_2 = 1;
+  __pyx_L3_bool_binop_done:;
   __pyx_v_a = __pyx_t_2;
 
   /* "aiotone/fm.pyx":56
  *         cdef int samples_since_reset = self.samples_since_reset
- *         cdef int a = self.a
+ *         cdef int a = self.a or 1
  *         cdef int d = self.d             # <<<<<<<<<<<<<<
  *         cdef double s = self.s
- *         cdef int r = self.r
+ *         cdef int r = self.r or 1
  */
   __pyx_t_2 = __pyx_v_self->d;
   __pyx_v_d = __pyx_t_2;
 
   /* "aiotone/fm.pyx":57
- *         cdef int a = self.a
+ *         cdef int a = self.a or 1
  *         cdef int d = self.d
  *         cdef double s = self.s             # <<<<<<<<<<<<<<
- *         cdef int r = self.r
+ *         cdef int r = self.r or 1
  * 
  */
   __pyx_t_1 = __pyx_v_self->s;
@@ -2407,15 +2412,21 @@ static PyObject *__pyx_pf_7aiotone_2fm_8Envelope_6advance(struct __pyx_obj_7aiot
   /* "aiotone/fm.pyx":58
  *         cdef int d = self.d
  *         cdef double s = self.s
- *         cdef int r = self.r             # <<<<<<<<<<<<<<
+ *         cdef int r = self.r or 1             # <<<<<<<<<<<<<<
  * 
  *         if samples_since_reset == -1:
  */
-  __pyx_t_2 = __pyx_v_self->r;
+  if (!__pyx_v_self->r) {
+  } else {
+    __pyx_t_2 = __pyx_v_self->r;
+    goto __pyx_L5_bool_binop_done;
+  }
+  __pyx_t_2 = 1;
+  __pyx_L5_bool_binop_done:;
   __pyx_v_r = __pyx_t_2;
 
   /* "aiotone/fm.pyx":60
- *         cdef int r = self.r
+ *         cdef int r = self.r or 1
  * 
  *         if samples_since_reset == -1:             # <<<<<<<<<<<<<<
  *             return 0.0
@@ -2437,7 +2448,7 @@ static PyObject *__pyx_pf_7aiotone_2fm_8Envelope_6advance(struct __pyx_obj_7aiot
     goto __pyx_L0;
 
     /* "aiotone/fm.pyx":60
- *         cdef int r = self.r
+ *         cdef int r = self.r or 1
  * 
  *         if samples_since_reset == -1:             # <<<<<<<<<<<<<<
  *             return 0.0
@@ -2458,8 +2469,8 @@ static PyObject *__pyx_pf_7aiotone_2fm_8Envelope_6advance(struct __pyx_obj_7aiot
  *         samples_since_reset += 1
  *         # Release
  *         if self.released:             # <<<<<<<<<<<<<<
- *             if envelope <= 0 or r == 0:
- *                 envelope = 0.0
+ *             if envelope > 0:
+ *                 envelope -= 1 / r
  */
   __pyx_t_3 = (__pyx_v_self->released != 0);
   if (__pyx_t_3) {
@@ -2467,81 +2478,73 @@ static PyObject *__pyx_pf_7aiotone_2fm_8Envelope_6advance(struct __pyx_obj_7aiot
     /* "aiotone/fm.pyx":66
  *         # Release
  *         if self.released:
- *             if envelope <= 0 or r == 0:             # <<<<<<<<<<<<<<
- *                 envelope = 0.0
- *                 samples_since_reset = -1
+ *             if envelope > 0:             # <<<<<<<<<<<<<<
+ *                 envelope -= 1 / r
+ *             else:
  */
-    __pyx_t_4 = ((__pyx_v_envelope <= 0.0) != 0);
-    if (!__pyx_t_4) {
-    } else {
-      __pyx_t_3 = __pyx_t_4;
-      goto __pyx_L6_bool_binop_done;
-    }
-    __pyx_t_4 = ((__pyx_v_r == 0) != 0);
-    __pyx_t_3 = __pyx_t_4;
-    __pyx_L6_bool_binop_done:;
+    __pyx_t_3 = ((__pyx_v_envelope > 0.0) != 0);
     if (__pyx_t_3) {
 
       /* "aiotone/fm.pyx":67
  *         if self.released:
- *             if envelope <= 0 or r == 0:
- *                 envelope = 0.0             # <<<<<<<<<<<<<<
- *                 samples_since_reset = -1
+ *             if envelope > 0:
+ *                 envelope -= 1 / r             # <<<<<<<<<<<<<<
  *             else:
- */
-      __pyx_v_envelope = 0.0;
-
-      /* "aiotone/fm.pyx":68
- *             if envelope <= 0 or r == 0:
  *                 envelope = 0.0
- *                 samples_since_reset = -1             # <<<<<<<<<<<<<<
- *             else:
- *                 envelope -= 1 / r
  */
-      __pyx_v_samples_since_reset = -1;
+      if (unlikely(__pyx_v_r == 0)) {
+        PyErr_SetString(PyExc_ZeroDivisionError, "float division");
+        __PYX_ERR(0, 67, __pyx_L1_error)
+      }
+      __pyx_v_envelope = (__pyx_v_envelope - (1.0 / ((double)__pyx_v_r)));
 
       /* "aiotone/fm.pyx":66
  *         # Release
  *         if self.released:
- *             if envelope <= 0 or r == 0:             # <<<<<<<<<<<<<<
- *                 envelope = 0.0
- *                 samples_since_reset = -1
+ *             if envelope > 0:             # <<<<<<<<<<<<<<
+ *                 envelope -= 1 / r
+ *             else:
  */
-      goto __pyx_L5;
+      goto __pyx_L9;
     }
 
-    /* "aiotone/fm.pyx":70
- *                 samples_since_reset = -1
+    /* "aiotone/fm.pyx":69
+ *                 envelope -= 1 / r
  *             else:
- *                 envelope -= 1 / r             # <<<<<<<<<<<<<<
+ *                 envelope = 0.0             # <<<<<<<<<<<<<<
+ *                 samples_since_reset = -1
+ *         # Attack
+ */
+    /*else*/ {
+      __pyx_v_envelope = 0.0;
+
+      /* "aiotone/fm.pyx":70
+ *             else:
+ *                 envelope = 0.0
+ *                 samples_since_reset = -1             # <<<<<<<<<<<<<<
  *         # Attack
  *         elif samples_since_reset <= a:
  */
-    /*else*/ {
-      if (unlikely(__pyx_v_r == 0)) {
-        PyErr_SetString(PyExc_ZeroDivisionError, "float division");
-        __PYX_ERR(0, 70, __pyx_L1_error)
-      }
-      __pyx_v_envelope = (__pyx_v_envelope - (1.0 / ((double)__pyx_v_r)));
+      __pyx_v_samples_since_reset = -1;
     }
-    __pyx_L5:;
+    __pyx_L9:;
 
     /* "aiotone/fm.pyx":65
  *         samples_since_reset += 1
  *         # Release
  *         if self.released:             # <<<<<<<<<<<<<<
- *             if envelope <= 0 or r == 0:
- *                 envelope = 0.0
+ *             if envelope > 0:
+ *                 envelope -= 1 / r
  */
-    goto __pyx_L4;
+    goto __pyx_L8;
   }
 
   /* "aiotone/fm.pyx":72
- *                 envelope -= 1 / r
+ *                 samples_since_reset = -1
  *         # Attack
  *         elif samples_since_reset <= a:             # <<<<<<<<<<<<<<
- *             if a == 0:
- *                 envelope = 1.0
+ *             envelope += 1 / a
+ *         # Decay
  */
   __pyx_t_3 = ((__pyx_v_samples_since_reset <= __pyx_v_a) != 0);
   if (__pyx_t_3) {
@@ -2549,98 +2552,87 @@ static PyObject *__pyx_pf_7aiotone_2fm_8Envelope_6advance(struct __pyx_obj_7aiot
     /* "aiotone/fm.pyx":73
  *         # Attack
  *         elif samples_since_reset <= a:
- *             if a == 0:             # <<<<<<<<<<<<<<
- *                 envelope = 1.0
- *             else:
- */
-    __pyx_t_3 = ((__pyx_v_a == 0) != 0);
-    if (__pyx_t_3) {
-
-      /* "aiotone/fm.pyx":74
- *         elif samples_since_reset <= a:
- *             if a == 0:
- *                 envelope = 1.0             # <<<<<<<<<<<<<<
- *             else:
- *                 envelope = samples_since_reset / a
- */
-      __pyx_v_envelope = 1.0;
-
-      /* "aiotone/fm.pyx":73
- *         # Attack
- *         elif samples_since_reset <= a:
- *             if a == 0:             # <<<<<<<<<<<<<<
- *                 envelope = 1.0
- *             else:
- */
-      goto __pyx_L8;
-    }
-
-    /* "aiotone/fm.pyx":76
- *                 envelope = 1.0
- *             else:
- *                 envelope = samples_since_reset / a             # <<<<<<<<<<<<<<
+ *             envelope += 1 / a             # <<<<<<<<<<<<<<
  *         # Decay
- *         elif samples_since_reset - a <= d and d > 0:
+ *         elif samples_since_reset <= a + d:
  */
-    /*else*/ {
-      if (unlikely(__pyx_v_a == 0)) {
-        PyErr_SetString(PyExc_ZeroDivisionError, "float division");
-        __PYX_ERR(0, 76, __pyx_L1_error)
-      }
-      __pyx_v_envelope = (((double)__pyx_v_samples_since_reset) / ((double)__pyx_v_a));
+    if (unlikely(__pyx_v_a == 0)) {
+      PyErr_SetString(PyExc_ZeroDivisionError, "float division");
+      __PYX_ERR(0, 73, __pyx_L1_error)
     }
-    __pyx_L8:;
+    __pyx_v_envelope = (__pyx_v_envelope + (1.0 / ((double)__pyx_v_a)));
 
     /* "aiotone/fm.pyx":72
- *                 envelope -= 1 / r
+ *                 samples_since_reset = -1
  *         # Attack
  *         elif samples_since_reset <= a:             # <<<<<<<<<<<<<<
- *             if a == 0:
- *                 envelope = 1.0
+ *             envelope += 1 / a
+ *         # Decay
  */
-    goto __pyx_L4;
+    goto __pyx_L8;
+  }
+
+  /* "aiotone/fm.pyx":75
+ *             envelope += 1 / a
+ *         # Decay
+ *         elif samples_since_reset <= a + d:             # <<<<<<<<<<<<<<
+ *             envelope -= (1 - s) / d
+ *         # Sustain
+ */
+  __pyx_t_3 = ((__pyx_v_samples_since_reset <= (__pyx_v_a + __pyx_v_d)) != 0);
+  if (__pyx_t_3) {
+
+    /* "aiotone/fm.pyx":76
+ *         # Decay
+ *         elif samples_since_reset <= a + d:
+ *             envelope -= (1 - s) / d             # <<<<<<<<<<<<<<
+ *         # Sustain
+ *         elif s:
+ */
+    __pyx_t_1 = (1.0 - __pyx_v_s);
+    if (unlikely(__pyx_v_d == 0)) {
+      PyErr_SetString(PyExc_ZeroDivisionError, "float division");
+      __PYX_ERR(0, 76, __pyx_L1_error)
+    }
+    __pyx_v_envelope = (__pyx_v_envelope - (__pyx_t_1 / ((double)__pyx_v_d)));
+
+    /* "aiotone/fm.pyx":75
+ *             envelope += 1 / a
+ *         # Decay
+ *         elif samples_since_reset <= a + d:             # <<<<<<<<<<<<<<
+ *             envelope -= (1 - s) / d
+ *         # Sustain
+ */
+    goto __pyx_L8;
   }
 
   /* "aiotone/fm.pyx":78
- *                 envelope = samples_since_reset / a
- *         # Decay
- *         elif samples_since_reset - a <= d and d > 0:             # <<<<<<<<<<<<<<
- *             envelope = 1.0 - (samples_since_reset - a) / d
+ *             envelope -= (1 - s) / d
+ *         # Sustain
+ *         elif s:             # <<<<<<<<<<<<<<
+ *             envelope = s
  *         # Silence
  */
-  __pyx_t_4 = (((__pyx_v_samples_since_reset - __pyx_v_a) <= __pyx_v_d) != 0);
-  if (__pyx_t_4) {
-  } else {
-    __pyx_t_3 = __pyx_t_4;
-    goto __pyx_L9_bool_binop_done;
-  }
-  __pyx_t_4 = ((__pyx_v_d > 0) != 0);
-  __pyx_t_3 = __pyx_t_4;
-  __pyx_L9_bool_binop_done:;
+  __pyx_t_3 = (__pyx_v_s != 0);
   if (__pyx_t_3) {
 
     /* "aiotone/fm.pyx":79
- *         # Decay
- *         elif samples_since_reset - a <= d and d > 0:
- *             envelope = 1.0 - (samples_since_reset - a) / d             # <<<<<<<<<<<<<<
+ *         # Sustain
+ *         elif s:
+ *             envelope = s             # <<<<<<<<<<<<<<
  *         # Silence
  *         else:
  */
-    __pyx_t_2 = (__pyx_v_samples_since_reset - __pyx_v_a);
-    if (unlikely(__pyx_v_d == 0)) {
-      PyErr_SetString(PyExc_ZeroDivisionError, "float division");
-      __PYX_ERR(0, 79, __pyx_L1_error)
-    }
-    __pyx_v_envelope = (1.0 - (((double)__pyx_t_2) / ((double)__pyx_v_d)));
+    __pyx_v_envelope = __pyx_v_s;
 
     /* "aiotone/fm.pyx":78
- *                 envelope = samples_since_reset / a
- *         # Decay
- *         elif samples_since_reset - a <= d and d > 0:             # <<<<<<<<<<<<<<
- *             envelope = 1.0 - (samples_since_reset - a) / d
+ *             envelope -= (1 - s) / d
+ *         # Sustain
+ *         elif s:             # <<<<<<<<<<<<<<
+ *             envelope = s
  *         # Silence
  */
-    goto __pyx_L4;
+    goto __pyx_L8;
   }
 
   /* "aiotone/fm.pyx":82
@@ -2662,7 +2654,7 @@ static PyObject *__pyx_pf_7aiotone_2fm_8Envelope_6advance(struct __pyx_obj_7aiot
  */
     __pyx_v_samples_since_reset = -1;
   }
-  __pyx_L4:;
+  __pyx_L8:;
 
   /* "aiotone/fm.pyx":85
  *             samples_since_reset = -1
@@ -2690,10 +2682,10 @@ static PyObject *__pyx_pf_7aiotone_2fm_8Envelope_6advance(struct __pyx_obj_7aiot
  *     def is_silent(self):
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_5 = PyFloat_FromDouble(__pyx_v_envelope); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 87, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_5);
-  __pyx_r = __pyx_t_5;
-  __pyx_t_5 = 0;
+  __pyx_t_4 = PyFloat_FromDouble(__pyx_v_envelope); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 87, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_4);
+  __pyx_r = __pyx_t_4;
+  __pyx_t_4 = 0;
   goto __pyx_L0;
 
   /* "aiotone/fm.pyx":52
@@ -2706,7 +2698,7 @@ static PyObject *__pyx_pf_7aiotone_2fm_8Envelope_6advance(struct __pyx_obj_7aiot
 
   /* function exit code */
   __pyx_L1_error:;
-  __Pyx_XDECREF(__pyx_t_5);
+  __Pyx_XDECREF(__pyx_t_4);
   __Pyx_AddTraceback("aiotone.fm.Envelope.advance", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;

@@ -52,10 +52,10 @@ cdef class Envelope:
     def advance(self):
         cdef double envelope = self.current_value
         cdef int samples_since_reset = self.samples_since_reset
-        cdef int a = self.a
+        cdef int a = self.a or 1
         cdef int d = self.d
         cdef double s = self.s
-        cdef int r = self.r
+        cdef int r = self.r or 1
 
         if samples_since_reset == -1:
             return 0.0
@@ -63,20 +63,20 @@ cdef class Envelope:
         samples_since_reset += 1
         # Release
         if self.released:
-            if envelope <= 0 or r == 0:
+            if envelope > 0:
+                envelope -= 1 / r
+            else:
                 envelope = 0.0
                 samples_since_reset = -1
-            else:
-                envelope -= 1 / r
         # Attack
         elif samples_since_reset <= a:
-            if a == 0:
-                envelope = 1.0
-            else:
-                envelope = samples_since_reset / a
+            envelope += 1 / a
         # Decay
-        elif samples_since_reset - a <= d and d > 0:
-            envelope = 1.0 - (samples_since_reset - a) / d
+        elif samples_since_reset <= a + d:
+            envelope -= (1 - s) / d
+        # Sustain
+        elif s:
+            envelope = s
         # Silence
         else:
             envelope = 0.0
