@@ -524,6 +524,9 @@ def main(config: str, make_config: bool) -> None:
 
     - efficient sample-precise ADSR envelope;
 
+    - efficient Operator implementation with sample-precise pitch, velocity, volume,
+      and modulation control (feedback not implemented yet);
+
     - dispatches MIDI IN events like NOTE_ON and NOTE_OFF events to the synthesizer.
 
     To use this yourself, you will need:

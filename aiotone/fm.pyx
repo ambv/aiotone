@@ -10,6 +10,7 @@ import array
 
 
 cpdef int16_t saturate(double value):
+    """Constrain `value` between -INT16_MAXVALUE and INT16_MAXVALUE."""
     cdef int32_t ival = <int32_t>value
     if ival > INT16_MAXVALUE:
         return INT16_MAXVALUE
@@ -19,6 +20,10 @@ cpdef int16_t saturate(double value):
 
 
 cpdef calculate_panning(double pan, array.array mono, array.array stereo, int32_t want_frames):
+    """Convert `mono` signal to `stereo` using the static `pan` ratio.
+    
+    pan = -1.0 is hard left. pan = 0.0 is center. pan = 1.0 is hard right.
+    """
     cdef int32_t i
     for i in range(want_frames):
             stereo.data.as_shorts[2 * i] = <int16_t>((-pan + 1) / 2 * mono.data.as_shorts[i])
@@ -26,6 +31,11 @@ cpdef calculate_panning(double pan, array.array mono, array.array stereo, int32_
 
 
 cdef class Envelope:
+    """A typical linear Attack-Decay-Sustain-Release envelope.
+    
+    Output in range 0.0 - 1.0.
+    """
+
     cdef int a  # in number of samples
     cdef int d  # in number of samples
     cdef double s  # 0.0 - 1.0; relative volume
@@ -53,6 +63,7 @@ cdef class Envelope:
         self.released = True
 
     cpdef advance(self):
+        """Move the envelope one sample forward and return its current floating-point value."""
         cdef double envelope = self.current_value
         cdef int samples_since_reset = self.samples_since_reset
         cdef int a = self.a or 1
@@ -94,11 +105,18 @@ cdef class Envelope:
 
 
 cdef class Operator:
+    """A Yamaha-style FM operator which is a waveform coupled with an envelope.
+
+    Generates monophonic audio with `mono_out` which can be modulated with
+    a `modulator` array input, possibly from another Operator.
+    """
+
+    # See field hints in `__init__` below.
     cdef array.array wave
-    cdef int sample_rate  # like: 44100
+    cdef int sample_rate
     cdef Envelope envelope
-    cdef double volume  # 0.0 - 1.0; relative attenuation
-    cdef double pitch  # Hz
+    cdef double volume
+    cdef double pitch
 
     # Current state of the operator, modified during `mono_out()`
     cdef double current_velocity
@@ -106,7 +124,7 @@ cdef class Operator:
 
     def __init__(
         self,
-        array.array wave,
+        array.array wave,  # "h" arrays assumed, which are signed 16-bit
         int sample_rate,  # Hz, like: 44100
         Envelope envelope,
         double volume = 1.0,  # 0.0 - 1.0; relative attenuation
@@ -129,7 +147,14 @@ cdef class Operator:
         self.envelope.release()
 
     def mono_out(self):
-        """With variable pitch and a resettable envelope."""
+        """Generate Audio, accepting other Audio for modulation purposes.
+        
+        Audio is generated with sample-precision pitch changes, and sample-precision
+        resettable envelope.
+
+        By design, the waveform is not reset until the sound is silent (passes through
+        the entire envelope).
+        """
         cdef array.array modulator
         cdef int mod_len
         cdef array.array out_buffer = array.array("h")
@@ -148,6 +173,14 @@ cdef class Operator:
 
     @cython.cdivision(True)
     cpdef modulate(self, array.array out_buffer, array.array modulator, double w_i):
+        """Fill `out_buffer` with an enveloped and attenuated chunk of `self.wave`.
+
+        The waveform is modulated by a `modulator` waveform which can be an output
+        of another Operator. By design velocity, volume, pitch, and the envelope
+        can change with sample-precision.
+
+        If you don't want modulation, use an identity `modulator` array (1-filled).
+        """
         cdef int i
         cdef int16_t mod
         cdef double mod_scaled
