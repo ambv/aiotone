@@ -973,7 +973,7 @@ struct __pyx_MemviewEnum_obj;
 struct __pyx_memoryview_obj;
 struct __pyx_memoryviewslice_obj;
 
-/* "aiotone/fm.pyx":33
+/* "aiotone/fm.pyx":40
  * 
  * 
  * cdef class Envelope:             # <<<<<<<<<<<<<<
@@ -993,7 +993,7 @@ struct __pyx_obj_7aiotone_2fm_Envelope {
 };
 
 
-/* "aiotone/fm.pyx":107
+/* "aiotone/fm.pyx":114
  * 
  * 
  * cdef class Operator:             # <<<<<<<<<<<<<<
@@ -1013,7 +1013,7 @@ struct __pyx_obj_7aiotone_2fm_Operator {
 };
 
 
-/* "aiotone/fm.pyx":149
+/* "aiotone/fm.pyx":156
  *         self.envelope.release()
  * 
  *     def mono_out(self):             # <<<<<<<<<<<<<<
@@ -1108,7 +1108,7 @@ struct __pyx_memoryviewslice_obj {
 
 
 
-/* "aiotone/fm.pyx":33
+/* "aiotone/fm.pyx":40
  * 
  * 
  * cdef class Envelope:             # <<<<<<<<<<<<<<
@@ -1123,7 +1123,7 @@ struct __pyx_vtabstruct_7aiotone_2fm_Envelope {
 static struct __pyx_vtabstruct_7aiotone_2fm_Envelope *__pyx_vtabptr_7aiotone_2fm_Envelope;
 
 
-/* "aiotone/fm.pyx":107
+/* "aiotone/fm.pyx":114
  * 
  * 
  * cdef class Operator:             # <<<<<<<<<<<<<<
@@ -2871,58 +2871,81 @@ static PyObject *__pyx_pf_7aiotone_2fm_saturate(CYTHON_UNUSED PyObject *__pyx_se
 /* "aiotone/fm.pyx":22
  * 
  * 
- * cpdef calculate_panning(double pan, array.array mono, array.array stereo, int32_t want_frames):             # <<<<<<<<<<<<<<
- *     """Convert `mono` signal to `stereo` using the static `pan` ratio.
- * 
+ * cpdef calculate_panning(             # <<<<<<<<<<<<<<
+ *     double pan,
+ *     array.array mono,
  */
 
 static PyObject *__pyx_pw_7aiotone_2fm_3calculate_panning(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
 static PyObject *__pyx_f_7aiotone_2fm_calculate_panning(double __pyx_v_pan, arrayobject *__pyx_v_mono, arrayobject *__pyx_v_stereo, int32_t __pyx_v_want_frames, CYTHON_UNUSED int __pyx_skip_dispatch) {
   int32_t __pyx_v_i;
+  short *__pyx_v_raw_mono;
+  short *__pyx_v_raw_stereo;
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
-  int32_t __pyx_t_1;
+  short *__pyx_t_1;
   int32_t __pyx_t_2;
   int32_t __pyx_t_3;
+  int32_t __pyx_t_4;
   __Pyx_RefNannySetupContext("calculate_panning", 0);
 
-  /* "aiotone/fm.pyx":28
+  /* "aiotone/fm.pyx":33
  *     """
  *     cdef int32_t i
- *     for i in range(want_frames):             # <<<<<<<<<<<<<<
- *             stereo.data.as_shorts[2 * i] = <int16_t>((-pan + 1) / 2 * mono.data.as_shorts[i])
- *             stereo.data.as_shorts[2 * i + 1] = <int16_t>((pan + 1) / 2 * mono.data.as_shorts[i])
+ *     cdef short *raw_mono = mono.data.as_shorts             # <<<<<<<<<<<<<<
+ *     cdef short *raw_stereo = stereo.data.as_shorts
+ *     for i in range(want_frames):
  */
-  __pyx_t_1 = __pyx_v_want_frames;
-  __pyx_t_2 = __pyx_t_1;
-  for (__pyx_t_3 = 0; __pyx_t_3 < __pyx_t_2; __pyx_t_3+=1) {
-    __pyx_v_i = __pyx_t_3;
+  __pyx_t_1 = __pyx_v_mono->data.as_shorts;
+  __pyx_v_raw_mono = __pyx_t_1;
 
-    /* "aiotone/fm.pyx":29
+  /* "aiotone/fm.pyx":34
  *     cdef int32_t i
+ *     cdef short *raw_mono = mono.data.as_shorts
+ *     cdef short *raw_stereo = stereo.data.as_shorts             # <<<<<<<<<<<<<<
  *     for i in range(want_frames):
- *             stereo.data.as_shorts[2 * i] = <int16_t>((-pan + 1) / 2 * mono.data.as_shorts[i])             # <<<<<<<<<<<<<<
- *             stereo.data.as_shorts[2 * i + 1] = <int16_t>((pan + 1) / 2 * mono.data.as_shorts[i])
- * 
+ *             raw_stereo[2 * i] = <int16_t>((-pan + 1) / 2 * raw_mono[i])
  */
-    (__pyx_v_stereo->data.as_shorts[(2 * __pyx_v_i)]) = ((int16_t)((((-__pyx_v_pan) + 1.0) / 2.0) * (__pyx_v_mono->data.as_shorts[__pyx_v_i])));
+  __pyx_t_1 = __pyx_v_stereo->data.as_shorts;
+  __pyx_v_raw_stereo = __pyx_t_1;
 
-    /* "aiotone/fm.pyx":30
+  /* "aiotone/fm.pyx":35
+ *     cdef short *raw_mono = mono.data.as_shorts
+ *     cdef short *raw_stereo = stereo.data.as_shorts
+ *     for i in range(want_frames):             # <<<<<<<<<<<<<<
+ *             raw_stereo[2 * i] = <int16_t>((-pan + 1) / 2 * raw_mono[i])
+ *             raw_stereo[2 * i + 1] = <int16_t>((pan + 1) / 2 * raw_mono[i])
+ */
+  __pyx_t_2 = __pyx_v_want_frames;
+  __pyx_t_3 = __pyx_t_2;
+  for (__pyx_t_4 = 0; __pyx_t_4 < __pyx_t_3; __pyx_t_4+=1) {
+    __pyx_v_i = __pyx_t_4;
+
+    /* "aiotone/fm.pyx":36
+ *     cdef short *raw_stereo = stereo.data.as_shorts
  *     for i in range(want_frames):
- *             stereo.data.as_shorts[2 * i] = <int16_t>((-pan + 1) / 2 * mono.data.as_shorts[i])
- *             stereo.data.as_shorts[2 * i + 1] = <int16_t>((pan + 1) / 2 * mono.data.as_shorts[i])             # <<<<<<<<<<<<<<
+ *             raw_stereo[2 * i] = <int16_t>((-pan + 1) / 2 * raw_mono[i])             # <<<<<<<<<<<<<<
+ *             raw_stereo[2 * i + 1] = <int16_t>((pan + 1) / 2 * raw_mono[i])
+ * 
+ */
+    (__pyx_v_raw_stereo[(2 * __pyx_v_i)]) = ((int16_t)((((-__pyx_v_pan) + 1.0) / 2.0) * (__pyx_v_raw_mono[__pyx_v_i])));
+
+    /* "aiotone/fm.pyx":37
+ *     for i in range(want_frames):
+ *             raw_stereo[2 * i] = <int16_t>((-pan + 1) / 2 * raw_mono[i])
+ *             raw_stereo[2 * i + 1] = <int16_t>((pan + 1) / 2 * raw_mono[i])             # <<<<<<<<<<<<<<
  * 
  * 
  */
-    (__pyx_v_stereo->data.as_shorts[((2 * __pyx_v_i) + 1)]) = ((int16_t)(((__pyx_v_pan + 1.0) / 2.0) * (__pyx_v_mono->data.as_shorts[__pyx_v_i])));
+    (__pyx_v_raw_stereo[((2 * __pyx_v_i) + 1)]) = ((int16_t)(((__pyx_v_pan + 1.0) / 2.0) * (__pyx_v_raw_mono[__pyx_v_i])));
   }
 
   /* "aiotone/fm.pyx":22
  * 
  * 
- * cpdef calculate_panning(double pan, array.array mono, array.array stereo, int32_t want_frames):             # <<<<<<<<<<<<<<
- *     """Convert `mono` signal to `stereo` using the static `pan` ratio.
- * 
+ * cpdef calculate_panning(             # <<<<<<<<<<<<<<
+ *     double pan,
+ *     array.array mono,
  */
 
   /* function exit code */
@@ -3000,10 +3023,10 @@ static PyObject *__pyx_pw_7aiotone_2fm_3calculate_panning(PyObject *__pyx_self, 
       values[2] = PyTuple_GET_ITEM(__pyx_args, 2);
       values[3] = PyTuple_GET_ITEM(__pyx_args, 3);
     }
-    __pyx_v_pan = __pyx_PyFloat_AsDouble(values[0]); if (unlikely((__pyx_v_pan == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 22, __pyx_L3_error)
+    __pyx_v_pan = __pyx_PyFloat_AsDouble(values[0]); if (unlikely((__pyx_v_pan == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 23, __pyx_L3_error)
     __pyx_v_mono = ((arrayobject *)values[1]);
     __pyx_v_stereo = ((arrayobject *)values[2]);
-    __pyx_v_want_frames = __Pyx_PyInt_As_int32_t(values[3]); if (unlikely((__pyx_v_want_frames == ((int32_t)-1)) && PyErr_Occurred())) __PYX_ERR(0, 22, __pyx_L3_error)
+    __pyx_v_want_frames = __Pyx_PyInt_As_int32_t(values[3]); if (unlikely((__pyx_v_want_frames == ((int32_t)-1)) && PyErr_Occurred())) __PYX_ERR(0, 26, __pyx_L3_error)
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
@@ -3013,8 +3036,8 @@ static PyObject *__pyx_pw_7aiotone_2fm_3calculate_panning(PyObject *__pyx_self, 
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_mono), __pyx_ptype_7cpython_5array_array, 1, "mono", 0))) __PYX_ERR(0, 22, __pyx_L1_error)
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_stereo), __pyx_ptype_7cpython_5array_array, 1, "stereo", 0))) __PYX_ERR(0, 22, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_mono), __pyx_ptype_7cpython_5array_array, 1, "mono", 0))) __PYX_ERR(0, 24, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_stereo), __pyx_ptype_7cpython_5array_array, 1, "stereo", 0))) __PYX_ERR(0, 25, __pyx_L1_error)
   __pyx_r = __pyx_pf_7aiotone_2fm_2calculate_panning(__pyx_self, __pyx_v_pan, __pyx_v_mono, __pyx_v_stereo, __pyx_v_want_frames);
 
   /* function exit code */
@@ -3052,7 +3075,7 @@ static PyObject *__pyx_pf_7aiotone_2fm_2calculate_panning(CYTHON_UNUSED PyObject
   return __pyx_r;
 }
 
-/* "aiotone/fm.pyx":48
+/* "aiotone/fm.pyx":55
  *     cdef double current_value
  * 
  *     def __init__(self, int a, int d, double s, int r):             # <<<<<<<<<<<<<<
@@ -3100,23 +3123,23 @@ static int __pyx_pw_7aiotone_2fm_8Envelope_1__init__(PyObject *__pyx_v_self, PyO
         case  1:
         if (likely((values[1] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_d)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("__init__", 1, 4, 4, 1); __PYX_ERR(0, 48, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("__init__", 1, 4, 4, 1); __PYX_ERR(0, 55, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  2:
         if (likely((values[2] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_s)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("__init__", 1, 4, 4, 2); __PYX_ERR(0, 48, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("__init__", 1, 4, 4, 2); __PYX_ERR(0, 55, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  3:
         if (likely((values[3] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_r)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("__init__", 1, 4, 4, 3); __PYX_ERR(0, 48, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("__init__", 1, 4, 4, 3); __PYX_ERR(0, 55, __pyx_L3_error)
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "__init__") < 0)) __PYX_ERR(0, 48, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "__init__") < 0)) __PYX_ERR(0, 55, __pyx_L3_error)
       }
     } else if (PyTuple_GET_SIZE(__pyx_args) != 4) {
       goto __pyx_L5_argtuple_error;
@@ -3126,14 +3149,14 @@ static int __pyx_pw_7aiotone_2fm_8Envelope_1__init__(PyObject *__pyx_v_self, PyO
       values[2] = PyTuple_GET_ITEM(__pyx_args, 2);
       values[3] = PyTuple_GET_ITEM(__pyx_args, 3);
     }
-    __pyx_v_a = __Pyx_PyInt_As_int(values[0]); if (unlikely((__pyx_v_a == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 48, __pyx_L3_error)
-    __pyx_v_d = __Pyx_PyInt_As_int(values[1]); if (unlikely((__pyx_v_d == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 48, __pyx_L3_error)
-    __pyx_v_s = __pyx_PyFloat_AsDouble(values[2]); if (unlikely((__pyx_v_s == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 48, __pyx_L3_error)
-    __pyx_v_r = __Pyx_PyInt_As_int(values[3]); if (unlikely((__pyx_v_r == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 48, __pyx_L3_error)
+    __pyx_v_a = __Pyx_PyInt_As_int(values[0]); if (unlikely((__pyx_v_a == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 55, __pyx_L3_error)
+    __pyx_v_d = __Pyx_PyInt_As_int(values[1]); if (unlikely((__pyx_v_d == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 55, __pyx_L3_error)
+    __pyx_v_s = __pyx_PyFloat_AsDouble(values[2]); if (unlikely((__pyx_v_s == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 55, __pyx_L3_error)
+    __pyx_v_r = __Pyx_PyInt_As_int(values[3]); if (unlikely((__pyx_v_r == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 55, __pyx_L3_error)
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("__init__", 1, 4, 4, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 48, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("__init__", 1, 4, 4, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 55, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("aiotone.fm.Envelope.__init__", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
@@ -3151,7 +3174,7 @@ static int __pyx_pf_7aiotone_2fm_8Envelope___init__(struct __pyx_obj_7aiotone_2f
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__init__", 0);
 
-  /* "aiotone/fm.pyx":49
+  /* "aiotone/fm.pyx":56
  * 
  *     def __init__(self, int a, int d, double s, int r):
  *         self.a = a             # <<<<<<<<<<<<<<
@@ -3160,7 +3183,7 @@ static int __pyx_pf_7aiotone_2fm_8Envelope___init__(struct __pyx_obj_7aiotone_2f
  */
   __pyx_v_self->a = __pyx_v_a;
 
-  /* "aiotone/fm.pyx":50
+  /* "aiotone/fm.pyx":57
  *     def __init__(self, int a, int d, double s, int r):
  *         self.a = a
  *         self.d = d             # <<<<<<<<<<<<<<
@@ -3169,7 +3192,7 @@ static int __pyx_pf_7aiotone_2fm_8Envelope___init__(struct __pyx_obj_7aiotone_2f
  */
   __pyx_v_self->d = __pyx_v_d;
 
-  /* "aiotone/fm.pyx":51
+  /* "aiotone/fm.pyx":58
  *         self.a = a
  *         self.d = d
  *         self.s = s             # <<<<<<<<<<<<<<
@@ -3178,7 +3201,7 @@ static int __pyx_pf_7aiotone_2fm_8Envelope___init__(struct __pyx_obj_7aiotone_2f
  */
   __pyx_v_self->s = __pyx_v_s;
 
-  /* "aiotone/fm.pyx":52
+  /* "aiotone/fm.pyx":59
  *         self.d = d
  *         self.s = s
  *         self.r = r             # <<<<<<<<<<<<<<
@@ -3187,7 +3210,7 @@ static int __pyx_pf_7aiotone_2fm_8Envelope___init__(struct __pyx_obj_7aiotone_2f
  */
   __pyx_v_self->r = __pyx_v_r;
 
-  /* "aiotone/fm.pyx":53
+  /* "aiotone/fm.pyx":60
  *         self.s = s
  *         self.r = r
  *         self.released = False             # <<<<<<<<<<<<<<
@@ -3196,7 +3219,7 @@ static int __pyx_pf_7aiotone_2fm_8Envelope___init__(struct __pyx_obj_7aiotone_2f
  */
   __pyx_v_self->released = 0;
 
-  /* "aiotone/fm.pyx":54
+  /* "aiotone/fm.pyx":61
  *         self.r = r
  *         self.released = False
  *         self.samples_since_reset = -1  # not flowing             # <<<<<<<<<<<<<<
@@ -3205,7 +3228,7 @@ static int __pyx_pf_7aiotone_2fm_8Envelope___init__(struct __pyx_obj_7aiotone_2f
  */
   __pyx_v_self->samples_since_reset = -1;
 
-  /* "aiotone/fm.pyx":55
+  /* "aiotone/fm.pyx":62
  *         self.released = False
  *         self.samples_since_reset = -1  # not flowing
  *         self.current_value = 0.0             # <<<<<<<<<<<<<<
@@ -3214,7 +3237,7 @@ static int __pyx_pf_7aiotone_2fm_8Envelope___init__(struct __pyx_obj_7aiotone_2f
  */
   __pyx_v_self->current_value = 0.0;
 
-  /* "aiotone/fm.pyx":48
+  /* "aiotone/fm.pyx":55
  *     cdef double current_value
  * 
  *     def __init__(self, int a, int d, double s, int r):             # <<<<<<<<<<<<<<
@@ -3228,7 +3251,7 @@ static int __pyx_pf_7aiotone_2fm_8Envelope___init__(struct __pyx_obj_7aiotone_2f
   return __pyx_r;
 }
 
-/* "aiotone/fm.pyx":57
+/* "aiotone/fm.pyx":64
  *         self.current_value = 0.0
  * 
  *     def reset(self):             # <<<<<<<<<<<<<<
@@ -3255,7 +3278,7 @@ static PyObject *__pyx_pf_7aiotone_2fm_8Envelope_2reset(struct __pyx_obj_7aioton
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("reset", 0);
 
-  /* "aiotone/fm.pyx":58
+  /* "aiotone/fm.pyx":65
  * 
  *     def reset(self):
  *         self.released = False             # <<<<<<<<<<<<<<
@@ -3264,7 +3287,7 @@ static PyObject *__pyx_pf_7aiotone_2fm_8Envelope_2reset(struct __pyx_obj_7aioton
  */
   __pyx_v_self->released = 0;
 
-  /* "aiotone/fm.pyx":59
+  /* "aiotone/fm.pyx":66
  *     def reset(self):
  *         self.released = False
  *         self.samples_since_reset = 0             # <<<<<<<<<<<<<<
@@ -3273,7 +3296,7 @@ static PyObject *__pyx_pf_7aiotone_2fm_8Envelope_2reset(struct __pyx_obj_7aioton
  */
   __pyx_v_self->samples_since_reset = 0;
 
-  /* "aiotone/fm.pyx":60
+  /* "aiotone/fm.pyx":67
  *         self.released = False
  *         self.samples_since_reset = 0
  *         self.current_value = 0.0             # <<<<<<<<<<<<<<
@@ -3282,7 +3305,7 @@ static PyObject *__pyx_pf_7aiotone_2fm_8Envelope_2reset(struct __pyx_obj_7aioton
  */
   __pyx_v_self->current_value = 0.0;
 
-  /* "aiotone/fm.pyx":57
+  /* "aiotone/fm.pyx":64
  *         self.current_value = 0.0
  * 
  *     def reset(self):             # <<<<<<<<<<<<<<
@@ -3297,7 +3320,7 @@ static PyObject *__pyx_pf_7aiotone_2fm_8Envelope_2reset(struct __pyx_obj_7aioton
   return __pyx_r;
 }
 
-/* "aiotone/fm.pyx":62
+/* "aiotone/fm.pyx":69
  *         self.current_value = 0.0
  * 
  *     def release(self):             # <<<<<<<<<<<<<<
@@ -3324,7 +3347,7 @@ static PyObject *__pyx_pf_7aiotone_2fm_8Envelope_4release(struct __pyx_obj_7aiot
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("release", 0);
 
-  /* "aiotone/fm.pyx":63
+  /* "aiotone/fm.pyx":70
  * 
  *     def release(self):
  *         self.released = True             # <<<<<<<<<<<<<<
@@ -3333,7 +3356,7 @@ static PyObject *__pyx_pf_7aiotone_2fm_8Envelope_4release(struct __pyx_obj_7aiot
  */
   __pyx_v_self->released = 1;
 
-  /* "aiotone/fm.pyx":62
+  /* "aiotone/fm.pyx":69
  *         self.current_value = 0.0
  * 
  *     def release(self):             # <<<<<<<<<<<<<<
@@ -3348,11 +3371,11 @@ static PyObject *__pyx_pf_7aiotone_2fm_8Envelope_4release(struct __pyx_obj_7aiot
   return __pyx_r;
 }
 
-/* "aiotone/fm.pyx":65
+/* "aiotone/fm.pyx":72
  *         self.released = True
  * 
  *     cpdef advance(self):             # <<<<<<<<<<<<<<
- *         """Move the envelope one sample forward and return its current floating-point value."""
+ *         """Move the envelope one sample forward and return its current fp value."""
  *         cdef double envelope = self.current_value
  */
 
@@ -3386,7 +3409,7 @@ static PyObject *__pyx_f_7aiotone_2fm_8Envelope_advance(struct __pyx_obj_7aioton
     if (unlikely(!__Pyx_object_dict_version_matches(((PyObject *)__pyx_v_self), __pyx_tp_dict_version, __pyx_obj_dict_version))) {
       PY_UINT64_T __pyx_type_dict_guard = __Pyx_get_tp_dict_version(((PyObject *)__pyx_v_self));
       #endif
-      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_advance); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 65, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_advance); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 72, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       if (!PyCFunction_Check(__pyx_t_1) || (PyCFunction_GET_FUNCTION(__pyx_t_1) != (PyCFunction)(void*)__pyx_pw_7aiotone_2fm_8Envelope_7advance)) {
         __Pyx_XDECREF(__pyx_r);
@@ -3403,7 +3426,7 @@ static PyObject *__pyx_f_7aiotone_2fm_8Envelope_advance(struct __pyx_obj_7aioton
         }
         __pyx_t_2 = (__pyx_t_4) ? __Pyx_PyObject_CallOneArg(__pyx_t_3, __pyx_t_4) : __Pyx_PyObject_CallNoArg(__pyx_t_3);
         __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
-        if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 65, __pyx_L1_error)
+        if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 72, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_2);
         __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
         __pyx_r = __pyx_t_2;
@@ -3424,9 +3447,9 @@ static PyObject *__pyx_f_7aiotone_2fm_8Envelope_advance(struct __pyx_obj_7aioton
     #endif
   }
 
-  /* "aiotone/fm.pyx":67
+  /* "aiotone/fm.pyx":74
  *     cpdef advance(self):
- *         """Move the envelope one sample forward and return its current floating-point value."""
+ *         """Move the envelope one sample forward and return its current fp value."""
  *         cdef double envelope = self.current_value             # <<<<<<<<<<<<<<
  *         cdef int samples_since_reset = self.samples_since_reset
  *         cdef int a = self.a or 1
@@ -3434,8 +3457,8 @@ static PyObject *__pyx_f_7aiotone_2fm_8Envelope_advance(struct __pyx_obj_7aioton
   __pyx_t_5 = __pyx_v_self->current_value;
   __pyx_v_envelope = __pyx_t_5;
 
-  /* "aiotone/fm.pyx":68
- *         """Move the envelope one sample forward and return its current floating-point value."""
+  /* "aiotone/fm.pyx":75
+ *         """Move the envelope one sample forward and return its current fp value."""
  *         cdef double envelope = self.current_value
  *         cdef int samples_since_reset = self.samples_since_reset             # <<<<<<<<<<<<<<
  *         cdef int a = self.a or 1
@@ -3444,7 +3467,7 @@ static PyObject *__pyx_f_7aiotone_2fm_8Envelope_advance(struct __pyx_obj_7aioton
   __pyx_t_6 = __pyx_v_self->samples_since_reset;
   __pyx_v_samples_since_reset = __pyx_t_6;
 
-  /* "aiotone/fm.pyx":69
+  /* "aiotone/fm.pyx":76
  *         cdef double envelope = self.current_value
  *         cdef int samples_since_reset = self.samples_since_reset
  *         cdef int a = self.a or 1             # <<<<<<<<<<<<<<
@@ -3460,7 +3483,7 @@ static PyObject *__pyx_f_7aiotone_2fm_8Envelope_advance(struct __pyx_obj_7aioton
   __pyx_L3_bool_binop_done:;
   __pyx_v_a = __pyx_t_6;
 
-  /* "aiotone/fm.pyx":70
+  /* "aiotone/fm.pyx":77
  *         cdef int samples_since_reset = self.samples_since_reset
  *         cdef int a = self.a or 1
  *         cdef int d = self.d             # <<<<<<<<<<<<<<
@@ -3470,7 +3493,7 @@ static PyObject *__pyx_f_7aiotone_2fm_8Envelope_advance(struct __pyx_obj_7aioton
   __pyx_t_6 = __pyx_v_self->d;
   __pyx_v_d = __pyx_t_6;
 
-  /* "aiotone/fm.pyx":71
+  /* "aiotone/fm.pyx":78
  *         cdef int a = self.a or 1
  *         cdef int d = self.d
  *         cdef double s = self.s             # <<<<<<<<<<<<<<
@@ -3480,7 +3503,7 @@ static PyObject *__pyx_f_7aiotone_2fm_8Envelope_advance(struct __pyx_obj_7aioton
   __pyx_t_5 = __pyx_v_self->s;
   __pyx_v_s = __pyx_t_5;
 
-  /* "aiotone/fm.pyx":72
+  /* "aiotone/fm.pyx":79
  *         cdef int d = self.d
  *         cdef double s = self.s
  *         cdef int r = self.r or 1             # <<<<<<<<<<<<<<
@@ -3496,7 +3519,7 @@ static PyObject *__pyx_f_7aiotone_2fm_8Envelope_advance(struct __pyx_obj_7aioton
   __pyx_L5_bool_binop_done:;
   __pyx_v_r = __pyx_t_6;
 
-  /* "aiotone/fm.pyx":74
+  /* "aiotone/fm.pyx":81
  *         cdef int r = self.r or 1
  * 
  *         if samples_since_reset == -1:             # <<<<<<<<<<<<<<
@@ -3506,7 +3529,7 @@ static PyObject *__pyx_f_7aiotone_2fm_8Envelope_advance(struct __pyx_obj_7aioton
   __pyx_t_7 = ((__pyx_v_samples_since_reset == -1L) != 0);
   if (__pyx_t_7) {
 
-    /* "aiotone/fm.pyx":75
+    /* "aiotone/fm.pyx":82
  * 
  *         if samples_since_reset == -1:
  *             return 0.0             # <<<<<<<<<<<<<<
@@ -3518,7 +3541,7 @@ static PyObject *__pyx_f_7aiotone_2fm_8Envelope_advance(struct __pyx_obj_7aioton
     __pyx_r = __pyx_float_0_0;
     goto __pyx_L0;
 
-    /* "aiotone/fm.pyx":74
+    /* "aiotone/fm.pyx":81
  *         cdef int r = self.r or 1
  * 
  *         if samples_since_reset == -1:             # <<<<<<<<<<<<<<
@@ -3527,7 +3550,7 @@ static PyObject *__pyx_f_7aiotone_2fm_8Envelope_advance(struct __pyx_obj_7aioton
  */
   }
 
-  /* "aiotone/fm.pyx":77
+  /* "aiotone/fm.pyx":84
  *             return 0.0
  * 
  *         samples_since_reset += 1             # <<<<<<<<<<<<<<
@@ -3536,7 +3559,7 @@ static PyObject *__pyx_f_7aiotone_2fm_8Envelope_advance(struct __pyx_obj_7aioton
  */
   __pyx_v_samples_since_reset = (__pyx_v_samples_since_reset + 1);
 
-  /* "aiotone/fm.pyx":79
+  /* "aiotone/fm.pyx":86
  *         samples_since_reset += 1
  *         # Release
  *         if self.released:             # <<<<<<<<<<<<<<
@@ -3546,7 +3569,7 @@ static PyObject *__pyx_f_7aiotone_2fm_8Envelope_advance(struct __pyx_obj_7aioton
   __pyx_t_7 = (__pyx_v_self->released != 0);
   if (__pyx_t_7) {
 
-    /* "aiotone/fm.pyx":80
+    /* "aiotone/fm.pyx":87
  *         # Release
  *         if self.released:
  *             if envelope > 0:             # <<<<<<<<<<<<<<
@@ -3556,7 +3579,7 @@ static PyObject *__pyx_f_7aiotone_2fm_8Envelope_advance(struct __pyx_obj_7aioton
     __pyx_t_7 = ((__pyx_v_envelope > 0.0) != 0);
     if (__pyx_t_7) {
 
-      /* "aiotone/fm.pyx":81
+      /* "aiotone/fm.pyx":88
  *         if self.released:
  *             if envelope > 0:
  *                 envelope -= 1 / r             # <<<<<<<<<<<<<<
@@ -3565,11 +3588,11 @@ static PyObject *__pyx_f_7aiotone_2fm_8Envelope_advance(struct __pyx_obj_7aioton
  */
       if (unlikely(__pyx_v_r == 0)) {
         PyErr_SetString(PyExc_ZeroDivisionError, "float division");
-        __PYX_ERR(0, 81, __pyx_L1_error)
+        __PYX_ERR(0, 88, __pyx_L1_error)
       }
       __pyx_v_envelope = (__pyx_v_envelope - (1.0 / ((double)__pyx_v_r)));
 
-      /* "aiotone/fm.pyx":80
+      /* "aiotone/fm.pyx":87
  *         # Release
  *         if self.released:
  *             if envelope > 0:             # <<<<<<<<<<<<<<
@@ -3579,7 +3602,7 @@ static PyObject *__pyx_f_7aiotone_2fm_8Envelope_advance(struct __pyx_obj_7aioton
       goto __pyx_L9;
     }
 
-    /* "aiotone/fm.pyx":83
+    /* "aiotone/fm.pyx":90
  *                 envelope -= 1 / r
  *             else:
  *                 envelope = 0.0             # <<<<<<<<<<<<<<
@@ -3589,7 +3612,7 @@ static PyObject *__pyx_f_7aiotone_2fm_8Envelope_advance(struct __pyx_obj_7aioton
     /*else*/ {
       __pyx_v_envelope = 0.0;
 
-      /* "aiotone/fm.pyx":84
+      /* "aiotone/fm.pyx":91
  *             else:
  *                 envelope = 0.0
  *                 samples_since_reset = -1             # <<<<<<<<<<<<<<
@@ -3600,7 +3623,7 @@ static PyObject *__pyx_f_7aiotone_2fm_8Envelope_advance(struct __pyx_obj_7aioton
     }
     __pyx_L9:;
 
-    /* "aiotone/fm.pyx":79
+    /* "aiotone/fm.pyx":86
  *         samples_since_reset += 1
  *         # Release
  *         if self.released:             # <<<<<<<<<<<<<<
@@ -3610,7 +3633,7 @@ static PyObject *__pyx_f_7aiotone_2fm_8Envelope_advance(struct __pyx_obj_7aioton
     goto __pyx_L8;
   }
 
-  /* "aiotone/fm.pyx":86
+  /* "aiotone/fm.pyx":93
  *                 samples_since_reset = -1
  *         # Attack
  *         elif samples_since_reset <= a:             # <<<<<<<<<<<<<<
@@ -3620,7 +3643,7 @@ static PyObject *__pyx_f_7aiotone_2fm_8Envelope_advance(struct __pyx_obj_7aioton
   __pyx_t_7 = ((__pyx_v_samples_since_reset <= __pyx_v_a) != 0);
   if (__pyx_t_7) {
 
-    /* "aiotone/fm.pyx":87
+    /* "aiotone/fm.pyx":94
  *         # Attack
  *         elif samples_since_reset <= a:
  *             envelope += 1 / a             # <<<<<<<<<<<<<<
@@ -3629,11 +3652,11 @@ static PyObject *__pyx_f_7aiotone_2fm_8Envelope_advance(struct __pyx_obj_7aioton
  */
     if (unlikely(__pyx_v_a == 0)) {
       PyErr_SetString(PyExc_ZeroDivisionError, "float division");
-      __PYX_ERR(0, 87, __pyx_L1_error)
+      __PYX_ERR(0, 94, __pyx_L1_error)
     }
     __pyx_v_envelope = (__pyx_v_envelope + (1.0 / ((double)__pyx_v_a)));
 
-    /* "aiotone/fm.pyx":86
+    /* "aiotone/fm.pyx":93
  *                 samples_since_reset = -1
  *         # Attack
  *         elif samples_since_reset <= a:             # <<<<<<<<<<<<<<
@@ -3643,7 +3666,7 @@ static PyObject *__pyx_f_7aiotone_2fm_8Envelope_advance(struct __pyx_obj_7aioton
     goto __pyx_L8;
   }
 
-  /* "aiotone/fm.pyx":89
+  /* "aiotone/fm.pyx":96
  *             envelope += 1 / a
  *         # Decay
  *         elif samples_since_reset <= a + d:             # <<<<<<<<<<<<<<
@@ -3653,7 +3676,7 @@ static PyObject *__pyx_f_7aiotone_2fm_8Envelope_advance(struct __pyx_obj_7aioton
   __pyx_t_7 = ((__pyx_v_samples_since_reset <= (__pyx_v_a + __pyx_v_d)) != 0);
   if (__pyx_t_7) {
 
-    /* "aiotone/fm.pyx":90
+    /* "aiotone/fm.pyx":97
  *         # Decay
  *         elif samples_since_reset <= a + d:
  *             envelope -= (1 - s) / d             # <<<<<<<<<<<<<<
@@ -3663,11 +3686,11 @@ static PyObject *__pyx_f_7aiotone_2fm_8Envelope_advance(struct __pyx_obj_7aioton
     __pyx_t_5 = (1.0 - __pyx_v_s);
     if (unlikely(__pyx_v_d == 0)) {
       PyErr_SetString(PyExc_ZeroDivisionError, "float division");
-      __PYX_ERR(0, 90, __pyx_L1_error)
+      __PYX_ERR(0, 97, __pyx_L1_error)
     }
     __pyx_v_envelope = (__pyx_v_envelope - (__pyx_t_5 / ((double)__pyx_v_d)));
 
-    /* "aiotone/fm.pyx":89
+    /* "aiotone/fm.pyx":96
  *             envelope += 1 / a
  *         # Decay
  *         elif samples_since_reset <= a + d:             # <<<<<<<<<<<<<<
@@ -3677,7 +3700,7 @@ static PyObject *__pyx_f_7aiotone_2fm_8Envelope_advance(struct __pyx_obj_7aioton
     goto __pyx_L8;
   }
 
-  /* "aiotone/fm.pyx":92
+  /* "aiotone/fm.pyx":99
  *             envelope -= (1 - s) / d
  *         # Sustain
  *         elif s:             # <<<<<<<<<<<<<<
@@ -3687,7 +3710,7 @@ static PyObject *__pyx_f_7aiotone_2fm_8Envelope_advance(struct __pyx_obj_7aioton
   __pyx_t_7 = (__pyx_v_s != 0);
   if (__pyx_t_7) {
 
-    /* "aiotone/fm.pyx":93
+    /* "aiotone/fm.pyx":100
  *         # Sustain
  *         elif s:
  *             envelope = s             # <<<<<<<<<<<<<<
@@ -3696,7 +3719,7 @@ static PyObject *__pyx_f_7aiotone_2fm_8Envelope_advance(struct __pyx_obj_7aioton
  */
     __pyx_v_envelope = __pyx_v_s;
 
-    /* "aiotone/fm.pyx":92
+    /* "aiotone/fm.pyx":99
  *             envelope -= (1 - s) / d
  *         # Sustain
  *         elif s:             # <<<<<<<<<<<<<<
@@ -3706,7 +3729,7 @@ static PyObject *__pyx_f_7aiotone_2fm_8Envelope_advance(struct __pyx_obj_7aioton
     goto __pyx_L8;
   }
 
-  /* "aiotone/fm.pyx":96
+  /* "aiotone/fm.pyx":103
  *         # Silence
  *         else:
  *             envelope = 0.0             # <<<<<<<<<<<<<<
@@ -3716,7 +3739,7 @@ static PyObject *__pyx_f_7aiotone_2fm_8Envelope_advance(struct __pyx_obj_7aioton
   /*else*/ {
     __pyx_v_envelope = 0.0;
 
-    /* "aiotone/fm.pyx":97
+    /* "aiotone/fm.pyx":104
  *         else:
  *             envelope = 0.0
  *             samples_since_reset = -1             # <<<<<<<<<<<<<<
@@ -3727,7 +3750,7 @@ static PyObject *__pyx_f_7aiotone_2fm_8Envelope_advance(struct __pyx_obj_7aioton
   }
   __pyx_L8:;
 
-  /* "aiotone/fm.pyx":99
+  /* "aiotone/fm.pyx":106
  *             samples_since_reset = -1
  * 
  *         self.samples_since_reset = samples_since_reset             # <<<<<<<<<<<<<<
@@ -3736,7 +3759,7 @@ static PyObject *__pyx_f_7aiotone_2fm_8Envelope_advance(struct __pyx_obj_7aioton
  */
   __pyx_v_self->samples_since_reset = __pyx_v_samples_since_reset;
 
-  /* "aiotone/fm.pyx":100
+  /* "aiotone/fm.pyx":107
  * 
  *         self.samples_since_reset = samples_since_reset
  *         self.current_value = envelope             # <<<<<<<<<<<<<<
@@ -3745,7 +3768,7 @@ static PyObject *__pyx_f_7aiotone_2fm_8Envelope_advance(struct __pyx_obj_7aioton
  */
   __pyx_v_self->current_value = __pyx_v_envelope;
 
-  /* "aiotone/fm.pyx":101
+  /* "aiotone/fm.pyx":108
  *         self.samples_since_reset = samples_since_reset
  *         self.current_value = envelope
  *         return envelope             # <<<<<<<<<<<<<<
@@ -3753,17 +3776,17 @@ static PyObject *__pyx_f_7aiotone_2fm_8Envelope_advance(struct __pyx_obj_7aioton
  *     cpdef is_silent(self):
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = PyFloat_FromDouble(__pyx_v_envelope); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 101, __pyx_L1_error)
+  __pyx_t_1 = PyFloat_FromDouble(__pyx_v_envelope); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 108, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "aiotone/fm.pyx":65
+  /* "aiotone/fm.pyx":72
  *         self.released = True
  * 
  *     cpdef advance(self):             # <<<<<<<<<<<<<<
- *         """Move the envelope one sample forward and return its current floating-point value."""
+ *         """Move the envelope one sample forward and return its current fp value."""
  *         cdef double envelope = self.current_value
  */
 
@@ -3783,7 +3806,7 @@ static PyObject *__pyx_f_7aiotone_2fm_8Envelope_advance(struct __pyx_obj_7aioton
 
 /* Python wrapper */
 static PyObject *__pyx_pw_7aiotone_2fm_8Envelope_7advance(PyObject *__pyx_v_self, CYTHON_UNUSED PyObject *unused); /*proto*/
-static char __pyx_doc_7aiotone_2fm_8Envelope_6advance[] = "Move the envelope one sample forward and return its current floating-point value.";
+static char __pyx_doc_7aiotone_2fm_8Envelope_6advance[] = "Move the envelope one sample forward and return its current fp value.";
 static PyMethodDef __pyx_mdef_7aiotone_2fm_8Envelope_7advance = {"advance", (PyCFunction)__pyx_pw_7aiotone_2fm_8Envelope_7advance, METH_NOARGS, __pyx_doc_7aiotone_2fm_8Envelope_6advance};
 static PyObject *__pyx_pw_7aiotone_2fm_8Envelope_7advance(PyObject *__pyx_v_self, CYTHON_UNUSED PyObject *unused) {
   PyObject *__pyx_r = 0;
@@ -3805,7 +3828,7 @@ static PyObject *__pyx_pf_7aiotone_2fm_8Envelope_6advance(struct __pyx_obj_7aiot
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("advance", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __pyx_f_7aiotone_2fm_8Envelope_advance(__pyx_v_self, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 65, __pyx_L1_error)
+  __pyx_t_1 = __pyx_f_7aiotone_2fm_8Envelope_advance(__pyx_v_self, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 72, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -3822,7 +3845,7 @@ static PyObject *__pyx_pf_7aiotone_2fm_8Envelope_6advance(struct __pyx_obj_7aiot
   return __pyx_r;
 }
 
-/* "aiotone/fm.pyx":103
+/* "aiotone/fm.pyx":110
  *         return envelope
  * 
  *     cpdef is_silent(self):             # <<<<<<<<<<<<<<
@@ -3852,7 +3875,7 @@ static PyObject *__pyx_f_7aiotone_2fm_8Envelope_is_silent(struct __pyx_obj_7aiot
     if (unlikely(!__Pyx_object_dict_version_matches(((PyObject *)__pyx_v_self), __pyx_tp_dict_version, __pyx_obj_dict_version))) {
       PY_UINT64_T __pyx_type_dict_guard = __Pyx_get_tp_dict_version(((PyObject *)__pyx_v_self));
       #endif
-      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_is_silent); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 103, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_is_silent); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 110, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       if (!PyCFunction_Check(__pyx_t_1) || (PyCFunction_GET_FUNCTION(__pyx_t_1) != (PyCFunction)(void*)__pyx_pw_7aiotone_2fm_8Envelope_9is_silent)) {
         __Pyx_XDECREF(__pyx_r);
@@ -3869,7 +3892,7 @@ static PyObject *__pyx_f_7aiotone_2fm_8Envelope_is_silent(struct __pyx_obj_7aiot
         }
         __pyx_t_2 = (__pyx_t_4) ? __Pyx_PyObject_CallOneArg(__pyx_t_3, __pyx_t_4) : __Pyx_PyObject_CallNoArg(__pyx_t_3);
         __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
-        if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 103, __pyx_L1_error)
+        if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 110, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_2);
         __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
         __pyx_r = __pyx_t_2;
@@ -3890,7 +3913,7 @@ static PyObject *__pyx_f_7aiotone_2fm_8Envelope_is_silent(struct __pyx_obj_7aiot
     #endif
   }
 
-  /* "aiotone/fm.pyx":104
+  /* "aiotone/fm.pyx":111
  * 
  *     cpdef is_silent(self):
  *         return self.samples_since_reset < 0 and self.current_value == 0             # <<<<<<<<<<<<<<
@@ -3901,14 +3924,14 @@ static PyObject *__pyx_f_7aiotone_2fm_8Envelope_is_silent(struct __pyx_obj_7aiot
   __pyx_t_5 = (__pyx_v_self->samples_since_reset < 0);
   if (__pyx_t_5) {
   } else {
-    __pyx_t_2 = __Pyx_PyBool_FromLong(__pyx_t_5); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 104, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyBool_FromLong(__pyx_t_5); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 111, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __pyx_t_1 = __pyx_t_2;
     __pyx_t_2 = 0;
     goto __pyx_L3_bool_binop_done;
   }
   __pyx_t_5 = (__pyx_v_self->current_value == 0.0);
-  __pyx_t_2 = __Pyx_PyBool_FromLong(__pyx_t_5); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 104, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyBool_FromLong(__pyx_t_5); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 111, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __pyx_t_1 = __pyx_t_2;
   __pyx_t_2 = 0;
@@ -3917,7 +3940,7 @@ static PyObject *__pyx_f_7aiotone_2fm_8Envelope_is_silent(struct __pyx_obj_7aiot
   __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "aiotone/fm.pyx":103
+  /* "aiotone/fm.pyx":110
  *         return envelope
  * 
  *     cpdef is_silent(self):             # <<<<<<<<<<<<<<
@@ -3962,7 +3985,7 @@ static PyObject *__pyx_pf_7aiotone_2fm_8Envelope_8is_silent(struct __pyx_obj_7ai
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("is_silent", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __pyx_f_7aiotone_2fm_8Envelope_is_silent(__pyx_v_self, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 103, __pyx_L1_error)
+  __pyx_t_1 = __pyx_f_7aiotone_2fm_8Envelope_is_silent(__pyx_v_self, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 110, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -4315,7 +4338,7 @@ static PyObject *__pyx_pf_7aiotone_2fm_8Envelope_12__setstate_cython__(struct __
   return __pyx_r;
 }
 
-/* "aiotone/fm.pyx":125
+/* "aiotone/fm.pyx":132
  *     cdef bint reset
  * 
  *     def __init__(             # <<<<<<<<<<<<<<
@@ -4366,13 +4389,13 @@ static int __pyx_pw_7aiotone_2fm_8Operator_1__init__(PyObject *__pyx_v_self, PyO
         case  1:
         if (likely((values[1] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_sample_rate)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("__init__", 0, 3, 5, 1); __PYX_ERR(0, 125, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("__init__", 0, 3, 5, 1); __PYX_ERR(0, 132, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  2:
         if (likely((values[2] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_envelope)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("__init__", 0, 3, 5, 2); __PYX_ERR(0, 125, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("__init__", 0, 3, 5, 2); __PYX_ERR(0, 132, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  3:
@@ -4388,7 +4411,7 @@ static int __pyx_pw_7aiotone_2fm_8Operator_1__init__(PyObject *__pyx_v_self, PyO
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "__init__") < 0)) __PYX_ERR(0, 125, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "__init__") < 0)) __PYX_ERR(0, 132, __pyx_L3_error)
       }
     } else {
       switch (PyTuple_GET_SIZE(__pyx_args)) {
@@ -4404,29 +4427,29 @@ static int __pyx_pw_7aiotone_2fm_8Operator_1__init__(PyObject *__pyx_v_self, PyO
       }
     }
     __pyx_v_wave = ((arrayobject *)values[0]);
-    __pyx_v_sample_rate = __Pyx_PyInt_As_int(values[1]); if (unlikely((__pyx_v_sample_rate == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 128, __pyx_L3_error)
+    __pyx_v_sample_rate = __Pyx_PyInt_As_int(values[1]); if (unlikely((__pyx_v_sample_rate == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 135, __pyx_L3_error)
     __pyx_v_envelope = ((struct __pyx_obj_7aiotone_2fm_Envelope *)values[2]);
     if (values[3]) {
-      __pyx_v_volume = __pyx_PyFloat_AsDouble(values[3]); if (unlikely((__pyx_v_volume == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 130, __pyx_L3_error)
+      __pyx_v_volume = __pyx_PyFloat_AsDouble(values[3]); if (unlikely((__pyx_v_volume == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 137, __pyx_L3_error)
     } else {
       __pyx_v_volume = ((double)1.0);
     }
     if (values[4]) {
-      __pyx_v_pitch = __pyx_PyFloat_AsDouble(values[4]); if (unlikely((__pyx_v_pitch == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 131, __pyx_L3_error)
+      __pyx_v_pitch = __pyx_PyFloat_AsDouble(values[4]); if (unlikely((__pyx_v_pitch == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 138, __pyx_L3_error)
     } else {
       __pyx_v_pitch = ((double)440.0);
     }
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("__init__", 0, 3, 5, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 125, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("__init__", 0, 3, 5, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 132, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("aiotone.fm.Operator.__init__", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return -1;
   __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_wave), __pyx_ptype_7cpython_5array_array, 1, "wave", 0))) __PYX_ERR(0, 127, __pyx_L1_error)
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_envelope), __pyx_ptype_7aiotone_2fm_Envelope, 1, "envelope", 0))) __PYX_ERR(0, 129, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_wave), __pyx_ptype_7cpython_5array_array, 1, "wave", 0))) __PYX_ERR(0, 134, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_envelope), __pyx_ptype_7aiotone_2fm_Envelope, 1, "envelope", 0))) __PYX_ERR(0, 136, __pyx_L1_error)
   __pyx_r = __pyx_pf_7aiotone_2fm_8Operator___init__(((struct __pyx_obj_7aiotone_2fm_Operator *)__pyx_v_self), __pyx_v_wave, __pyx_v_sample_rate, __pyx_v_envelope, __pyx_v_volume, __pyx_v_pitch);
 
   /* function exit code */
@@ -4443,7 +4466,7 @@ static int __pyx_pf_7aiotone_2fm_8Operator___init__(struct __pyx_obj_7aiotone_2f
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__init__", 0);
 
-  /* "aiotone/fm.pyx":133
+  /* "aiotone/fm.pyx":140
  *         double pitch = 440.0,  # Hz
  *     ):
  *         self.wave = wave             # <<<<<<<<<<<<<<
@@ -4456,7 +4479,7 @@ static int __pyx_pf_7aiotone_2fm_8Operator___init__(struct __pyx_obj_7aiotone_2f
   __Pyx_DECREF(((PyObject *)__pyx_v_self->wave));
   __pyx_v_self->wave = __pyx_v_wave;
 
-  /* "aiotone/fm.pyx":134
+  /* "aiotone/fm.pyx":141
  *     ):
  *         self.wave = wave
  *         self.sample_rate = sample_rate             # <<<<<<<<<<<<<<
@@ -4465,7 +4488,7 @@ static int __pyx_pf_7aiotone_2fm_8Operator___init__(struct __pyx_obj_7aiotone_2f
  */
   __pyx_v_self->sample_rate = __pyx_v_sample_rate;
 
-  /* "aiotone/fm.pyx":135
+  /* "aiotone/fm.pyx":142
  *         self.wave = wave
  *         self.sample_rate = sample_rate
  *         self.envelope = envelope             # <<<<<<<<<<<<<<
@@ -4478,7 +4501,7 @@ static int __pyx_pf_7aiotone_2fm_8Operator___init__(struct __pyx_obj_7aiotone_2f
   __Pyx_DECREF(((PyObject *)__pyx_v_self->envelope));
   __pyx_v_self->envelope = __pyx_v_envelope;
 
-  /* "aiotone/fm.pyx":136
+  /* "aiotone/fm.pyx":143
  *         self.sample_rate = sample_rate
  *         self.envelope = envelope
  *         self.volume = volume             # <<<<<<<<<<<<<<
@@ -4487,7 +4510,7 @@ static int __pyx_pf_7aiotone_2fm_8Operator___init__(struct __pyx_obj_7aiotone_2f
  */
   __pyx_v_self->volume = __pyx_v_volume;
 
-  /* "aiotone/fm.pyx":137
+  /* "aiotone/fm.pyx":144
  *         self.envelope = envelope
  *         self.volume = volume
  *         self.pitch = pitch             # <<<<<<<<<<<<<<
@@ -4496,7 +4519,7 @@ static int __pyx_pf_7aiotone_2fm_8Operator___init__(struct __pyx_obj_7aiotone_2f
  */
   __pyx_v_self->pitch = __pyx_v_pitch;
 
-  /* "aiotone/fm.pyx":138
+  /* "aiotone/fm.pyx":145
  *         self.volume = volume
  *         self.pitch = pitch
  *         self.current_velocity = 0.0             # <<<<<<<<<<<<<<
@@ -4505,7 +4528,7 @@ static int __pyx_pf_7aiotone_2fm_8Operator___init__(struct __pyx_obj_7aiotone_2f
  */
   __pyx_v_self->current_velocity = 0.0;
 
-  /* "aiotone/fm.pyx":139
+  /* "aiotone/fm.pyx":146
  *         self.pitch = pitch
  *         self.current_velocity = 0.0
  *         self.reset = False             # <<<<<<<<<<<<<<
@@ -4514,7 +4537,7 @@ static int __pyx_pf_7aiotone_2fm_8Operator___init__(struct __pyx_obj_7aiotone_2f
  */
   __pyx_v_self->reset = 0;
 
-  /* "aiotone/fm.pyx":125
+  /* "aiotone/fm.pyx":132
  *     cdef bint reset
  * 
  *     def __init__(             # <<<<<<<<<<<<<<
@@ -4528,7 +4551,7 @@ static int __pyx_pf_7aiotone_2fm_8Operator___init__(struct __pyx_obj_7aiotone_2f
   return __pyx_r;
 }
 
-/* "aiotone/fm.pyx":141
+/* "aiotone/fm.pyx":148
  *         self.reset = False
  * 
  *     def note_on(self, double pitch, double volume):             # <<<<<<<<<<<<<<
@@ -4571,11 +4594,11 @@ static PyObject *__pyx_pw_7aiotone_2fm_8Operator_3note_on(PyObject *__pyx_v_self
         case  1:
         if (likely((values[1] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_volume)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("note_on", 1, 2, 2, 1); __PYX_ERR(0, 141, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("note_on", 1, 2, 2, 1); __PYX_ERR(0, 148, __pyx_L3_error)
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "note_on") < 0)) __PYX_ERR(0, 141, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "note_on") < 0)) __PYX_ERR(0, 148, __pyx_L3_error)
       }
     } else if (PyTuple_GET_SIZE(__pyx_args) != 2) {
       goto __pyx_L5_argtuple_error;
@@ -4583,12 +4606,12 @@ static PyObject *__pyx_pw_7aiotone_2fm_8Operator_3note_on(PyObject *__pyx_v_self
       values[0] = PyTuple_GET_ITEM(__pyx_args, 0);
       values[1] = PyTuple_GET_ITEM(__pyx_args, 1);
     }
-    __pyx_v_pitch = __pyx_PyFloat_AsDouble(values[0]); if (unlikely((__pyx_v_pitch == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 141, __pyx_L3_error)
-    __pyx_v_volume = __pyx_PyFloat_AsDouble(values[1]); if (unlikely((__pyx_v_volume == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 141, __pyx_L3_error)
+    __pyx_v_pitch = __pyx_PyFloat_AsDouble(values[0]); if (unlikely((__pyx_v_pitch == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 148, __pyx_L3_error)
+    __pyx_v_volume = __pyx_PyFloat_AsDouble(values[1]); if (unlikely((__pyx_v_volume == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 148, __pyx_L3_error)
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("note_on", 1, 2, 2, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 141, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("note_on", 1, 2, 2, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 148, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("aiotone.fm.Operator.note_on", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
@@ -4606,7 +4629,7 @@ static PyObject *__pyx_pf_7aiotone_2fm_8Operator_2note_on(struct __pyx_obj_7aiot
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("note_on", 0);
 
-  /* "aiotone/fm.pyx":142
+  /* "aiotone/fm.pyx":149
  * 
  *     def note_on(self, double pitch, double volume):
  *         self.reset = True             # <<<<<<<<<<<<<<
@@ -4615,7 +4638,7 @@ static PyObject *__pyx_pf_7aiotone_2fm_8Operator_2note_on(struct __pyx_obj_7aiot
  */
   __pyx_v_self->reset = 1;
 
-  /* "aiotone/fm.pyx":143
+  /* "aiotone/fm.pyx":150
  *     def note_on(self, double pitch, double volume):
  *         self.reset = True
  *         self.pitch = pitch             # <<<<<<<<<<<<<<
@@ -4624,7 +4647,7 @@ static PyObject *__pyx_pf_7aiotone_2fm_8Operator_2note_on(struct __pyx_obj_7aiot
  */
   __pyx_v_self->pitch = __pyx_v_pitch;
 
-  /* "aiotone/fm.pyx":144
+  /* "aiotone/fm.pyx":151
  *         self.reset = True
  *         self.pitch = pitch
  *         self.current_velocity = volume             # <<<<<<<<<<<<<<
@@ -4633,7 +4656,7 @@ static PyObject *__pyx_pf_7aiotone_2fm_8Operator_2note_on(struct __pyx_obj_7aiot
  */
   __pyx_v_self->current_velocity = __pyx_v_volume;
 
-  /* "aiotone/fm.pyx":141
+  /* "aiotone/fm.pyx":148
  *         self.reset = False
  * 
  *     def note_on(self, double pitch, double volume):             # <<<<<<<<<<<<<<
@@ -4648,7 +4671,7 @@ static PyObject *__pyx_pf_7aiotone_2fm_8Operator_2note_on(struct __pyx_obj_7aiot
   return __pyx_r;
 }
 
-/* "aiotone/fm.pyx":146
+/* "aiotone/fm.pyx":153
  *         self.current_velocity = volume
  * 
  *     def note_off(self, double pitch, double volume):             # <<<<<<<<<<<<<<
@@ -4691,11 +4714,11 @@ static PyObject *__pyx_pw_7aiotone_2fm_8Operator_5note_off(PyObject *__pyx_v_sel
         case  1:
         if (likely((values[1] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_volume)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("note_off", 1, 2, 2, 1); __PYX_ERR(0, 146, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("note_off", 1, 2, 2, 1); __PYX_ERR(0, 153, __pyx_L3_error)
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "note_off") < 0)) __PYX_ERR(0, 146, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "note_off") < 0)) __PYX_ERR(0, 153, __pyx_L3_error)
       }
     } else if (PyTuple_GET_SIZE(__pyx_args) != 2) {
       goto __pyx_L5_argtuple_error;
@@ -4703,12 +4726,12 @@ static PyObject *__pyx_pw_7aiotone_2fm_8Operator_5note_off(PyObject *__pyx_v_sel
       values[0] = PyTuple_GET_ITEM(__pyx_args, 0);
       values[1] = PyTuple_GET_ITEM(__pyx_args, 1);
     }
-    __pyx_v_pitch = __pyx_PyFloat_AsDouble(values[0]); if (unlikely((__pyx_v_pitch == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 146, __pyx_L3_error)
-    __pyx_v_volume = __pyx_PyFloat_AsDouble(values[1]); if (unlikely((__pyx_v_volume == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 146, __pyx_L3_error)
+    __pyx_v_pitch = __pyx_PyFloat_AsDouble(values[0]); if (unlikely((__pyx_v_pitch == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 153, __pyx_L3_error)
+    __pyx_v_volume = __pyx_PyFloat_AsDouble(values[1]); if (unlikely((__pyx_v_volume == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 153, __pyx_L3_error)
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("note_off", 1, 2, 2, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 146, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("note_off", 1, 2, 2, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 153, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("aiotone.fm.Operator.note_off", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
@@ -4732,14 +4755,14 @@ static PyObject *__pyx_pf_7aiotone_2fm_8Operator_4note_off(struct __pyx_obj_7aio
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("note_off", 0);
 
-  /* "aiotone/fm.pyx":147
+  /* "aiotone/fm.pyx":154
  * 
  *     def note_off(self, double pitch, double volume):
  *         self.envelope.release()             # <<<<<<<<<<<<<<
  * 
  *     def mono_out(self):
  */
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self->envelope), __pyx_n_s_release); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 147, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self->envelope), __pyx_n_s_release); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 154, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __pyx_t_3 = NULL;
   if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_2))) {
@@ -4753,12 +4776,12 @@ static PyObject *__pyx_pf_7aiotone_2fm_8Operator_4note_off(struct __pyx_obj_7aio
   }
   __pyx_t_1 = (__pyx_t_3) ? __Pyx_PyObject_CallOneArg(__pyx_t_2, __pyx_t_3) : __Pyx_PyObject_CallNoArg(__pyx_t_2);
   __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
-  if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 147, __pyx_L1_error)
+  if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 154, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "aiotone/fm.pyx":146
+  /* "aiotone/fm.pyx":153
  *         self.current_velocity = volume
  * 
  *     def note_off(self, double pitch, double volume):             # <<<<<<<<<<<<<<
@@ -4782,7 +4805,7 @@ static PyObject *__pyx_pf_7aiotone_2fm_8Operator_4note_off(struct __pyx_obj_7aio
 }
 static PyObject *__pyx_gb_7aiotone_2fm_8Operator_8generator(__pyx_CoroutineObject *__pyx_generator, CYTHON_UNUSED PyThreadState *__pyx_tstate, PyObject *__pyx_sent_value); /* proto */
 
-/* "aiotone/fm.pyx":149
+/* "aiotone/fm.pyx":156
  *         self.envelope.release()
  * 
  *     def mono_out(self):             # <<<<<<<<<<<<<<
@@ -4817,7 +4840,7 @@ static PyObject *__pyx_pf_7aiotone_2fm_8Operator_6mono_out(struct __pyx_obj_7aio
   if (unlikely(!__pyx_cur_scope)) {
     __pyx_cur_scope = ((struct __pyx_obj_7aiotone_2fm___pyx_scope_struct__mono_out *)Py_None);
     __Pyx_INCREF(Py_None);
-    __PYX_ERR(0, 149, __pyx_L1_error)
+    __PYX_ERR(0, 156, __pyx_L1_error)
   } else {
     __Pyx_GOTREF(__pyx_cur_scope);
   }
@@ -4825,7 +4848,7 @@ static PyObject *__pyx_pf_7aiotone_2fm_8Operator_6mono_out(struct __pyx_obj_7aio
   __Pyx_INCREF((PyObject *)__pyx_cur_scope->__pyx_v_self);
   __Pyx_GIVEREF((PyObject *)__pyx_cur_scope->__pyx_v_self);
   {
-    __pyx_CoroutineObject *gen = __Pyx_Generator_New((__pyx_coroutine_body_t) __pyx_gb_7aiotone_2fm_8Operator_8generator, __pyx_codeobj_, (PyObject *) __pyx_cur_scope, __pyx_n_s_mono_out, __pyx_n_s_Operator_mono_out, __pyx_n_s_aiotone_fm); if (unlikely(!gen)) __PYX_ERR(0, 149, __pyx_L1_error)
+    __pyx_CoroutineObject *gen = __Pyx_Generator_New((__pyx_coroutine_body_t) __pyx_gb_7aiotone_2fm_8Operator_8generator, __pyx_codeobj_, (PyObject *) __pyx_cur_scope, __pyx_n_s_mono_out, __pyx_n_s_Operator_mono_out, __pyx_n_s_aiotone_fm); if (unlikely(!gen)) __PYX_ERR(0, 156, __pyx_L1_error)
     __Pyx_DECREF(__pyx_cur_scope);
     __Pyx_RefNannyFinishContext();
     return (PyObject *) gen;
@@ -4866,22 +4889,22 @@ static PyObject *__pyx_gb_7aiotone_2fm_8Operator_8generator(__pyx_CoroutineObjec
     return NULL;
   }
   __pyx_L3_first_run:;
-  if (unlikely(!__pyx_sent_value)) __PYX_ERR(0, 149, __pyx_L1_error)
+  if (unlikely(!__pyx_sent_value)) __PYX_ERR(0, 156, __pyx_L1_error)
 
-  /* "aiotone/fm.pyx":160
+  /* "aiotone/fm.pyx":167
  *         cdef array.array modulator
  *         cdef int mod_len
  *         cdef array.array out_buffer = array.array("h")             # <<<<<<<<<<<<<<
  *         cdef double w_i = 0.0
  * 
  */
-  __pyx_t_1 = __Pyx_PyObject_Call(((PyObject *)__pyx_ptype_7cpython_5array_array), __pyx_tuple__2, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 160, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_Call(((PyObject *)__pyx_ptype_7cpython_5array_array), __pyx_tuple__2, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 167, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_GIVEREF(__pyx_t_1);
   __pyx_cur_scope->__pyx_v_out_buffer = ((arrayobject *)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "aiotone/fm.pyx":161
+  /* "aiotone/fm.pyx":168
  *         cdef int mod_len
  *         cdef array.array out_buffer = array.array("h")
  *         cdef double w_i = 0.0             # <<<<<<<<<<<<<<
@@ -4890,7 +4913,7 @@ static PyObject *__pyx_gb_7aiotone_2fm_8Operator_8generator(__pyx_CoroutineObjec
  */
   __pyx_cur_scope->__pyx_v_w_i = 0.0;
 
-  /* "aiotone/fm.pyx":163
+  /* "aiotone/fm.pyx":170
  *         cdef double w_i = 0.0
  * 
  *         modulator = yield out_buffer             # <<<<<<<<<<<<<<
@@ -4906,14 +4929,14 @@ static PyObject *__pyx_gb_7aiotone_2fm_8Operator_8generator(__pyx_CoroutineObjec
   __pyx_generator->resume_label = 1;
   return __pyx_r;
   __pyx_L4_resume_from_yield:;
-  if (unlikely(!__pyx_sent_value)) __PYX_ERR(0, 163, __pyx_L1_error)
+  if (unlikely(!__pyx_sent_value)) __PYX_ERR(0, 170, __pyx_L1_error)
   __pyx_t_1 = __pyx_sent_value; __Pyx_INCREF(__pyx_t_1);
-  if (!(likely(((__pyx_t_1) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_1, __pyx_ptype_7cpython_5array_array))))) __PYX_ERR(0, 163, __pyx_L1_error)
+  if (!(likely(((__pyx_t_1) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_1, __pyx_ptype_7cpython_5array_array))))) __PYX_ERR(0, 170, __pyx_L1_error)
   __Pyx_GIVEREF(__pyx_t_1);
   __pyx_cur_scope->__pyx_v_modulator = ((arrayobject *)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "aiotone/fm.pyx":164
+  /* "aiotone/fm.pyx":171
  * 
  *         modulator = yield out_buffer
  *         mod_len = len(modulator)             # <<<<<<<<<<<<<<
@@ -4922,21 +4945,21 @@ static PyObject *__pyx_gb_7aiotone_2fm_8Operator_8generator(__pyx_CoroutineObjec
  */
   if (unlikely(((PyObject *)__pyx_cur_scope->__pyx_v_modulator) == Py_None)) {
     PyErr_SetString(PyExc_TypeError, "object of type 'NoneType' has no len()");
-    __PYX_ERR(0, 164, __pyx_L1_error)
+    __PYX_ERR(0, 171, __pyx_L1_error)
   }
-  __pyx_t_2 = Py_SIZE(((PyObject *)__pyx_cur_scope->__pyx_v_modulator)); if (unlikely(__pyx_t_2 == ((Py_ssize_t)-1))) __PYX_ERR(0, 164, __pyx_L1_error)
+  __pyx_t_2 = Py_SIZE(((PyObject *)__pyx_cur_scope->__pyx_v_modulator)); if (unlikely(__pyx_t_2 == ((Py_ssize_t)-1))) __PYX_ERR(0, 171, __pyx_L1_error)
   __pyx_cur_scope->__pyx_v_mod_len = __pyx_t_2;
 
-  /* "aiotone/fm.pyx":165
+  /* "aiotone/fm.pyx":172
  *         modulator = yield out_buffer
  *         mod_len = len(modulator)
  *         out_buffer.extend([0] * MAX_BUFFER)             # <<<<<<<<<<<<<<
  *         while True:
  *             w_i = self.modulate(out_buffer, modulator, w_i)
  */
-  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_cur_scope->__pyx_v_out_buffer), __pyx_n_s_extend); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 165, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_cur_scope->__pyx_v_out_buffer), __pyx_n_s_extend); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 172, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_4 = PyList_New(1 * 2400); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 165, __pyx_L1_error)
+  __pyx_t_4 = PyList_New(1 * 2400); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 172, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   { Py_ssize_t __pyx_temp;
     for (__pyx_temp=0; __pyx_temp < 0x960; __pyx_temp++) {
@@ -4958,12 +4981,12 @@ static PyObject *__pyx_gb_7aiotone_2fm_8Operator_8generator(__pyx_CoroutineObjec
   __pyx_t_1 = (__pyx_t_5) ? __Pyx_PyObject_Call2Args(__pyx_t_3, __pyx_t_5, __pyx_t_4) : __Pyx_PyObject_CallOneArg(__pyx_t_3, __pyx_t_4);
   __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 165, __pyx_L1_error)
+  if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 172, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "aiotone/fm.pyx":166
+  /* "aiotone/fm.pyx":173
  *         mod_len = len(modulator)
  *         out_buffer.extend([0] * MAX_BUFFER)
  *         while True:             # <<<<<<<<<<<<<<
@@ -4972,20 +4995,20 @@ static PyObject *__pyx_gb_7aiotone_2fm_8Operator_8generator(__pyx_CoroutineObjec
  */
   while (1) {
 
-    /* "aiotone/fm.pyx":167
+    /* "aiotone/fm.pyx":174
  *         out_buffer.extend([0] * MAX_BUFFER)
  *         while True:
  *             w_i = self.modulate(out_buffer, modulator, w_i)             # <<<<<<<<<<<<<<
  *             if self.reset:
  *                 self.reset = False
  */
-    __pyx_t_1 = ((struct __pyx_vtabstruct_7aiotone_2fm_Operator *)__pyx_cur_scope->__pyx_v_self->__pyx_vtab)->modulate(__pyx_cur_scope->__pyx_v_self, __pyx_cur_scope->__pyx_v_out_buffer, __pyx_cur_scope->__pyx_v_modulator, __pyx_cur_scope->__pyx_v_w_i, 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 167, __pyx_L1_error)
+    __pyx_t_1 = ((struct __pyx_vtabstruct_7aiotone_2fm_Operator *)__pyx_cur_scope->__pyx_v_self->__pyx_vtab)->modulate(__pyx_cur_scope->__pyx_v_self, __pyx_cur_scope->__pyx_v_out_buffer, __pyx_cur_scope->__pyx_v_modulator, __pyx_cur_scope->__pyx_v_w_i, 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 174, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
-    __pyx_t_6 = __pyx_PyFloat_AsDouble(__pyx_t_1); if (unlikely((__pyx_t_6 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 167, __pyx_L1_error)
+    __pyx_t_6 = __pyx_PyFloat_AsDouble(__pyx_t_1); if (unlikely((__pyx_t_6 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 174, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
     __pyx_cur_scope->__pyx_v_w_i = __pyx_t_6;
 
-    /* "aiotone/fm.pyx":168
+    /* "aiotone/fm.pyx":175
  *         while True:
  *             w_i = self.modulate(out_buffer, modulator, w_i)
  *             if self.reset:             # <<<<<<<<<<<<<<
@@ -4995,7 +5018,7 @@ static PyObject *__pyx_gb_7aiotone_2fm_8Operator_8generator(__pyx_CoroutineObjec
     __pyx_t_7 = (__pyx_cur_scope->__pyx_v_self->reset != 0);
     if (__pyx_t_7) {
 
-      /* "aiotone/fm.pyx":169
+      /* "aiotone/fm.pyx":176
  *             w_i = self.modulate(out_buffer, modulator, w_i)
  *             if self.reset:
  *                 self.reset = False             # <<<<<<<<<<<<<<
@@ -5004,14 +5027,14 @@ static PyObject *__pyx_gb_7aiotone_2fm_8Operator_8generator(__pyx_CoroutineObjec
  */
       __pyx_cur_scope->__pyx_v_self->reset = 0;
 
-      /* "aiotone/fm.pyx":170
+      /* "aiotone/fm.pyx":177
  *             if self.reset:
  *                 self.reset = False
  *                 self.envelope.reset()             # <<<<<<<<<<<<<<
  *             modulator = yield out_buffer[:mod_len]
  *             mod_len = len(modulator)
  */
-      __pyx_t_3 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_cur_scope->__pyx_v_self->envelope), __pyx_n_s_reset); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 170, __pyx_L1_error)
+      __pyx_t_3 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_cur_scope->__pyx_v_self->envelope), __pyx_n_s_reset); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 177, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_3);
       __pyx_t_4 = NULL;
       if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_3))) {
@@ -5025,12 +5048,12 @@ static PyObject *__pyx_gb_7aiotone_2fm_8Operator_8generator(__pyx_CoroutineObjec
       }
       __pyx_t_1 = (__pyx_t_4) ? __Pyx_PyObject_CallOneArg(__pyx_t_3, __pyx_t_4) : __Pyx_PyObject_CallNoArg(__pyx_t_3);
       __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
-      if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 170, __pyx_L1_error)
+      if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 177, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-      /* "aiotone/fm.pyx":168
+      /* "aiotone/fm.pyx":175
  *         while True:
  *             w_i = self.modulate(out_buffer, modulator, w_i)
  *             if self.reset:             # <<<<<<<<<<<<<<
@@ -5039,14 +5062,14 @@ static PyObject *__pyx_gb_7aiotone_2fm_8Operator_8generator(__pyx_CoroutineObjec
  */
     }
 
-    /* "aiotone/fm.pyx":171
+    /* "aiotone/fm.pyx":178
  *                 self.reset = False
  *                 self.envelope.reset()
  *             modulator = yield out_buffer[:mod_len]             # <<<<<<<<<<<<<<
  *             mod_len = len(modulator)
  * 
  */
-    __pyx_t_1 = __Pyx_PyObject_GetSlice(((PyObject *)__pyx_cur_scope->__pyx_v_out_buffer), 0, __pyx_cur_scope->__pyx_v_mod_len, NULL, NULL, NULL, 0, 1, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 171, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyObject_GetSlice(((PyObject *)__pyx_cur_scope->__pyx_v_out_buffer), 0, __pyx_cur_scope->__pyx_v_mod_len, NULL, NULL, NULL, 0, 1, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 178, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __pyx_r = __pyx_t_1;
     __pyx_t_1 = 0;
@@ -5057,15 +5080,15 @@ static PyObject *__pyx_gb_7aiotone_2fm_8Operator_8generator(__pyx_CoroutineObjec
     __pyx_generator->resume_label = 2;
     return __pyx_r;
     __pyx_L8_resume_from_yield:;
-    if (unlikely(!__pyx_sent_value)) __PYX_ERR(0, 171, __pyx_L1_error)
+    if (unlikely(!__pyx_sent_value)) __PYX_ERR(0, 178, __pyx_L1_error)
     __pyx_t_1 = __pyx_sent_value; __Pyx_INCREF(__pyx_t_1);
-    if (!(likely(((__pyx_t_1) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_1, __pyx_ptype_7cpython_5array_array))))) __PYX_ERR(0, 171, __pyx_L1_error)
+    if (!(likely(((__pyx_t_1) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_1, __pyx_ptype_7cpython_5array_array))))) __PYX_ERR(0, 178, __pyx_L1_error)
     __Pyx_GOTREF(((PyObject *)__pyx_cur_scope->__pyx_v_modulator));
     __Pyx_DECREF_SET(__pyx_cur_scope->__pyx_v_modulator, ((arrayobject *)__pyx_t_1));
     __Pyx_GIVEREF(__pyx_t_1);
     __pyx_t_1 = 0;
 
-    /* "aiotone/fm.pyx":172
+    /* "aiotone/fm.pyx":179
  *                 self.envelope.reset()
  *             modulator = yield out_buffer[:mod_len]
  *             mod_len = len(modulator)             # <<<<<<<<<<<<<<
@@ -5074,14 +5097,14 @@ static PyObject *__pyx_gb_7aiotone_2fm_8Operator_8generator(__pyx_CoroutineObjec
  */
     if (unlikely(((PyObject *)__pyx_cur_scope->__pyx_v_modulator) == Py_None)) {
       PyErr_SetString(PyExc_TypeError, "object of type 'NoneType' has no len()");
-      __PYX_ERR(0, 172, __pyx_L1_error)
+      __PYX_ERR(0, 179, __pyx_L1_error)
     }
-    __pyx_t_2 = Py_SIZE(((PyObject *)__pyx_cur_scope->__pyx_v_modulator)); if (unlikely(__pyx_t_2 == ((Py_ssize_t)-1))) __PYX_ERR(0, 172, __pyx_L1_error)
+    __pyx_t_2 = Py_SIZE(((PyObject *)__pyx_cur_scope->__pyx_v_modulator)); if (unlikely(__pyx_t_2 == ((Py_ssize_t)-1))) __PYX_ERR(0, 179, __pyx_L1_error)
     __pyx_cur_scope->__pyx_v_mod_len = __pyx_t_2;
   }
   CYTHON_MAYBE_UNUSED_VAR(__pyx_cur_scope);
 
-  /* "aiotone/fm.pyx":149
+  /* "aiotone/fm.pyx":156
  *         self.envelope.release()
  * 
  *     def mono_out(self):             # <<<<<<<<<<<<<<
@@ -5109,12 +5132,12 @@ static PyObject *__pyx_gb_7aiotone_2fm_8Operator_8generator(__pyx_CoroutineObjec
   return __pyx_r;
 }
 
-/* "aiotone/fm.pyx":175
+/* "aiotone/fm.pyx":182
  * 
  *     @cython.cdivision(True)
- *     cpdef modulate(self, array.array out_buffer, array.array modulator, double w_i):             # <<<<<<<<<<<<<<
- *         """Fill `out_buffer` with an enveloped and attenuated chunk of `self.wave`.
- * 
+ *     cpdef modulate(             # <<<<<<<<<<<<<<
+ *         self,
+ *         array.array out_buffer,
  */
 
 static PyObject *__pyx_pw_7aiotone_2fm_8Operator_10modulate(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
@@ -5158,11 +5181,11 @@ static PyObject *__pyx_f_7aiotone_2fm_8Operator_modulate(struct __pyx_obj_7aioto
     if (unlikely(!__Pyx_object_dict_version_matches(((PyObject *)__pyx_v_self), __pyx_tp_dict_version, __pyx_obj_dict_version))) {
       PY_UINT64_T __pyx_type_dict_guard = __Pyx_get_tp_dict_version(((PyObject *)__pyx_v_self));
       #endif
-      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_modulate); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 175, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_modulate); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 182, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       if (!PyCFunction_Check(__pyx_t_1) || (PyCFunction_GET_FUNCTION(__pyx_t_1) != (PyCFunction)(void*)__pyx_pw_7aiotone_2fm_8Operator_10modulate)) {
         __Pyx_XDECREF(__pyx_r);
-        __pyx_t_3 = PyFloat_FromDouble(__pyx_v_w_i); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 175, __pyx_L1_error)
+        __pyx_t_3 = PyFloat_FromDouble(__pyx_v_w_i); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 182, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_3);
         __Pyx_INCREF(__pyx_t_1);
         __pyx_t_4 = __pyx_t_1; __pyx_t_5 = NULL;
@@ -5180,7 +5203,7 @@ static PyObject *__pyx_f_7aiotone_2fm_8Operator_modulate(struct __pyx_obj_7aioto
         #if CYTHON_FAST_PYCALL
         if (PyFunction_Check(__pyx_t_4)) {
           PyObject *__pyx_temp[4] = {__pyx_t_5, ((PyObject *)__pyx_v_out_buffer), ((PyObject *)__pyx_v_modulator), __pyx_t_3};
-          __pyx_t_2 = __Pyx_PyFunction_FastCall(__pyx_t_4, __pyx_temp+1-__pyx_t_6, 3+__pyx_t_6); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 175, __pyx_L1_error)
+          __pyx_t_2 = __Pyx_PyFunction_FastCall(__pyx_t_4, __pyx_temp+1-__pyx_t_6, 3+__pyx_t_6); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 182, __pyx_L1_error)
           __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
           __Pyx_GOTREF(__pyx_t_2);
           __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -5189,14 +5212,14 @@ static PyObject *__pyx_f_7aiotone_2fm_8Operator_modulate(struct __pyx_obj_7aioto
         #if CYTHON_FAST_PYCCALL
         if (__Pyx_PyFastCFunction_Check(__pyx_t_4)) {
           PyObject *__pyx_temp[4] = {__pyx_t_5, ((PyObject *)__pyx_v_out_buffer), ((PyObject *)__pyx_v_modulator), __pyx_t_3};
-          __pyx_t_2 = __Pyx_PyCFunction_FastCall(__pyx_t_4, __pyx_temp+1-__pyx_t_6, 3+__pyx_t_6); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 175, __pyx_L1_error)
+          __pyx_t_2 = __Pyx_PyCFunction_FastCall(__pyx_t_4, __pyx_temp+1-__pyx_t_6, 3+__pyx_t_6); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 182, __pyx_L1_error)
           __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
           __Pyx_GOTREF(__pyx_t_2);
           __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
         } else
         #endif
         {
-          __pyx_t_7 = PyTuple_New(3+__pyx_t_6); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 175, __pyx_L1_error)
+          __pyx_t_7 = PyTuple_New(3+__pyx_t_6); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 182, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_7);
           if (__pyx_t_5) {
             __Pyx_GIVEREF(__pyx_t_5); PyTuple_SET_ITEM(__pyx_t_7, 0, __pyx_t_5); __pyx_t_5 = NULL;
@@ -5210,7 +5233,7 @@ static PyObject *__pyx_f_7aiotone_2fm_8Operator_modulate(struct __pyx_obj_7aioto
           __Pyx_GIVEREF(__pyx_t_3);
           PyTuple_SET_ITEM(__pyx_t_7, 2+__pyx_t_6, __pyx_t_3);
           __pyx_t_3 = 0;
-          __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_4, __pyx_t_7, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 175, __pyx_L1_error)
+          __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_4, __pyx_t_7, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 182, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_2);
           __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
         }
@@ -5233,7 +5256,7 @@ static PyObject *__pyx_f_7aiotone_2fm_8Operator_modulate(struct __pyx_obj_7aioto
     #endif
   }
 
-  /* "aiotone/fm.pyx":188
+  /* "aiotone/fm.pyx":200
  *         cdef double mod_scaled
  *         cdef double triangle_factor
  *         cdef int sr = self.sample_rate             # <<<<<<<<<<<<<<
@@ -5243,19 +5266,19 @@ static PyObject *__pyx_f_7aiotone_2fm_8Operator_modulate(struct __pyx_obj_7aioto
   __pyx_t_6 = __pyx_v_self->sample_rate;
   __pyx_v_sr = __pyx_t_6;
 
-  /* "aiotone/fm.pyx":189
+  /* "aiotone/fm.pyx":201
  *         cdef double triangle_factor
  *         cdef int sr = self.sample_rate
  *         cdef int16_t[:] w = self.wave             # <<<<<<<<<<<<<<
  *         cdef int w_len = len(w)
  *         envelope = self.envelope
  */
-  __pyx_t_8 = __Pyx_PyObject_to_MemoryviewSlice_ds_nn_int16_t(((PyObject *)__pyx_v_self->wave), PyBUF_WRITABLE); if (unlikely(!__pyx_t_8.memview)) __PYX_ERR(0, 189, __pyx_L1_error)
+  __pyx_t_8 = __Pyx_PyObject_to_MemoryviewSlice_ds_nn_int16_t(((PyObject *)__pyx_v_self->wave), PyBUF_WRITABLE); if (unlikely(!__pyx_t_8.memview)) __PYX_ERR(0, 201, __pyx_L1_error)
   __pyx_v_w = __pyx_t_8;
   __pyx_t_8.memview = NULL;
   __pyx_t_8.data = NULL;
 
-  /* "aiotone/fm.pyx":190
+  /* "aiotone/fm.pyx":202
  *         cdef int sr = self.sample_rate
  *         cdef int16_t[:] w = self.wave
  *         cdef int w_len = len(w)             # <<<<<<<<<<<<<<
@@ -5265,7 +5288,7 @@ static PyObject *__pyx_f_7aiotone_2fm_8Operator_modulate(struct __pyx_obj_7aioto
   __pyx_t_9 = __Pyx_MemoryView_Len(__pyx_v_w); 
   __pyx_v_w_len = __pyx_t_9;
 
-  /* "aiotone/fm.pyx":191
+  /* "aiotone/fm.pyx":203
  *         cdef int16_t[:] w = self.wave
  *         cdef int w_len = len(w)
  *         envelope = self.envelope             # <<<<<<<<<<<<<<
@@ -5277,20 +5300,20 @@ static PyObject *__pyx_f_7aiotone_2fm_8Operator_modulate(struct __pyx_obj_7aioto
   __pyx_v_envelope = ((struct __pyx_obj_7aiotone_2fm_Envelope *)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "aiotone/fm.pyx":193
+  /* "aiotone/fm.pyx":205
  *         envelope = self.envelope
  * 
  *         if envelope.is_silent():             # <<<<<<<<<<<<<<
  *             for i in range(len(modulator)):
  *                 out_buffer[i] = 0
  */
-  __pyx_t_1 = ((struct __pyx_vtabstruct_7aiotone_2fm_Envelope *)__pyx_v_envelope->__pyx_vtab)->is_silent(__pyx_v_envelope, 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 193, __pyx_L1_error)
+  __pyx_t_1 = ((struct __pyx_vtabstruct_7aiotone_2fm_Envelope *)__pyx_v_envelope->__pyx_vtab)->is_silent(__pyx_v_envelope, 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 205, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_10 = __Pyx_PyObject_IsTrue(__pyx_t_1); if (unlikely(__pyx_t_10 < 0)) __PYX_ERR(0, 193, __pyx_L1_error)
+  __pyx_t_10 = __Pyx_PyObject_IsTrue(__pyx_t_1); if (unlikely(__pyx_t_10 < 0)) __PYX_ERR(0, 205, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   if (__pyx_t_10) {
 
-    /* "aiotone/fm.pyx":194
+    /* "aiotone/fm.pyx":206
  * 
  *         if envelope.is_silent():
  *             for i in range(len(modulator)):             # <<<<<<<<<<<<<<
@@ -5299,24 +5322,24 @@ static PyObject *__pyx_f_7aiotone_2fm_8Operator_modulate(struct __pyx_obj_7aioto
  */
     if (unlikely(((PyObject *)__pyx_v_modulator) == Py_None)) {
       PyErr_SetString(PyExc_TypeError, "object of type 'NoneType' has no len()");
-      __PYX_ERR(0, 194, __pyx_L1_error)
+      __PYX_ERR(0, 206, __pyx_L1_error)
     }
-    __pyx_t_11 = Py_SIZE(((PyObject *)__pyx_v_modulator)); if (unlikely(__pyx_t_11 == ((Py_ssize_t)-1))) __PYX_ERR(0, 194, __pyx_L1_error)
+    __pyx_t_11 = Py_SIZE(((PyObject *)__pyx_v_modulator)); if (unlikely(__pyx_t_11 == ((Py_ssize_t)-1))) __PYX_ERR(0, 206, __pyx_L1_error)
     __pyx_t_12 = __pyx_t_11;
     for (__pyx_t_6 = 0; __pyx_t_6 < __pyx_t_12; __pyx_t_6+=1) {
       __pyx_v_i = __pyx_t_6;
 
-      /* "aiotone/fm.pyx":195
+      /* "aiotone/fm.pyx":207
  *         if envelope.is_silent():
  *             for i in range(len(modulator)):
  *                 out_buffer[i] = 0             # <<<<<<<<<<<<<<
  *             return 0.0
  * 
  */
-      if (unlikely(__Pyx_SetItemInt(((PyObject *)__pyx_v_out_buffer), __pyx_v_i, __pyx_int_0, int, 1, __Pyx_PyInt_From_int, 0, 1, 1) < 0)) __PYX_ERR(0, 195, __pyx_L1_error)
+      if (unlikely(__Pyx_SetItemInt(((PyObject *)__pyx_v_out_buffer), __pyx_v_i, __pyx_int_0, int, 1, __Pyx_PyInt_From_int, 0, 1, 1) < 0)) __PYX_ERR(0, 207, __pyx_L1_error)
     }
 
-    /* "aiotone/fm.pyx":196
+    /* "aiotone/fm.pyx":208
  *             for i in range(len(modulator)):
  *                 out_buffer[i] = 0
  *             return 0.0             # <<<<<<<<<<<<<<
@@ -5328,7 +5351,7 @@ static PyObject *__pyx_f_7aiotone_2fm_8Operator_modulate(struct __pyx_obj_7aioto
     __pyx_r = __pyx_float_0_0;
     goto __pyx_L0;
 
-    /* "aiotone/fm.pyx":193
+    /* "aiotone/fm.pyx":205
  *         envelope = self.envelope
  * 
  *         if envelope.is_silent():             # <<<<<<<<<<<<<<
@@ -5337,7 +5360,7 @@ static PyObject *__pyx_f_7aiotone_2fm_8Operator_modulate(struct __pyx_obj_7aioto
  */
   }
 
-  /* "aiotone/fm.pyx":198
+  /* "aiotone/fm.pyx":210
  *             return 0.0
  * 
  *         for i in range(len(modulator)):             # <<<<<<<<<<<<<<
@@ -5346,14 +5369,14 @@ static PyObject *__pyx_f_7aiotone_2fm_8Operator_modulate(struct __pyx_obj_7aioto
  */
   if (unlikely(((PyObject *)__pyx_v_modulator) == Py_None)) {
     PyErr_SetString(PyExc_TypeError, "object of type 'NoneType' has no len()");
-    __PYX_ERR(0, 198, __pyx_L1_error)
+    __PYX_ERR(0, 210, __pyx_L1_error)
   }
-  __pyx_t_11 = Py_SIZE(((PyObject *)__pyx_v_modulator)); if (unlikely(__pyx_t_11 == ((Py_ssize_t)-1))) __PYX_ERR(0, 198, __pyx_L1_error)
+  __pyx_t_11 = Py_SIZE(((PyObject *)__pyx_v_modulator)); if (unlikely(__pyx_t_11 == ((Py_ssize_t)-1))) __PYX_ERR(0, 210, __pyx_L1_error)
   __pyx_t_12 = __pyx_t_11;
   for (__pyx_t_6 = 0; __pyx_t_6 < __pyx_t_12; __pyx_t_6+=1) {
     __pyx_v_i = __pyx_t_6;
 
-    /* "aiotone/fm.pyx":199
+    /* "aiotone/fm.pyx":211
  * 
  *         for i in range(len(modulator)):
  *             mod = modulator.data.as_shorts[i]             # <<<<<<<<<<<<<<
@@ -5362,7 +5385,7 @@ static PyObject *__pyx_f_7aiotone_2fm_8Operator_modulate(struct __pyx_obj_7aioto
  */
     __pyx_v_mod = (__pyx_v_modulator->data.as_shorts[__pyx_v_i]);
 
-    /* "aiotone/fm.pyx":200
+    /* "aiotone/fm.pyx":212
  *         for i in range(len(modulator)):
  *             mod = modulator.data.as_shorts[i]
  *             mod_scaled = w_i + mod * w_len / INT16_MAXVALUE             # <<<<<<<<<<<<<<
@@ -5371,7 +5394,7 @@ static PyObject *__pyx_f_7aiotone_2fm_8Operator_modulate(struct __pyx_obj_7aioto
  */
     __pyx_v_mod_scaled = (__pyx_v_w_i + (((long)(__pyx_v_mod * __pyx_v_w_len)) / 0x7FFF));
 
-    /* "aiotone/fm.pyx":201
+    /* "aiotone/fm.pyx":213
  *             mod = modulator.data.as_shorts[i]
  *             mod_scaled = w_i + mod * w_len / INT16_MAXVALUE
  *             triangle_factor = mod_scaled - floor(mod_scaled)             # <<<<<<<<<<<<<<
@@ -5380,31 +5403,31 @@ static PyObject *__pyx_f_7aiotone_2fm_8Operator_modulate(struct __pyx_obj_7aioto
  */
     __pyx_v_triangle_factor = (__pyx_v_mod_scaled - floor(__pyx_v_mod_scaled));
 
-    /* "aiotone/fm.pyx":204
+    /* "aiotone/fm.pyx":216
  *             out_buffer.data.as_shorts[i] = saturate(
  *                 self.current_velocity
  *                 * self.volume             # <<<<<<<<<<<<<<
  *                 * envelope.advance()
  *                 * (
  */
-    __pyx_t_1 = PyFloat_FromDouble((__pyx_v_self->current_velocity * __pyx_v_self->volume)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 204, __pyx_L1_error)
+    __pyx_t_1 = PyFloat_FromDouble((__pyx_v_self->current_velocity * __pyx_v_self->volume)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 216, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
 
-    /* "aiotone/fm.pyx":205
+    /* "aiotone/fm.pyx":217
  *                 self.current_velocity
  *                 * self.volume
  *                 * envelope.advance()             # <<<<<<<<<<<<<<
  *                 * (
  *                     (1.0 - triangle_factor) * w[<int>mod_scaled % w_len]
  */
-    __pyx_t_2 = ((struct __pyx_vtabstruct_7aiotone_2fm_Envelope *)__pyx_v_envelope->__pyx_vtab)->advance(__pyx_v_envelope, 0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 205, __pyx_L1_error)
+    __pyx_t_2 = ((struct __pyx_vtabstruct_7aiotone_2fm_Envelope *)__pyx_v_envelope->__pyx_vtab)->advance(__pyx_v_envelope, 0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 217, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
-    __pyx_t_4 = PyNumber_Multiply(__pyx_t_1, __pyx_t_2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 205, __pyx_L1_error)
+    __pyx_t_4 = PyNumber_Multiply(__pyx_t_1, __pyx_t_2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 217, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-    /* "aiotone/fm.pyx":207
+    /* "aiotone/fm.pyx":219
  *                 * envelope.advance()
  *                 * (
  *                     (1.0 - triangle_factor) * w[<int>mod_scaled % w_len]             # <<<<<<<<<<<<<<
@@ -5419,10 +5442,10 @@ static PyObject *__pyx_f_7aiotone_2fm_8Operator_modulate(struct __pyx_obj_7aioto
     } else if (unlikely(__pyx_t_13 >= __pyx_v_w.shape[0])) __pyx_t_14 = 0;
     if (unlikely(__pyx_t_14 != -1)) {
       __Pyx_RaiseBufferIndexError(__pyx_t_14);
-      __PYX_ERR(0, 207, __pyx_L1_error)
+      __PYX_ERR(0, 219, __pyx_L1_error)
     }
 
-    /* "aiotone/fm.pyx":208
+    /* "aiotone/fm.pyx":220
  *                 * (
  *                     (1.0 - triangle_factor) * w[<int>mod_scaled % w_len]
  *                     + triangle_factor * w[<int>(mod_scaled + 1.0) % w_len]             # <<<<<<<<<<<<<<
@@ -5437,26 +5460,26 @@ static PyObject *__pyx_f_7aiotone_2fm_8Operator_modulate(struct __pyx_obj_7aioto
     } else if (unlikely(__pyx_t_15 >= __pyx_v_w.shape[0])) __pyx_t_14 = 0;
     if (unlikely(__pyx_t_14 != -1)) {
       __Pyx_RaiseBufferIndexError(__pyx_t_14);
-      __PYX_ERR(0, 208, __pyx_L1_error)
+      __PYX_ERR(0, 220, __pyx_L1_error)
     }
-    __pyx_t_2 = PyFloat_FromDouble((((1.0 - __pyx_v_triangle_factor) * (*((int16_t *) ( /* dim=0 */ (__pyx_v_w.data + __pyx_t_13 * __pyx_v_w.strides[0]) )))) + (__pyx_v_triangle_factor * (*((int16_t *) ( /* dim=0 */ (__pyx_v_w.data + __pyx_t_15 * __pyx_v_w.strides[0]) )))))); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 208, __pyx_L1_error)
+    __pyx_t_2 = PyFloat_FromDouble((((1.0 - __pyx_v_triangle_factor) * (*((int16_t *) ( /* dim=0 */ (__pyx_v_w.data + __pyx_t_13 * __pyx_v_w.strides[0]) )))) + (__pyx_v_triangle_factor * (*((int16_t *) ( /* dim=0 */ (__pyx_v_w.data + __pyx_t_15 * __pyx_v_w.strides[0]) )))))); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 220, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
 
-    /* "aiotone/fm.pyx":206
+    /* "aiotone/fm.pyx":218
  *                 * self.volume
  *                 * envelope.advance()
  *                 * (             # <<<<<<<<<<<<<<
  *                     (1.0 - triangle_factor) * w[<int>mod_scaled % w_len]
  *                     + triangle_factor * w[<int>(mod_scaled + 1.0) % w_len]
  */
-    __pyx_t_1 = PyNumber_Multiply(__pyx_t_4, __pyx_t_2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 206, __pyx_L1_error)
+    __pyx_t_1 = PyNumber_Multiply(__pyx_t_4, __pyx_t_2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 218, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-    __pyx_t_16 = __pyx_PyFloat_AsDouble(__pyx_t_1); if (unlikely((__pyx_t_16 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 206, __pyx_L1_error)
+    __pyx_t_16 = __pyx_PyFloat_AsDouble(__pyx_t_1); if (unlikely((__pyx_t_16 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 218, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-    /* "aiotone/fm.pyx":202
+    /* "aiotone/fm.pyx":214
  *             mod_scaled = w_i + mod * w_len / INT16_MAXVALUE
  *             triangle_factor = mod_scaled - floor(mod_scaled)
  *             out_buffer.data.as_shorts[i] = saturate(             # <<<<<<<<<<<<<<
@@ -5465,7 +5488,7 @@ static PyObject *__pyx_f_7aiotone_2fm_8Operator_modulate(struct __pyx_obj_7aioto
  */
     (__pyx_v_out_buffer->data.as_shorts[__pyx_v_i]) = __pyx_f_7aiotone_2fm_saturate(__pyx_t_16, 0);
 
-    /* "aiotone/fm.pyx":211
+    /* "aiotone/fm.pyx":223
  *                 )
  *             )
  *             w_i += w_len * <double>self.pitch / sr             # <<<<<<<<<<<<<<
@@ -5475,7 +5498,7 @@ static PyObject *__pyx_f_7aiotone_2fm_8Operator_modulate(struct __pyx_obj_7aioto
     __pyx_v_w_i = (__pyx_v_w_i + ((__pyx_v_w_len * ((double)__pyx_v_self->pitch)) / ((double)__pyx_v_sr)));
   }
 
-  /* "aiotone/fm.pyx":212
+  /* "aiotone/fm.pyx":224
  *             )
  *             w_i += w_len * <double>self.pitch / sr
  *         return w_i             # <<<<<<<<<<<<<<
@@ -5483,18 +5506,18 @@ static PyObject *__pyx_f_7aiotone_2fm_8Operator_modulate(struct __pyx_obj_7aioto
  *     def is_silent(self):
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = PyFloat_FromDouble(__pyx_v_w_i); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 212, __pyx_L1_error)
+  __pyx_t_1 = PyFloat_FromDouble(__pyx_v_w_i); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 224, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "aiotone/fm.pyx":175
+  /* "aiotone/fm.pyx":182
  * 
  *     @cython.cdivision(True)
- *     cpdef modulate(self, array.array out_buffer, array.array modulator, double w_i):             # <<<<<<<<<<<<<<
- *         """Fill `out_buffer` with an enveloped and attenuated chunk of `self.wave`.
- * 
+ *     cpdef modulate(             # <<<<<<<<<<<<<<
+ *         self,
+ *         array.array out_buffer,
  */
 
   /* function exit code */
@@ -5555,17 +5578,17 @@ static PyObject *__pyx_pw_7aiotone_2fm_8Operator_10modulate(PyObject *__pyx_v_se
         case  1:
         if (likely((values[1] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_modulator)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("modulate", 1, 3, 3, 1); __PYX_ERR(0, 175, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("modulate", 1, 3, 3, 1); __PYX_ERR(0, 182, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  2:
         if (likely((values[2] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_w_i)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("modulate", 1, 3, 3, 2); __PYX_ERR(0, 175, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("modulate", 1, 3, 3, 2); __PYX_ERR(0, 182, __pyx_L3_error)
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "modulate") < 0)) __PYX_ERR(0, 175, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "modulate") < 0)) __PYX_ERR(0, 182, __pyx_L3_error)
       }
     } else if (PyTuple_GET_SIZE(__pyx_args) != 3) {
       goto __pyx_L5_argtuple_error;
@@ -5576,18 +5599,18 @@ static PyObject *__pyx_pw_7aiotone_2fm_8Operator_10modulate(PyObject *__pyx_v_se
     }
     __pyx_v_out_buffer = ((arrayobject *)values[0]);
     __pyx_v_modulator = ((arrayobject *)values[1]);
-    __pyx_v_w_i = __pyx_PyFloat_AsDouble(values[2]); if (unlikely((__pyx_v_w_i == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 175, __pyx_L3_error)
+    __pyx_v_w_i = __pyx_PyFloat_AsDouble(values[2]); if (unlikely((__pyx_v_w_i == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 186, __pyx_L3_error)
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("modulate", 1, 3, 3, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 175, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("modulate", 1, 3, 3, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 182, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("aiotone.fm.Operator.modulate", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_out_buffer), __pyx_ptype_7cpython_5array_array, 1, "out_buffer", 0))) __PYX_ERR(0, 175, __pyx_L1_error)
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_modulator), __pyx_ptype_7cpython_5array_array, 1, "modulator", 0))) __PYX_ERR(0, 175, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_out_buffer), __pyx_ptype_7cpython_5array_array, 1, "out_buffer", 0))) __PYX_ERR(0, 184, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_modulator), __pyx_ptype_7cpython_5array_array, 1, "modulator", 0))) __PYX_ERR(0, 185, __pyx_L1_error)
   __pyx_r = __pyx_pf_7aiotone_2fm_8Operator_9modulate(((struct __pyx_obj_7aiotone_2fm_Operator *)__pyx_v_self), __pyx_v_out_buffer, __pyx_v_modulator, __pyx_v_w_i);
 
   /* function exit code */
@@ -5608,7 +5631,7 @@ static PyObject *__pyx_pf_7aiotone_2fm_8Operator_9modulate(struct __pyx_obj_7aio
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("modulate", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __pyx_f_7aiotone_2fm_8Operator_modulate(__pyx_v_self, __pyx_v_out_buffer, __pyx_v_modulator, __pyx_v_w_i, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 175, __pyx_L1_error)
+  __pyx_t_1 = __pyx_f_7aiotone_2fm_8Operator_modulate(__pyx_v_self, __pyx_v_out_buffer, __pyx_v_modulator, __pyx_v_w_i, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 182, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -5625,7 +5648,7 @@ static PyObject *__pyx_pf_7aiotone_2fm_8Operator_9modulate(struct __pyx_obj_7aio
   return __pyx_r;
 }
 
-/* "aiotone/fm.pyx":214
+/* "aiotone/fm.pyx":226
  *         return w_i
  * 
  *     def is_silent(self):             # <<<<<<<<<<<<<<
@@ -5657,7 +5680,7 @@ static PyObject *__pyx_pf_7aiotone_2fm_8Operator_11is_silent(struct __pyx_obj_7a
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("is_silent", 0);
 
-  /* "aiotone/fm.pyx":215
+  /* "aiotone/fm.pyx":227
  * 
  *     def is_silent(self):
  *         return not self.reset and self.envelope.is_silent()             # <<<<<<<<<<<<<<
@@ -5666,13 +5689,13 @@ static PyObject *__pyx_pf_7aiotone_2fm_8Operator_11is_silent(struct __pyx_obj_7a
   __pyx_t_2 = (!(__pyx_v_self->reset != 0));
   if (__pyx_t_2) {
   } else {
-    __pyx_t_3 = __Pyx_PyBool_FromLong(__pyx_t_2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 215, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_PyBool_FromLong(__pyx_t_2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 227, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __pyx_t_1 = __pyx_t_3;
     __pyx_t_3 = 0;
     goto __pyx_L3_bool_binop_done;
   }
-  __pyx_t_3 = ((struct __pyx_vtabstruct_7aiotone_2fm_Envelope *)__pyx_v_self->envelope->__pyx_vtab)->is_silent(__pyx_v_self->envelope, 0); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 215, __pyx_L1_error)
+  __pyx_t_3 = ((struct __pyx_vtabstruct_7aiotone_2fm_Envelope *)__pyx_v_self->envelope->__pyx_vtab)->is_silent(__pyx_v_self->envelope, 0); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 227, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_INCREF(__pyx_t_3);
   __pyx_t_1 = __pyx_t_3;
@@ -5682,7 +5705,7 @@ static PyObject *__pyx_pf_7aiotone_2fm_8Operator_11is_silent(struct __pyx_obj_7a
   __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "aiotone/fm.pyx":214
+  /* "aiotone/fm.pyx":226
  *         return w_i
  * 
  *     def is_silent(self):             # <<<<<<<<<<<<<<
@@ -21889,7 +21912,7 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {0, 0, 0, 0, 0, 0, 0}
 };
 static CYTHON_SMALL_CODE int __Pyx_InitCachedBuiltins(void) {
-  __pyx_builtin_range = __Pyx_GetBuiltinName(__pyx_n_s_range); if (!__pyx_builtin_range) __PYX_ERR(0, 28, __pyx_L1_error)
+  __pyx_builtin_range = __Pyx_GetBuiltinName(__pyx_n_s_range); if (!__pyx_builtin_range) __PYX_ERR(0, 35, __pyx_L1_error)
   __pyx_builtin_MemoryError = __Pyx_GetBuiltinName(__pyx_n_s_MemoryError); if (!__pyx_builtin_MemoryError) __PYX_ERR(2, 109, __pyx_L1_error)
   __pyx_builtin_ValueError = __Pyx_GetBuiltinName(__pyx_n_s_ValueError); if (!__pyx_builtin_ValueError) __PYX_ERR(1, 133, __pyx_L1_error)
   __pyx_builtin_enumerate = __Pyx_GetBuiltinName(__pyx_n_s_enumerate); if (!__pyx_builtin_enumerate) __PYX_ERR(1, 151, __pyx_L1_error)
@@ -21906,14 +21929,14 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__Pyx_InitCachedConstants", 0);
 
-  /* "aiotone/fm.pyx":160
+  /* "aiotone/fm.pyx":167
  *         cdef array.array modulator
  *         cdef int mod_len
  *         cdef array.array out_buffer = array.array("h")             # <<<<<<<<<<<<<<
  *         cdef double w_i = 0.0
  * 
  */
-  __pyx_tuple__2 = PyTuple_Pack(1, __pyx_n_u_h); if (unlikely(!__pyx_tuple__2)) __PYX_ERR(0, 160, __pyx_L1_error)
+  __pyx_tuple__2 = PyTuple_Pack(1, __pyx_n_u_h); if (unlikely(!__pyx_tuple__2)) __PYX_ERR(0, 167, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__2);
   __Pyx_GIVEREF(__pyx_tuple__2);
 
@@ -22124,62 +22147,62 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
   /* "aiotone/fm.pyx":22
  * 
  * 
- * cpdef calculate_panning(double pan, array.array mono, array.array stereo, int32_t want_frames):             # <<<<<<<<<<<<<<
- *     """Convert `mono` signal to `stereo` using the static `pan` ratio.
- * 
+ * cpdef calculate_panning(             # <<<<<<<<<<<<<<
+ *     double pan,
+ *     array.array mono,
  */
   __pyx_tuple__23 = PyTuple_Pack(4, __pyx_n_s_pan, __pyx_n_s_mono, __pyx_n_s_stereo, __pyx_n_s_want_frames); if (unlikely(!__pyx_tuple__23)) __PYX_ERR(0, 22, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__23);
   __Pyx_GIVEREF(__pyx_tuple__23);
   __pyx_codeobj__24 = (PyObject*)__Pyx_PyCode_New(4, 0, 4, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__23, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_aiotone_fm_pyx, __pyx_n_s_calculate_panning, 22, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__24)) __PYX_ERR(0, 22, __pyx_L1_error)
 
-  /* "aiotone/fm.pyx":57
+  /* "aiotone/fm.pyx":64
  *         self.current_value = 0.0
  * 
  *     def reset(self):             # <<<<<<<<<<<<<<
  *         self.released = False
  *         self.samples_since_reset = 0
  */
-  __pyx_tuple__25 = PyTuple_Pack(1, __pyx_n_s_self); if (unlikely(!__pyx_tuple__25)) __PYX_ERR(0, 57, __pyx_L1_error)
+  __pyx_tuple__25 = PyTuple_Pack(1, __pyx_n_s_self); if (unlikely(!__pyx_tuple__25)) __PYX_ERR(0, 64, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__25);
   __Pyx_GIVEREF(__pyx_tuple__25);
-  __pyx_codeobj__26 = (PyObject*)__Pyx_PyCode_New(1, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__25, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_aiotone_fm_pyx, __pyx_n_s_reset, 57, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__26)) __PYX_ERR(0, 57, __pyx_L1_error)
+  __pyx_codeobj__26 = (PyObject*)__Pyx_PyCode_New(1, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__25, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_aiotone_fm_pyx, __pyx_n_s_reset, 64, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__26)) __PYX_ERR(0, 64, __pyx_L1_error)
 
-  /* "aiotone/fm.pyx":62
+  /* "aiotone/fm.pyx":69
  *         self.current_value = 0.0
  * 
  *     def release(self):             # <<<<<<<<<<<<<<
  *         self.released = True
  * 
  */
-  __pyx_tuple__27 = PyTuple_Pack(1, __pyx_n_s_self); if (unlikely(!__pyx_tuple__27)) __PYX_ERR(0, 62, __pyx_L1_error)
+  __pyx_tuple__27 = PyTuple_Pack(1, __pyx_n_s_self); if (unlikely(!__pyx_tuple__27)) __PYX_ERR(0, 69, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__27);
   __Pyx_GIVEREF(__pyx_tuple__27);
-  __pyx_codeobj__28 = (PyObject*)__Pyx_PyCode_New(1, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__27, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_aiotone_fm_pyx, __pyx_n_s_release, 62, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__28)) __PYX_ERR(0, 62, __pyx_L1_error)
+  __pyx_codeobj__28 = (PyObject*)__Pyx_PyCode_New(1, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__27, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_aiotone_fm_pyx, __pyx_n_s_release, 69, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__28)) __PYX_ERR(0, 69, __pyx_L1_error)
 
-  /* "aiotone/fm.pyx":65
+  /* "aiotone/fm.pyx":72
  *         self.released = True
  * 
  *     cpdef advance(self):             # <<<<<<<<<<<<<<
- *         """Move the envelope one sample forward and return its current floating-point value."""
+ *         """Move the envelope one sample forward and return its current fp value."""
  *         cdef double envelope = self.current_value
  */
-  __pyx_tuple__29 = PyTuple_Pack(1, __pyx_n_s_self); if (unlikely(!__pyx_tuple__29)) __PYX_ERR(0, 65, __pyx_L1_error)
+  __pyx_tuple__29 = PyTuple_Pack(1, __pyx_n_s_self); if (unlikely(!__pyx_tuple__29)) __PYX_ERR(0, 72, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__29);
   __Pyx_GIVEREF(__pyx_tuple__29);
-  __pyx_codeobj__30 = (PyObject*)__Pyx_PyCode_New(1, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__29, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_aiotone_fm_pyx, __pyx_n_s_advance, 65, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__30)) __PYX_ERR(0, 65, __pyx_L1_error)
+  __pyx_codeobj__30 = (PyObject*)__Pyx_PyCode_New(1, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__29, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_aiotone_fm_pyx, __pyx_n_s_advance, 72, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__30)) __PYX_ERR(0, 72, __pyx_L1_error)
 
-  /* "aiotone/fm.pyx":103
+  /* "aiotone/fm.pyx":110
  *         return envelope
  * 
  *     cpdef is_silent(self):             # <<<<<<<<<<<<<<
  *         return self.samples_since_reset < 0 and self.current_value == 0
  * 
  */
-  __pyx_tuple__31 = PyTuple_Pack(1, __pyx_n_s_self); if (unlikely(!__pyx_tuple__31)) __PYX_ERR(0, 103, __pyx_L1_error)
+  __pyx_tuple__31 = PyTuple_Pack(1, __pyx_n_s_self); if (unlikely(!__pyx_tuple__31)) __PYX_ERR(0, 110, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__31);
   __Pyx_GIVEREF(__pyx_tuple__31);
-  __pyx_codeobj__32 = (PyObject*)__Pyx_PyCode_New(1, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__31, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_aiotone_fm_pyx, __pyx_n_s_is_silent, 103, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__32)) __PYX_ERR(0, 103, __pyx_L1_error)
+  __pyx_codeobj__32 = (PyObject*)__Pyx_PyCode_New(1, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__31, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_aiotone_fm_pyx, __pyx_n_s_is_silent, 110, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__32)) __PYX_ERR(0, 110, __pyx_L1_error)
 
   /* "(tree fragment)":1
  * def __reduce_cython__(self):             # <<<<<<<<<<<<<<
@@ -22202,64 +22225,64 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
   __Pyx_GIVEREF(__pyx_tuple__35);
   __pyx_codeobj__36 = (PyObject*)__Pyx_PyCode_New(2, 0, 2, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__35, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_stringsource, __pyx_n_s_setstate_cython, 16, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__36)) __PYX_ERR(1, 16, __pyx_L1_error)
 
-  /* "aiotone/fm.pyx":141
+  /* "aiotone/fm.pyx":148
  *         self.reset = False
  * 
  *     def note_on(self, double pitch, double volume):             # <<<<<<<<<<<<<<
  *         self.reset = True
  *         self.pitch = pitch
  */
-  __pyx_tuple__37 = PyTuple_Pack(3, __pyx_n_s_self, __pyx_n_s_pitch, __pyx_n_s_volume); if (unlikely(!__pyx_tuple__37)) __PYX_ERR(0, 141, __pyx_L1_error)
+  __pyx_tuple__37 = PyTuple_Pack(3, __pyx_n_s_self, __pyx_n_s_pitch, __pyx_n_s_volume); if (unlikely(!__pyx_tuple__37)) __PYX_ERR(0, 148, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__37);
   __Pyx_GIVEREF(__pyx_tuple__37);
-  __pyx_codeobj__38 = (PyObject*)__Pyx_PyCode_New(3, 0, 3, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__37, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_aiotone_fm_pyx, __pyx_n_s_note_on, 141, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__38)) __PYX_ERR(0, 141, __pyx_L1_error)
+  __pyx_codeobj__38 = (PyObject*)__Pyx_PyCode_New(3, 0, 3, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__37, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_aiotone_fm_pyx, __pyx_n_s_note_on, 148, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__38)) __PYX_ERR(0, 148, __pyx_L1_error)
 
-  /* "aiotone/fm.pyx":146
+  /* "aiotone/fm.pyx":153
  *         self.current_velocity = volume
  * 
  *     def note_off(self, double pitch, double volume):             # <<<<<<<<<<<<<<
  *         self.envelope.release()
  * 
  */
-  __pyx_tuple__39 = PyTuple_Pack(3, __pyx_n_s_self, __pyx_n_s_pitch, __pyx_n_s_volume); if (unlikely(!__pyx_tuple__39)) __PYX_ERR(0, 146, __pyx_L1_error)
+  __pyx_tuple__39 = PyTuple_Pack(3, __pyx_n_s_self, __pyx_n_s_pitch, __pyx_n_s_volume); if (unlikely(!__pyx_tuple__39)) __PYX_ERR(0, 153, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__39);
   __Pyx_GIVEREF(__pyx_tuple__39);
-  __pyx_codeobj__40 = (PyObject*)__Pyx_PyCode_New(3, 0, 3, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__39, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_aiotone_fm_pyx, __pyx_n_s_note_off, 146, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__40)) __PYX_ERR(0, 146, __pyx_L1_error)
+  __pyx_codeobj__40 = (PyObject*)__Pyx_PyCode_New(3, 0, 3, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__39, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_aiotone_fm_pyx, __pyx_n_s_note_off, 153, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__40)) __PYX_ERR(0, 153, __pyx_L1_error)
 
-  /* "aiotone/fm.pyx":149
+  /* "aiotone/fm.pyx":156
  *         self.envelope.release()
  * 
  *     def mono_out(self):             # <<<<<<<<<<<<<<
  *         """Generate Audio, accepting other Audio for modulation purposes.
  * 
  */
-  __pyx_tuple__41 = PyTuple_Pack(5, __pyx_n_s_self, __pyx_n_s_modulator, __pyx_n_s_mod_len, __pyx_n_s_out_buffer, __pyx_n_s_w_i); if (unlikely(!__pyx_tuple__41)) __PYX_ERR(0, 149, __pyx_L1_error)
+  __pyx_tuple__41 = PyTuple_Pack(5, __pyx_n_s_self, __pyx_n_s_modulator, __pyx_n_s_mod_len, __pyx_n_s_out_buffer, __pyx_n_s_w_i); if (unlikely(!__pyx_tuple__41)) __PYX_ERR(0, 156, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__41);
   __Pyx_GIVEREF(__pyx_tuple__41);
-  __pyx_codeobj_ = (PyObject*)__Pyx_PyCode_New(1, 0, 5, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__41, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_aiotone_fm_pyx, __pyx_n_s_mono_out, 149, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj_)) __PYX_ERR(0, 149, __pyx_L1_error)
+  __pyx_codeobj_ = (PyObject*)__Pyx_PyCode_New(1, 0, 5, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__41, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_aiotone_fm_pyx, __pyx_n_s_mono_out, 156, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj_)) __PYX_ERR(0, 156, __pyx_L1_error)
 
-  /* "aiotone/fm.pyx":175
+  /* "aiotone/fm.pyx":182
  * 
  *     @cython.cdivision(True)
- *     cpdef modulate(self, array.array out_buffer, array.array modulator, double w_i):             # <<<<<<<<<<<<<<
- *         """Fill `out_buffer` with an enveloped and attenuated chunk of `self.wave`.
- * 
+ *     cpdef modulate(             # <<<<<<<<<<<<<<
+ *         self,
+ *         array.array out_buffer,
  */
-  __pyx_tuple__42 = PyTuple_Pack(4, __pyx_n_s_self, __pyx_n_s_out_buffer, __pyx_n_s_modulator, __pyx_n_s_w_i); if (unlikely(!__pyx_tuple__42)) __PYX_ERR(0, 175, __pyx_L1_error)
+  __pyx_tuple__42 = PyTuple_Pack(4, __pyx_n_s_self, __pyx_n_s_out_buffer, __pyx_n_s_modulator, __pyx_n_s_w_i); if (unlikely(!__pyx_tuple__42)) __PYX_ERR(0, 182, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__42);
   __Pyx_GIVEREF(__pyx_tuple__42);
-  __pyx_codeobj__43 = (PyObject*)__Pyx_PyCode_New(4, 0, 4, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__42, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_aiotone_fm_pyx, __pyx_n_s_modulate, 175, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__43)) __PYX_ERR(0, 175, __pyx_L1_error)
+  __pyx_codeobj__43 = (PyObject*)__Pyx_PyCode_New(4, 0, 4, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__42, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_aiotone_fm_pyx, __pyx_n_s_modulate, 182, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__43)) __PYX_ERR(0, 182, __pyx_L1_error)
 
-  /* "aiotone/fm.pyx":214
+  /* "aiotone/fm.pyx":226
  *         return w_i
  * 
  *     def is_silent(self):             # <<<<<<<<<<<<<<
  *         return not self.reset and self.envelope.is_silent()
  */
-  __pyx_tuple__44 = PyTuple_Pack(1, __pyx_n_s_self); if (unlikely(!__pyx_tuple__44)) __PYX_ERR(0, 214, __pyx_L1_error)
+  __pyx_tuple__44 = PyTuple_Pack(1, __pyx_n_s_self); if (unlikely(!__pyx_tuple__44)) __PYX_ERR(0, 226, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__44);
   __Pyx_GIVEREF(__pyx_tuple__44);
-  __pyx_codeobj__45 = (PyObject*)__Pyx_PyCode_New(1, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__44, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_aiotone_fm_pyx, __pyx_n_s_is_silent, 214, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__45)) __PYX_ERR(0, 214, __pyx_L1_error)
+  __pyx_codeobj__45 = (PyObject*)__Pyx_PyCode_New(1, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__44, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_aiotone_fm_pyx, __pyx_n_s_is_silent, 226, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__45)) __PYX_ERR(0, 226, __pyx_L1_error)
 
   /* "(tree fragment)":1
  * def __reduce_cython__(self):             # <<<<<<<<<<<<<<
@@ -22428,31 +22451,31 @@ static int __Pyx_modinit_type_init_code(void) {
   __pyx_vtabptr_7aiotone_2fm_Envelope = &__pyx_vtable_7aiotone_2fm_Envelope;
   __pyx_vtable_7aiotone_2fm_Envelope.advance = (PyObject *(*)(struct __pyx_obj_7aiotone_2fm_Envelope *, int __pyx_skip_dispatch))__pyx_f_7aiotone_2fm_8Envelope_advance;
   __pyx_vtable_7aiotone_2fm_Envelope.is_silent = (PyObject *(*)(struct __pyx_obj_7aiotone_2fm_Envelope *, int __pyx_skip_dispatch))__pyx_f_7aiotone_2fm_8Envelope_is_silent;
-  if (PyType_Ready(&__pyx_type_7aiotone_2fm_Envelope) < 0) __PYX_ERR(0, 33, __pyx_L1_error)
+  if (PyType_Ready(&__pyx_type_7aiotone_2fm_Envelope) < 0) __PYX_ERR(0, 40, __pyx_L1_error)
   #if PY_VERSION_HEX < 0x030800B1
   __pyx_type_7aiotone_2fm_Envelope.tp_print = 0;
   #endif
   if ((CYTHON_USE_TYPE_SLOTS && CYTHON_USE_PYTYPE_LOOKUP) && likely(!__pyx_type_7aiotone_2fm_Envelope.tp_dictoffset && __pyx_type_7aiotone_2fm_Envelope.tp_getattro == PyObject_GenericGetAttr)) {
     __pyx_type_7aiotone_2fm_Envelope.tp_getattro = __Pyx_PyObject_GenericGetAttr;
   }
-  if (__Pyx_SetVtable(__pyx_type_7aiotone_2fm_Envelope.tp_dict, __pyx_vtabptr_7aiotone_2fm_Envelope) < 0) __PYX_ERR(0, 33, __pyx_L1_error)
-  if (PyObject_SetAttr(__pyx_m, __pyx_n_s_Envelope, (PyObject *)&__pyx_type_7aiotone_2fm_Envelope) < 0) __PYX_ERR(0, 33, __pyx_L1_error)
-  if (__Pyx_setup_reduce((PyObject*)&__pyx_type_7aiotone_2fm_Envelope) < 0) __PYX_ERR(0, 33, __pyx_L1_error)
+  if (__Pyx_SetVtable(__pyx_type_7aiotone_2fm_Envelope.tp_dict, __pyx_vtabptr_7aiotone_2fm_Envelope) < 0) __PYX_ERR(0, 40, __pyx_L1_error)
+  if (PyObject_SetAttr(__pyx_m, __pyx_n_s_Envelope, (PyObject *)&__pyx_type_7aiotone_2fm_Envelope) < 0) __PYX_ERR(0, 40, __pyx_L1_error)
+  if (__Pyx_setup_reduce((PyObject*)&__pyx_type_7aiotone_2fm_Envelope) < 0) __PYX_ERR(0, 40, __pyx_L1_error)
   __pyx_ptype_7aiotone_2fm_Envelope = &__pyx_type_7aiotone_2fm_Envelope;
   __pyx_vtabptr_7aiotone_2fm_Operator = &__pyx_vtable_7aiotone_2fm_Operator;
   __pyx_vtable_7aiotone_2fm_Operator.modulate = (PyObject *(*)(struct __pyx_obj_7aiotone_2fm_Operator *, arrayobject *, arrayobject *, double, int __pyx_skip_dispatch))__pyx_f_7aiotone_2fm_8Operator_modulate;
-  if (PyType_Ready(&__pyx_type_7aiotone_2fm_Operator) < 0) __PYX_ERR(0, 107, __pyx_L1_error)
+  if (PyType_Ready(&__pyx_type_7aiotone_2fm_Operator) < 0) __PYX_ERR(0, 114, __pyx_L1_error)
   #if PY_VERSION_HEX < 0x030800B1
   __pyx_type_7aiotone_2fm_Operator.tp_print = 0;
   #endif
   if ((CYTHON_USE_TYPE_SLOTS && CYTHON_USE_PYTYPE_LOOKUP) && likely(!__pyx_type_7aiotone_2fm_Operator.tp_dictoffset && __pyx_type_7aiotone_2fm_Operator.tp_getattro == PyObject_GenericGetAttr)) {
     __pyx_type_7aiotone_2fm_Operator.tp_getattro = __Pyx_PyObject_GenericGetAttr;
   }
-  if (__Pyx_SetVtable(__pyx_type_7aiotone_2fm_Operator.tp_dict, __pyx_vtabptr_7aiotone_2fm_Operator) < 0) __PYX_ERR(0, 107, __pyx_L1_error)
-  if (PyObject_SetAttr(__pyx_m, __pyx_n_s_Operator, (PyObject *)&__pyx_type_7aiotone_2fm_Operator) < 0) __PYX_ERR(0, 107, __pyx_L1_error)
-  if (__Pyx_setup_reduce((PyObject*)&__pyx_type_7aiotone_2fm_Operator) < 0) __PYX_ERR(0, 107, __pyx_L1_error)
+  if (__Pyx_SetVtable(__pyx_type_7aiotone_2fm_Operator.tp_dict, __pyx_vtabptr_7aiotone_2fm_Operator) < 0) __PYX_ERR(0, 114, __pyx_L1_error)
+  if (PyObject_SetAttr(__pyx_m, __pyx_n_s_Operator, (PyObject *)&__pyx_type_7aiotone_2fm_Operator) < 0) __PYX_ERR(0, 114, __pyx_L1_error)
+  if (__Pyx_setup_reduce((PyObject*)&__pyx_type_7aiotone_2fm_Operator) < 0) __PYX_ERR(0, 114, __pyx_L1_error)
   __pyx_ptype_7aiotone_2fm_Operator = &__pyx_type_7aiotone_2fm_Operator;
-  if (PyType_Ready(&__pyx_type_7aiotone_2fm___pyx_scope_struct__mono_out) < 0) __PYX_ERR(0, 149, __pyx_L1_error)
+  if (PyType_Ready(&__pyx_type_7aiotone_2fm___pyx_scope_struct__mono_out) < 0) __PYX_ERR(0, 156, __pyx_L1_error)
   #if PY_VERSION_HEX < 0x030800B1
   __pyx_type_7aiotone_2fm___pyx_scope_struct__mono_out.tp_print = 0;
   #endif
@@ -22806,64 +22829,64 @@ if (!__Pyx_RefNanny) {
   /* "aiotone/fm.pyx":22
  * 
  * 
- * cpdef calculate_panning(double pan, array.array mono, array.array stereo, int32_t want_frames):             # <<<<<<<<<<<<<<
- *     """Convert `mono` signal to `stereo` using the static `pan` ratio.
- * 
+ * cpdef calculate_panning(             # <<<<<<<<<<<<<<
+ *     double pan,
+ *     array.array mono,
  */
   __pyx_t_1 = __Pyx_CyFunction_New(&__pyx_mdef_7aiotone_2fm_3calculate_panning, 0, __pyx_n_s_calculate_panning, NULL, __pyx_n_s_aiotone_fm, __pyx_d, ((PyObject *)__pyx_codeobj__24)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 22, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_calculate_panning, __pyx_t_1) < 0) __PYX_ERR(0, 22, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "aiotone/fm.pyx":57
+  /* "aiotone/fm.pyx":64
  *         self.current_value = 0.0
  * 
  *     def reset(self):             # <<<<<<<<<<<<<<
  *         self.released = False
  *         self.samples_since_reset = 0
  */
-  __pyx_t_1 = __Pyx_CyFunction_New(&__pyx_mdef_7aiotone_2fm_8Envelope_3reset, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_Envelope_reset, NULL, __pyx_n_s_aiotone_fm, __pyx_d, ((PyObject *)__pyx_codeobj__26)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 57, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_CyFunction_New(&__pyx_mdef_7aiotone_2fm_8Envelope_3reset, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_Envelope_reset, NULL, __pyx_n_s_aiotone_fm, __pyx_d, ((PyObject *)__pyx_codeobj__26)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 64, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem((PyObject *)__pyx_ptype_7aiotone_2fm_Envelope->tp_dict, __pyx_n_s_reset, __pyx_t_1) < 0) __PYX_ERR(0, 57, __pyx_L1_error)
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_7aiotone_2fm_Envelope->tp_dict, __pyx_n_s_reset, __pyx_t_1) < 0) __PYX_ERR(0, 64, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   PyType_Modified(__pyx_ptype_7aiotone_2fm_Envelope);
 
-  /* "aiotone/fm.pyx":62
+  /* "aiotone/fm.pyx":69
  *         self.current_value = 0.0
  * 
  *     def release(self):             # <<<<<<<<<<<<<<
  *         self.released = True
  * 
  */
-  __pyx_t_1 = __Pyx_CyFunction_New(&__pyx_mdef_7aiotone_2fm_8Envelope_5release, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_Envelope_release, NULL, __pyx_n_s_aiotone_fm, __pyx_d, ((PyObject *)__pyx_codeobj__28)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 62, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_CyFunction_New(&__pyx_mdef_7aiotone_2fm_8Envelope_5release, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_Envelope_release, NULL, __pyx_n_s_aiotone_fm, __pyx_d, ((PyObject *)__pyx_codeobj__28)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 69, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem((PyObject *)__pyx_ptype_7aiotone_2fm_Envelope->tp_dict, __pyx_n_s_release, __pyx_t_1) < 0) __PYX_ERR(0, 62, __pyx_L1_error)
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_7aiotone_2fm_Envelope->tp_dict, __pyx_n_s_release, __pyx_t_1) < 0) __PYX_ERR(0, 69, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   PyType_Modified(__pyx_ptype_7aiotone_2fm_Envelope);
 
-  /* "aiotone/fm.pyx":65
+  /* "aiotone/fm.pyx":72
  *         self.released = True
  * 
  *     cpdef advance(self):             # <<<<<<<<<<<<<<
- *         """Move the envelope one sample forward and return its current floating-point value."""
+ *         """Move the envelope one sample forward and return its current fp value."""
  *         cdef double envelope = self.current_value
  */
-  __pyx_t_1 = __Pyx_CyFunction_New(&__pyx_mdef_7aiotone_2fm_8Envelope_7advance, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_Envelope_advance, NULL, __pyx_n_s_aiotone_fm, __pyx_d, ((PyObject *)__pyx_codeobj__30)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 65, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_CyFunction_New(&__pyx_mdef_7aiotone_2fm_8Envelope_7advance, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_Envelope_advance, NULL, __pyx_n_s_aiotone_fm, __pyx_d, ((PyObject *)__pyx_codeobj__30)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 72, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem((PyObject *)__pyx_ptype_7aiotone_2fm_Envelope->tp_dict, __pyx_n_s_advance, __pyx_t_1) < 0) __PYX_ERR(0, 65, __pyx_L1_error)
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_7aiotone_2fm_Envelope->tp_dict, __pyx_n_s_advance, __pyx_t_1) < 0) __PYX_ERR(0, 72, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   PyType_Modified(__pyx_ptype_7aiotone_2fm_Envelope);
 
-  /* "aiotone/fm.pyx":103
+  /* "aiotone/fm.pyx":110
  *         return envelope
  * 
  *     cpdef is_silent(self):             # <<<<<<<<<<<<<<
  *         return self.samples_since_reset < 0 and self.current_value == 0
  * 
  */
-  __pyx_t_1 = __Pyx_CyFunction_New(&__pyx_mdef_7aiotone_2fm_8Envelope_9is_silent, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_Envelope_is_silent, NULL, __pyx_n_s_aiotone_fm, __pyx_d, ((PyObject *)__pyx_codeobj__32)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 103, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_CyFunction_New(&__pyx_mdef_7aiotone_2fm_8Envelope_9is_silent, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_Envelope_is_silent, NULL, __pyx_n_s_aiotone_fm, __pyx_d, ((PyObject *)__pyx_codeobj__32)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 110, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem((PyObject *)__pyx_ptype_7aiotone_2fm_Envelope->tp_dict, __pyx_n_s_is_silent, __pyx_t_1) < 0) __PYX_ERR(0, 103, __pyx_L1_error)
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_7aiotone_2fm_Envelope->tp_dict, __pyx_n_s_is_silent, __pyx_t_1) < 0) __PYX_ERR(0, 110, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   PyType_Modified(__pyx_ptype_7aiotone_2fm_Envelope);
 
@@ -22890,67 +22913,67 @@ if (!__Pyx_RefNanny) {
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   PyType_Modified(__pyx_ptype_7aiotone_2fm_Envelope);
 
-  /* "aiotone/fm.pyx":141
+  /* "aiotone/fm.pyx":148
  *         self.reset = False
  * 
  *     def note_on(self, double pitch, double volume):             # <<<<<<<<<<<<<<
  *         self.reset = True
  *         self.pitch = pitch
  */
-  __pyx_t_1 = __Pyx_CyFunction_New(&__pyx_mdef_7aiotone_2fm_8Operator_3note_on, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_Operator_note_on, NULL, __pyx_n_s_aiotone_fm, __pyx_d, ((PyObject *)__pyx_codeobj__38)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 141, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_CyFunction_New(&__pyx_mdef_7aiotone_2fm_8Operator_3note_on, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_Operator_note_on, NULL, __pyx_n_s_aiotone_fm, __pyx_d, ((PyObject *)__pyx_codeobj__38)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 148, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem((PyObject *)__pyx_ptype_7aiotone_2fm_Operator->tp_dict, __pyx_n_s_note_on, __pyx_t_1) < 0) __PYX_ERR(0, 141, __pyx_L1_error)
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_7aiotone_2fm_Operator->tp_dict, __pyx_n_s_note_on, __pyx_t_1) < 0) __PYX_ERR(0, 148, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   PyType_Modified(__pyx_ptype_7aiotone_2fm_Operator);
 
-  /* "aiotone/fm.pyx":146
+  /* "aiotone/fm.pyx":153
  *         self.current_velocity = volume
  * 
  *     def note_off(self, double pitch, double volume):             # <<<<<<<<<<<<<<
  *         self.envelope.release()
  * 
  */
-  __pyx_t_1 = __Pyx_CyFunction_New(&__pyx_mdef_7aiotone_2fm_8Operator_5note_off, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_Operator_note_off, NULL, __pyx_n_s_aiotone_fm, __pyx_d, ((PyObject *)__pyx_codeobj__40)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 146, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_CyFunction_New(&__pyx_mdef_7aiotone_2fm_8Operator_5note_off, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_Operator_note_off, NULL, __pyx_n_s_aiotone_fm, __pyx_d, ((PyObject *)__pyx_codeobj__40)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 153, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem((PyObject *)__pyx_ptype_7aiotone_2fm_Operator->tp_dict, __pyx_n_s_note_off, __pyx_t_1) < 0) __PYX_ERR(0, 146, __pyx_L1_error)
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_7aiotone_2fm_Operator->tp_dict, __pyx_n_s_note_off, __pyx_t_1) < 0) __PYX_ERR(0, 153, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   PyType_Modified(__pyx_ptype_7aiotone_2fm_Operator);
 
-  /* "aiotone/fm.pyx":149
+  /* "aiotone/fm.pyx":156
  *         self.envelope.release()
  * 
  *     def mono_out(self):             # <<<<<<<<<<<<<<
  *         """Generate Audio, accepting other Audio for modulation purposes.
  * 
  */
-  __pyx_t_1 = __Pyx_CyFunction_New(&__pyx_mdef_7aiotone_2fm_8Operator_7mono_out, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_Operator_mono_out, NULL, __pyx_n_s_aiotone_fm, __pyx_d, ((PyObject *)__pyx_codeobj_)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 149, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_CyFunction_New(&__pyx_mdef_7aiotone_2fm_8Operator_7mono_out, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_Operator_mono_out, NULL, __pyx_n_s_aiotone_fm, __pyx_d, ((PyObject *)__pyx_codeobj_)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 156, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem((PyObject *)__pyx_ptype_7aiotone_2fm_Operator->tp_dict, __pyx_n_s_mono_out, __pyx_t_1) < 0) __PYX_ERR(0, 149, __pyx_L1_error)
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_7aiotone_2fm_Operator->tp_dict, __pyx_n_s_mono_out, __pyx_t_1) < 0) __PYX_ERR(0, 156, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   PyType_Modified(__pyx_ptype_7aiotone_2fm_Operator);
 
-  /* "aiotone/fm.pyx":175
+  /* "aiotone/fm.pyx":182
  * 
  *     @cython.cdivision(True)
- *     cpdef modulate(self, array.array out_buffer, array.array modulator, double w_i):             # <<<<<<<<<<<<<<
- *         """Fill `out_buffer` with an enveloped and attenuated chunk of `self.wave`.
- * 
+ *     cpdef modulate(             # <<<<<<<<<<<<<<
+ *         self,
+ *         array.array out_buffer,
  */
-  __pyx_t_1 = __Pyx_CyFunction_New(&__pyx_mdef_7aiotone_2fm_8Operator_10modulate, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_Operator_modulate, NULL, __pyx_n_s_aiotone_fm, __pyx_d, ((PyObject *)__pyx_codeobj__43)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 175, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_CyFunction_New(&__pyx_mdef_7aiotone_2fm_8Operator_10modulate, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_Operator_modulate, NULL, __pyx_n_s_aiotone_fm, __pyx_d, ((PyObject *)__pyx_codeobj__43)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 182, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem((PyObject *)__pyx_ptype_7aiotone_2fm_Operator->tp_dict, __pyx_n_s_modulate, __pyx_t_1) < 0) __PYX_ERR(0, 175, __pyx_L1_error)
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_7aiotone_2fm_Operator->tp_dict, __pyx_n_s_modulate, __pyx_t_1) < 0) __PYX_ERR(0, 182, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   PyType_Modified(__pyx_ptype_7aiotone_2fm_Operator);
 
-  /* "aiotone/fm.pyx":214
+  /* "aiotone/fm.pyx":226
  *         return w_i
  * 
  *     def is_silent(self):             # <<<<<<<<<<<<<<
  *         return not self.reset and self.envelope.is_silent()
  */
-  __pyx_t_1 = __Pyx_CyFunction_New(&__pyx_mdef_7aiotone_2fm_8Operator_12is_silent, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_Operator_is_silent, NULL, __pyx_n_s_aiotone_fm, __pyx_d, ((PyObject *)__pyx_codeobj__45)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 214, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_CyFunction_New(&__pyx_mdef_7aiotone_2fm_8Operator_12is_silent, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_Operator_is_silent, NULL, __pyx_n_s_aiotone_fm, __pyx_d, ((PyObject *)__pyx_codeobj__45)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 226, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem((PyObject *)__pyx_ptype_7aiotone_2fm_Operator->tp_dict, __pyx_n_s_is_silent, __pyx_t_1) < 0) __PYX_ERR(0, 214, __pyx_L1_error)
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_7aiotone_2fm_Operator->tp_dict, __pyx_n_s_is_silent, __pyx_t_1) < 0) __PYX_ERR(0, 226, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   PyType_Modified(__pyx_ptype_7aiotone_2fm_Operator);
 

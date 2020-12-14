@@ -19,15 +19,22 @@ cpdef int16_t saturate(double value):
     return <int16_t>ival
 
 
-cpdef calculate_panning(double pan, array.array mono, array.array stereo, int32_t want_frames):
+cpdef calculate_panning(
+    double pan,
+    array.array mono,
+    array.array stereo,
+    int32_t want_frames,
+):
     """Convert `mono` signal to `stereo` using the static `pan` ratio.
     
     pan = -1.0 is hard left. pan = 0.0 is center. pan = 1.0 is hard right.
     """
     cdef int32_t i
+    cdef short *raw_mono = mono.data.as_shorts
+    cdef short *raw_stereo = stereo.data.as_shorts
     for i in range(want_frames):
-            stereo.data.as_shorts[2 * i] = <int16_t>((-pan + 1) / 2 * mono.data.as_shorts[i])
-            stereo.data.as_shorts[2 * i + 1] = <int16_t>((pan + 1) / 2 * mono.data.as_shorts[i])
+            raw_stereo[2 * i] = <int16_t>((-pan + 1) / 2 * raw_mono[i])
+            raw_stereo[2 * i + 1] = <int16_t>((pan + 1) / 2 * raw_mono[i])
 
 
 cdef class Envelope:
@@ -63,7 +70,7 @@ cdef class Envelope:
         self.released = True
 
     cpdef advance(self):
-        """Move the envelope one sample forward and return its current floating-point value."""
+        """Move the envelope one sample forward and return its current fp value."""
         cdef double envelope = self.current_value
         cdef int samples_since_reset = self.samples_since_reset
         cdef int a = self.a or 1
@@ -172,7 +179,12 @@ cdef class Operator:
             mod_len = len(modulator)
 
     @cython.cdivision(True)
-    cpdef modulate(self, array.array out_buffer, array.array modulator, double w_i):
+    cpdef modulate(
+        self,
+        array.array out_buffer,
+        array.array modulator,
+        double w_i,
+    ):
         """Fill `out_buffer` with an enveloped and attenuated chunk of `self.wave`.
 
         The waveform is modulated by a `modulator` waveform which can be an output
