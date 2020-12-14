@@ -9,7 +9,6 @@ import asyncio
 from collections import defaultdict
 import configparser
 from dataclasses import dataclass, field
-import math
 from pathlib import Path
 import time
 
@@ -41,8 +40,8 @@ from .midi import (
     silence,
 )
 from .notes import note_to_freq
-
-from .fm import calculate_panning, saturate, Envelope, Operator
+from .fm import calculate_panning, filter_array, saturate, Envelope, Operator
+from .waves import sine_array, sine12_array, saw_array
 
 
 # We want this to be symmetrical on the + and the - side.
@@ -68,42 +67,6 @@ if TYPE_CHECKING:
 # Note: due to this initialization, the first yield in Audio generators returns an
 # empty array.
 init = next
-
-
-def sine_array(sample_count: int) -> array[int]:
-    """Return a monophonic signed 16-bit wavetable with a single sine cycle."""
-    numbers = []
-    for i in range(sample_count):
-        current = round(INT16_MAXVALUE * math.sin(i / sample_count * math.tau))
-        numbers.append(current)
-    return array("h", numbers)
-
-
-def sine12_array(sample_count: int) -> array[int]:
-    """Return a monophonic signed 16-bit wavetable with a single cycle of a 1+2 sine.
-
-    A 1+2 sine is a sine wave modulated by its first harmonic.
-    """
-    numbers = []
-    for i in range(sample_count):
-        current = round(
-            INT16_MAXVALUE
-            * (
-                0.5 * math.sin(i / sample_count * math.tau)
-                + 0.5 * math.sin(2 * i / sample_count * math.tau)
-            )
-        )
-        numbers.append(current)
-    return array("h", numbers)
-
-
-def saw_array(sample_count: int) -> array[int]:
-    """Return a monophonic signed 16-bit wavetable with a single sawtooth wave cycle."""
-    numbers = []
-    for i in range(sample_count):
-        current = round(-INT16_MAXVALUE + (i / sample_count) * (2 * INT16_MAXVALUE))
-        numbers.append(current)
-    return array("h", numbers)
 
 
 def panning(mono: Audio, pan: float = 0.0) -> Audio:
