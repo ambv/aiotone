@@ -3,10 +3,11 @@ DEF MAX_BUFFER = 2400  # 5 ms at 48000 Hz
 
 cimport cython
 from libc.stdint cimport int16_t, int32_t
-from libc.math cimport floor
+from libc.math cimport floor, lround
 
 from cpython cimport array
 import array
+from cymem.cymem cimport Pool
 
 
 cpdef int16_t saturate(double value):
@@ -35,6 +36,49 @@ cpdef calculate_panning(
     for i in range(want_frames):
             raw_stereo[2 * i] = <int16_t>((-pan + 1) / 2 * raw_mono[i])
             raw_stereo[2 * i + 1] = <int16_t>((pan + 1) / 2 * raw_mono[i])
+
+
+@cython.cdivision(True)
+cpdef filter_array(array.array input, int window):
+    """Return a new array of the same length as `input` filtered by a linear triangle window."""
+    cdef Pool mem = Pool()
+    cdef double* window_table = <double*>mem.alloc(window, sizeof(double))
+    cdef double divisor = 0.0
+    cdef int i
+    cdef int j
+    cdef double val = 0.0
+
+    for i in range(window):
+        window_table[i] = 1.0 - <double>i / <double>window
+        divisor += 2.0 * window_table[i]
+
+    # ensure the window sums to 1.0
+    for i in range(window):
+        window_table[i] /= divisor
+        val += window_table[i]
+
+    assert val <= 1.0
+    val = 0.0
+
+    cdef short* raw_input = input.data.as_shorts
+    cdef int input_len = len(input)
+    cdef array.array result = array.array("h", [0] * input_len)
+    for i in range(input_len):
+        val = 0.0
+        for j in range(window):
+            val += raw_input[modulo(i + j, input_len)] * window_table[j]
+            if j == 0:
+                continue
+            val += raw_input[modulo(i - j, input_len)] * window_table[j]
+        assert -INT16_MAXVALUE <= lround(val) <= INT16_MAXVALUE
+        result.data.as_shorts[i] = <int16_t>lround(val)
+    return result
+
+
+@cython.cdivision(True)
+cdef inline modulo(int a, int b):
+    """Python-style mod that always returns positive numbers."""
+    return ((a % b) + b) % b
 
 
 cdef class Envelope:
@@ -216,8 +260,8 @@ cdef class Operator:
                 * self.volume
                 * envelope.advance()
                 * (
-                    (1.0 - triangle_factor) * w[<int>mod_scaled % w_len]
-                    + triangle_factor * w[<int>(mod_scaled + 1.0) % w_len]
+                    (1.0 - triangle_factor) * w[modulo(<int>mod_scaled, w_len)]
+                    + triangle_factor * w[modulo(<int>mod_scaled + 1, w_len)]
                 )
             )
             w_i += w_len * <double>self.pitch / sr

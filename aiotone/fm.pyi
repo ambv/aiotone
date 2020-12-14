@@ -15,6 +15,10 @@ def calculate_panning(
     ...
 
 
+def filter_array(input: array[int], window: int) -> array[int]:
+    ...
+
+
 class Envelope:
     def __init__(self, a: int, d: int, s: float, r: int) -> None:
         ...
