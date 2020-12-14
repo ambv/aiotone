@@ -3,7 +3,7 @@ DEF MAX_BUFFER = 2400  # 5 ms at 48000 Hz
 
 cimport cython
 from libc.stdint cimport int16_t, int32_t
-from libc.math cimport lround
+from libc.math cimport floor
 
 from cpython cimport array
 import array
@@ -184,6 +184,7 @@ cdef class Operator:
         cdef int i
         cdef int16_t mod
         cdef double mod_scaled
+        cdef double triangle_factor
         cdef int sr = self.sample_rate
         cdef int16_t[:] w = self.wave
         cdef int w_len = len(w)
@@ -196,12 +197,16 @@ cdef class Operator:
 
         for i in range(len(modulator)):
             mod = modulator.data.as_shorts[i]
-            mod_scaled = mod * w_len / INT16_MAXVALUE
+            mod_scaled = w_i + mod * w_len / INT16_MAXVALUE
+            triangle_factor = mod_scaled - floor(mod_scaled)
             out_buffer.data.as_shorts[i] = saturate(
                 self.current_velocity
                 * self.volume
                 * envelope.advance()
-                * w[lround(w_i + mod_scaled) % w_len]
+                * (
+                    (1.0 - triangle_factor) * w[<int>mod_scaled % w_len]
+                    + triangle_factor * w[<int>(mod_scaled + 1.0) % w_len]
+                )
             )
             w_i += w_len * <double>self.pitch / sr
         return w_i
