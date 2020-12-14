@@ -114,7 +114,7 @@ class Synthesizer:
         self.panning = [(2 * i / (polyphony - 1) - 1) for i in range(polyphony)]
         self.voices = [
             PhaseModulator(
-                wave1=saw_array(2048),
+                wave1=filter_array(saw_array(2048), 256),
                 wave2=sine12_array(2048),
                 wave3=sine_array(2048),
                 wave4=sine_array(2048),
@@ -286,7 +286,7 @@ class PhaseModulator:
     wave4: array[int]
     sample_rate: int
     algorithm: int = 10
-    rate1: float = 1.998  # detune by adding/removing cents
+    rate1: float = 0.999  # detune by adding/removing cents
     rate2: float = 1.003
     rate3: float = 1.0
     rate4: float = 19.0
@@ -309,7 +309,7 @@ class PhaseModulator:
                 s=0.0,
                 r=int(0.33 * self.sample_rate),
             ),
-            volume=0.02 * 0.4,
+            volume=0.052 * 0.6,
         )
         self.op2 = Operator(
             wave=self.wave2,
