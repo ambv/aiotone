@@ -171,6 +171,7 @@ cdef class Operator:
 
     # Current state of the operator, modified during `mono_out()`
     cdef double current_velocity
+    cdef double current_bend
     cdef bint reset
 
     def __init__(
@@ -187,15 +188,24 @@ cdef class Operator:
         self.volume = volume
         self.pitch = pitch
         self.current_velocity = 0.0
+        self.current_bend = 1.0
         self.reset = False
 
     def note_on(self, double pitch, double volume):
         self.reset = True
-        self.pitch = pitch
+        self.pitch = pitch * self.current_bend
         self.current_velocity = volume
 
     def note_off(self, double pitch, double volume):
         self.envelope.release()
+
+    def pitch_bend(self, double semitones):
+        """Bend pitch by `semitones`. `pitch` can be negative."""
+        if self.current_bend != 0:
+            self.pitch /= self.current_bend
+
+        self.current_bend = 2 ** (semitones / 12)
+        self.pitch *= self.current_bend
 
     def mono_out(self):
         """Generate Audio, accepting other Audio for modulation purposes.

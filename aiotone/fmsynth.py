@@ -221,7 +221,12 @@ class Synthesizer:
 
     async def pitch_bend(self, value: int) -> None:
         """Value range: 0 - 16384"""
-        ...
+        if value <= 64:
+            semitones = -12 + (12 * value / 64)
+        else:
+            semitones = 12 * value / 16384
+        for v in self.voices:
+            v.pitch_bend(semitones)
 
     async def mod_wheel(self, value: int) -> None:
         """Value range: 0 - 16384"""
@@ -372,6 +377,13 @@ class PhaseModulator:
         self.op3.note_off(pitch * self.rate3, volume)
         self.op4.note_off(pitch * self.rate4, volume)
         self.last_pitch_played = 0.0
+
+    def pitch_bend(self, semitones: float) -> None:
+        """Note: This deliberately doesn't update `last_pitch_played."""
+        self.op1.pitch_bend(semitones)
+        self.op2.pitch_bend(semitones)
+        self.op3.pitch_bend(semitones)
+        self.op4.pitch_bend(semitones)
 
     def mono_out(self) -> Audio:
         out_buffer = array("h", [0] * MAX_BUFFER)
