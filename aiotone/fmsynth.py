@@ -105,9 +105,15 @@ class Synthesizer:
     _voices_lru: List[int] = field(init=False)  # list of `voices` indexes
     _sustain: int = field(init=False)
     _released_on_sustain: Set[float] = field(init=False)
+    _pitch_bend_slew: SlewGenerator = field(init=False)
 
     def __post_init__(self) -> None:
         self.reset_voices()
+
+    async def __async_init__(self) -> None:
+        self._pitch_bend_slew = SlewGenerator(
+            name="pitch bend", callback=self._pitch_bend_cb
+        )
 
     def reset_voices(self) -> None:
         polyphony = self.polyphony
@@ -222,6 +228,9 @@ class Synthesizer:
     async def pitch_bend(self, value: int) -> None:
         """Value range: 0 - 16384"""
         semitones = -12 + (24 * value / 16384)
+        await self._pitch_bend_slew.update(semitones)
+
+    def _pitch_bend_cb(self, semitones: float) -> None:
         for v in self.voices:
             v.pitch_bend(semitones)
 
@@ -487,6 +496,7 @@ class PhaseModulator:
 
 
 async def async_main(synth: Synthesizer, cfg: Mapping[str, str]) -> None:
+    await synth.__async_init__()
     queue: asyncio.Queue[MidiMessage] = asyncio.Queue(maxsize=256)
     loop = asyncio.get_event_loop()
 
@@ -576,6 +586,66 @@ async def midi_consumer(queue: asyncio.Queue[MidiMessage], synth: Synthesizer) -
             else:
                 if st not in handled_types:
                     click.secho(f"warning: unhandled event {msg}", err=True)
+
+
+@dataclass
+class SlewGenerator:
+    """A lag generator, interpolating values.
+
+    Creating it automatically instantiates a task on the current running event loop
+    which calls `callback` many times (`steps`) interpolating each value change.
+    You can request a value change by calling `update()`.
+
+    By design, if multiple calls to `update()` were made while the slew was busy
+    interpolating some previous value, those calls are ignored save for the last one.
+    """
+
+    name: str
+    callback: Callable[[float], None]
+    value: float = 0.0
+    steps: int = 128  # number of steps between each value received
+    rate: float = 2  # steps/ms
+    _new_value: Optional[float] = None
+    _task: asyncio.Task = field(init=False)
+    _lock: asyncio.Lock = field(init=False)
+
+    def __post_init__(self) -> None:
+        self._task = asyncio.create_task(
+            self.task(), name=f"slew generator for {self.name}"
+        )
+        self._lock = asyncio.Lock()
+
+    def __del__(self) -> None:
+        try:
+            self._task.cancel()
+        except BaseException:
+            pass
+
+    async def update(self, value: float) -> None:
+        async with self._lock:
+            self._new_value = value
+
+    async def task(self) -> None:
+        # type-ignores below due to https://github.com/python/mypy/issues/708
+
+        steps = self.steps
+        step_sleep = 1 / (1000 * self.rate)
+        current_value = self.value
+        while True:
+            while self._new_value is None:
+                await asyncio.sleep(step_sleep)
+            async with self._lock:
+                new_value = self._new_value
+                self._new_value = None
+            step = (new_value - current_value) / steps
+            cb = self.callback  # type: ignore
+            for i in range(steps):
+                current_value += step
+                cb(current_value)  # type: ignore
+                await asyncio.sleep(step_sleep)
+                if self._new_value is not None:
+                    break
+            self.value = current_value
 
 
 @click.command()
