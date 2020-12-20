@@ -221,10 +221,7 @@ class Synthesizer:
 
     async def pitch_bend(self, value: int) -> None:
         """Value range: 0 - 16384"""
-        if value <= 64:
-            semitones = -12 + (12 * value / 64)
-        else:
-            semitones = 12 * value / 16384
+        semitones = -12 + (24 * value / 16384)
         for v in self.voices:
             v.pitch_bend(semitones)
 
@@ -575,7 +572,7 @@ async def midi_consumer(queue: asyncio.Queue[MidiMessage], synth: Synthesizer) -
                 else:
                     click.secho(f"warning: unhandled CC {msg}", err=True)
             elif t == PITCH_BEND:
-                await synth.pitch_bend(128 * msg[1] + msg[2])
+                await synth.pitch_bend(128 * msg[2] + msg[1])
             else:
                 if st not in handled_types:
                     click.secho(f"warning: unhandled event {msg}", err=True)
