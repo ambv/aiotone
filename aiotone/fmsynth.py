@@ -149,7 +149,7 @@ class Synthesizer:
             for i in range(self.polyphony)
         ]
 
-        mix_down = 1 / self.polyphony
+        mix_down = 1 / min(self.polyphony, 8)
         stereo = [init(v) for v in voices]
         if want_frames == 0:
             want_frames = yield stereo[0]
