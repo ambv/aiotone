@@ -26,6 +26,9 @@ from .midi import (
     STOP,
     SONG_POSITION,
     CONTROL_CHANGE,
+    PROGRAM_CHANGE,
+    CHAN_AFTERTOUCH,
+    POLY_AFTERTOUCH,
     MOD_WHEEL,
     MOD_WHEEL_LSB,
     EXPRESSION_PEDAL,
@@ -36,6 +39,7 @@ from .midi import (
     PITCH_BEND,
     ALL_NOTES_OFF,
     STRIP_CHANNEL,
+    GET_CHANNEL,
     get_ports,
     silence,
 )
@@ -500,9 +504,6 @@ async def async_main(synth: Synthesizer, cfg: Mapping[str, str]) -> None:
     queue: asyncio.Queue[MidiMessage] = asyncio.Queue(maxsize=256)
     loop = asyncio.get_event_loop()
 
-    if int(cfg.get("channel", "")) != 1:
-        raise click.UsageError("midi-in channel must be 1, sorry")
-
     try:
         midi_in, midi_out = get_ports(cfg["port-name"], clock_source=True)
     except ValueError as port:
@@ -531,29 +532,53 @@ async def midi_consumer(queue: asyncio.Queue[MidiMessage], synth: Synthesizer) -
     click.echo("Waiting for MIDI messages...")
     system_realtime = {START, STOP, SONG_POSITION}
     notes = {NOTE_ON, NOTE_OFF}
-    handled_types = system_realtime | notes | {CONTROL_CHANGE}
+    handled_types = (
+        system_realtime
+        | notes
+        | {CONTROL_CHANGE, PROGRAM_CHANGE, CHAN_AFTERTOUCH, POLY_AFTERTOUCH}
+    )
     last: Dict[int, int] = defaultdict(int)  # last CC value
     while True:
         msg, delta, sent_time = await queue.get()
         latency = time.time() - sent_time
-        # Note hack below. We are matching the default which is channel 1 only.
-        # This is what we want.
         t = msg[0]
         if t == CLOCK:
             await synth.clock()
         else:
             st = t & STRIP_CHANNEL
-            if st == STRIP_CHANNEL:  # system realtime message didn't have a channel
-                st = t
-            if __debug__ and st == t:
+            ch = -1
+            if st != STRIP_CHANNEL:
+                ch = t & GET_CHANNEL
+                t = st
+            if __debug__:
                 fg = "white"
+                desc = ""
                 if t in system_realtime:
                     fg = "blue"
                 elif t == CONTROL_CHANGE:
+                    desc = "CONT CH"
+                    fg = "magenta"
+                elif t == POLY_AFTERTOUCH:
+                    desc = "POLY AT"
+                    fg = "cyan"
+                elif t == CHAN_AFTERTOUCH:
+                    desc = "CHAN AT"
+                    fg = "yellow"
+                elif t == PROGRAM_CHANGE:
+                    desc = "PROG CH"
+                    fg = "blue"
+                elif t == NOTE_ON:
+                    desc = "NOTE ON"
                     fg = "green"
-                click.secho(
-                    f"{msg}\tevent delta: {delta:.4f}\tlatency: {latency:.4f}", fg=fg
-                )
+                elif t == NOTE_OFF:
+                    desc = "NOTE OF"
+                    fg = "red"
+                chdesc = "---"
+                if ch >= 0:
+                    chdesc = f"ch{ch+1}"
+                msgdesc = repr(msg[1:])
+                click.secho(f"{desc} {chdesc:>4} {msgdesc}", nl=False, fg=fg)
+                click.secho(f"\tev delta: {delta:.4f}\tlatency: {latency:.4f}")
             if t == START:
                 await synth.start()
             elif t == STOP:
