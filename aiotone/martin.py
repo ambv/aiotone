@@ -50,6 +50,6 @@ def main(file: str) -> None:
     json.dump(lines, sys.stdout)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     args = docopt.docopt(__doc__)
-    main(file=args['<file>'])
+    main(file=args["<file>"])

@@ -75,13 +75,13 @@ def main() -> None:
     Plays a tune on Circuit and Circuit Mono Station:
 
     - uses the Circuit as the clock master;
-    
+
     - uses the Circuit as a drum machine;
 
     - uses the Mono Station as a paraphonic bass synthesizer.
 
     To use this:
-    
+
     - have the Circuit and the Circuit Mono Station connected to your computer;
 
     - turn the Circuit and the Circuit Mono Station on and set them both to use empty
