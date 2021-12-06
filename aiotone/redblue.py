@@ -8,7 +8,7 @@ from enum import Enum
 from pathlib import Path
 import sys
 import time
-from typing import Dict, List, Sequence, Tuple
+from typing import Callable, Coroutine, Dict, List, Sequence, Tuple
 
 from attr import dataclass, Factory
 import click
@@ -67,8 +67,12 @@ class NoteMode(Enum):
 class Performance:
     red_port: MidiOut
     red_channel: int
+    red_mod_wheel: bool
+    red_expression_pedal: bool
     blue_port: MidiOut
     blue_channel: int
+    blue_mod_wheel: bool
+    blue_expression_pedal: bool
     start_stop: bool
     portamento: str
     damper_portamento_max: int
@@ -84,6 +88,28 @@ class Performance:
     # Modes
     power_chord: bool = False
     duophon: bool = False
+
+    def __post_init__(self) -> None:
+        if self.red_mod_wheel and self.blue_mod_wheel:
+            self.mod_wheel_target = self.cc_both
+        elif self.red_mod_wheel:
+            self.mod_wheel_target = self.cc_red
+        elif self.blue_mod_wheel:
+            self.mod_wheel_target = self.cc_blue
+        else:
+            self.mod_wheel_target = self.cc_none
+
+        if self.red_expression_pedal and self.blue_expression_pedal:
+            self.expression_pedal_target = self.cc_both
+        elif self.red_expression_pedal:
+            self.expression_pedal_target = self.cc_red
+        elif self.blue_expression_pedal:
+            self.expression_pedal_target = self.cc_blue
+        else:
+            self.expression_pedal_target = self.cc_none
+
+    def __attrs_post_init__(self) -> None:
+        self.__post_init__()
 
     async def play(
         self,
@@ -232,7 +258,7 @@ class Performance:
             await self.both(NOTE_OFF, note, 0)
 
     async def mod_wheel(self, value: int) -> None:
-        await self.cc_red(MOD_WHEEL, value)
+        await self.mod_wheel_target(MOD_WHEEL, value)
 
     async def expression(self, value: int) -> None:
         if self.is_accent:
@@ -242,7 +268,7 @@ class Performance:
                 value = 112
         else:
             self.last_expression_value = value
-        await self.cc_blue(MOD_WHEEL, value)
+        await self.expression_pedal_target(MOD_WHEEL, value)
 
     # Raw commands
 
@@ -265,6 +291,9 @@ class Performance:
     async def cc_both(self, type: int, value: int) -> None:
         self.red_port.send_message([CONTROL_CHANGE | self.red_channel, type, value])
         self.blue_port.send_message([CONTROL_CHANGE | self.blue_channel, type, value])
+
+    async def cc_none(self, type: int, value: int) -> None:
+        pass
 
 
 @click.command()
@@ -443,6 +472,10 @@ async def async_main(config: str) -> None:
         blue_channel=cfg["to-mother-blue"].getint("channel") - 1,
         start_stop=cfg["from-ableton"].getboolean("start-stop"),
         portamento=cfg["from-ableton"]["portamento"],
+        red_mod_wheel=cfg["to-mother-red"].getboolean("mod-wheel"),
+        blue_mod_wheel=cfg["to-mother-blue"].getboolean("mod-wheel"),
+        red_expression_pedal=cfg["to-mother-red"].getboolean("expression-pedal"),
+        blue_expression_pedal=cfg["to-mother-blue"].getboolean("expression-pedal"),
         damper_portamento_max=cfg["from-ableton"].getint("damper-portamento-max"),
         accent_volume=cfg["from-ableton"].getint("accent-volume"),
     )
