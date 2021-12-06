@@ -21,7 +21,7 @@ def main(file: list[str]) -> None:
     for f in file:
         p = Path(f)
         if p.is_file():
-            print(f"{p} - {loudness(p)}")
+            print(f"{p}  =  {loudness(p):.3f}")
         else:
             print(f"{p} does not exist", file=sys.stderr)
 
