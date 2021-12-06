@@ -8,10 +8,11 @@ from enum import Enum
 from pathlib import Path
 import sys
 import time
-from typing import Callable, Coroutine, Dict, List, Sequence, Tuple
+from typing import Dict, List, Sequence, Tuple
 
 from attr import dataclass, Factory
 import click
+from scipy.interpolate import interp1d
 import uvloop
 
 from .metronome import Metronome
@@ -77,6 +78,8 @@ class Performance:
     portamento: str
     damper_portamento_max: int
     accent_volume: int
+    expression_min: int
+    expression_max: int
 
     # Current state of the performance
     metronome: Metronome = Factory(Metronome)
@@ -107,6 +110,10 @@ class Performance:
             self.expression_pedal_target = self.cc_blue
         else:
             self.expression_pedal_target = self.cc_none
+
+        self.expression_scale = interp1d(
+            [0, 127], [self.expression_min, self.expression_max]
+        )
 
     def __attrs_post_init__(self) -> None:
         self.__post_init__()
@@ -261,14 +268,14 @@ class Performance:
         await self.mod_wheel_target(MOD_WHEEL, value)
 
     async def expression(self, value: int) -> None:
+        scaled_value = int(self.expression_scale(value))
+
         if self.is_accent:
-            if value < 80:
-                value += 32
-            elif value <= 112:
-                value = 112
+            scaled_value = min(scaled_value + 32, 127)
         else:
-            self.last_expression_value = value
-        await self.expression_pedal_target(MOD_WHEEL, value)
+            self.last_expression_value = value  # sic, raw value
+
+        await self.expression_pedal_target(MOD_WHEEL, scaled_value)
 
     # Raw commands
 
@@ -478,6 +485,8 @@ async def async_main(config: str) -> None:
         blue_expression_pedal=cfg["to-mother-blue"].getboolean("expression-pedal"),
         damper_portamento_max=cfg["from-ableton"].getint("damper-portamento-max"),
         accent_volume=cfg["from-ableton"].getint("accent-volume"),
+        expression_min=cfg["from-ableton"].getint("expression-min"),
+        expression_max=cfg["from-ableton"].getint("expression-max"),
     )
     try:
         await midi_consumer(queue, performance)
