@@ -159,14 +159,19 @@ class Performance:
         await self.cc_blue(ALL_NOTES_OFF, 0)
         self.notes.clear()
 
-    async def legato_portamento(self) -> None:
+    async def legato_portamento(self, note: int) -> None:
         if not self.portamento == "legato":
             return
 
-        if len(self.notes) > 1:
+        if len(self.notes):
+            last_note = list(self.notes.keys())[-1]
+            if note > last_note:  # glide up
+                ptime = 64
+            elif note < last_note:  # glide down
+                ptime = 80
             await self.cc_both(PORTAMENTO, 127)
-            await self.cc_both(PORTAMENTO_TIME, 64)
-        elif len(self.notes) == 0:
+            await self.cc_both(PORTAMENTO_TIME, ptime)
+        else:
             await self.cc_both(PORTAMENTO, 0)
             await self.cc_both(PORTAMENTO_TIME, 0)
 
@@ -530,11 +535,11 @@ async def midi_consumer(
             elif t == STOP:
                 await performance.stop()
             elif t == NOTE_ON:
-                await performance.legato_portamento()
+                await performance.legato_portamento(msg[1])
                 await performance.note_on(msg[1], msg[2])
             elif t == NOTE_OFF:
-                await performance.legato_portamento()
                 await performance.note_off(msg[1])
+                await performance.legato_portamento(msg[1])
             elif t == CONTROL_CHANGE:
                 if msg[1] == MOD_WHEEL:
                     await performance.mod_wheel(msg[2])
