@@ -87,6 +87,7 @@ class Performance:
     last_expression_value: int = 64
     last_color: NoteMode = NoteMode.BLUE
     is_accent: bool = False
+    is_portamento: bool = False
 
     # Modes
     power_chord: bool = False
@@ -171,9 +172,11 @@ class Performance:
                 ptime = 80
             await self.cc_both(PORTAMENTO, 127)
             await self.cc_both(PORTAMENTO_TIME, ptime)
+            self.is_portamento = True
         else:
             await self.cc_both(PORTAMENTO, 0)
             await self.cc_both(PORTAMENTO_TIME, 0)
+            self.is_portamento = False
 
     async def damper_portamento(self, value: int) -> bool:
         """Handle sustain pedal-driven portamento.
@@ -185,10 +188,12 @@ class Performance:
         if value == 0:
             await self.cc_both(PORTAMENTO, 0)
             await self.cc_both(PORTAMENTO_TIME, 0)
+            self.is_portamento = False
         else:
             await self.cc_both(PORTAMENTO, 127)
             converted_value = int(self.damper_portamento_max * value / 127)
             await self.cc_both(PORTAMENTO_TIME, converted_value)
+            self.is_portamento = True
 
         return self.portamento == "sustain"
 
@@ -222,13 +227,22 @@ class Performance:
         elif self.duophon:
             red_notes = 0
             blue_notes = 0
-            for note_mode in self.notes.values():
-                if note_mode == NoteMode.RED:
+            closest_note = 128
+            closest_mode = NoteMode.REGULAR
+            for old_note, old_mode in self.notes.items():
+                if old_mode == NoteMode.RED:
                     red_notes += 1
-                elif note_mode == NoteMode.BLUE:
+                elif old_mode == NoteMode.BLUE:
                     blue_notes += 1
+                note_distance = abs(note - old_note)
+                if note_distance <= closest_note:
+                    # <= because we want the last played note with the smallest distance
+                    closest_mode = old_mode
+                    closest_note = note_distance
 
-            if self.last_color == NoteMode.RED:
+            if self.is_portamento:
+                use_channel = closest_mode
+            elif self.last_color == NoteMode.RED:
                 if not blue_notes:
                     use_channel = NoteMode.BLUE
                 elif not red_notes:
