@@ -10,7 +10,7 @@ import sys
 import time
 from typing import Dict, List, Sequence, Tuple
 
-from attr import dataclass, Factory
+from attrs import define, field, Factory
 import click
 import uvloop
 
@@ -37,6 +37,7 @@ from .midi import (
     silence,
 )
 from .notes import C, Cs, D, Ds, E, F, Fs, G, Gs, A, As, B, Db, Eb, Gb, Ab, Bb  # NoQA
+from .slew import SlewGenerator
 
 
 # types
@@ -63,7 +64,7 @@ class NoteMode(Enum):
     BLUE = 3
 
 
-@dataclass
+@define
 class Performance:
     red_port: MidiOut
     red_channel: int
@@ -84,6 +85,10 @@ class Performance:
     # Modes
     power_chord: bool = False
     duophon: bool = False
+
+    # Internal state
+    _expression_slew: SlewGenerator = field(init=False)
+    _expression_last_sent: int = field(init=False, default=-1)
 
     async def play(
         self,
@@ -242,7 +247,7 @@ class Performance:
                 value = 112
         else:
             self.last_expression_value = value
-        await self.cc_blue(MOD_WHEEL, value)
+        await self._expression_slew.update(value)
 
     # Raw commands
 
@@ -265,6 +270,18 @@ class Performance:
     async def cc_both(self, type: int, value: int) -> None:
         self.red_port.send_message([CONTROL_CHANGE | self.red_channel, type, value])
         self.blue_port.send_message([CONTROL_CHANGE | self.blue_channel, type, value])
+
+    async def _expression_cb(self, cc_slew: float) -> None:
+        cc = int(round(cc_slew))
+        if cc == self._expression_last_sent:
+            return
+        self._expression_last_sent = cc
+        await self.cc_blue(MOD_WHEEL, cc)
+
+    def __attrs_post_init__(self) -> None:
+        self._expression_slew = SlewGenerator(
+            "expression slew", callback=self._expression_cb
+        )
 
 
 @click.command()

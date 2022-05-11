@@ -3,6 +3,7 @@ from typing import *
 
 import asyncio
 from dataclasses import dataclass, field
+import inspect
 
 
 @dataclass
@@ -18,7 +19,7 @@ class SlewGenerator:
     """
 
     name: str
-    callback: Callable[[float], None]
+    callback: Callable[[float], None] | Callable[[float], Coroutine[None, None, None]]
     value: float = 0.0
     steps: int = 128  # number of steps between each value received
     rate: float = 2  # steps/ms
@@ -43,8 +44,6 @@ class SlewGenerator:
             self._new_value = value
 
     async def task(self) -> None:
-        # type-ignores below due to https://github.com/python/mypy/issues/708
-
         steps = self.steps
         step_sleep = 1 / (1000 * self.rate)
         current_value = self.value
@@ -55,10 +54,11 @@ class SlewGenerator:
                 new_value = self._new_value
                 self._new_value = None
             step = (new_value - current_value) / steps
-            cb = self.callback  # type: ignore
-            for i in range(steps):
+            for _i in range(steps):
                 current_value += step
-                cb(current_value)  # type: ignore
+                coro = self.callback(current_value)
+                if inspect.iscoroutine(coro):
+                    await coro
                 await asyncio.sleep(step_sleep)
                 if self._new_value is not None:
                     break
