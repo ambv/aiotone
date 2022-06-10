@@ -1,4 +1,5 @@
 import os
+import platform
 import shutil
 from distutils.command.build_ext import build_ext
 from distutils.core import Distribution, Extension
@@ -6,7 +7,8 @@ from pathlib import Path
 
 from Cython.Build import cythonize
 
-compile_args = ["-march=native", "-O3", "-msse", "-msse2", "-mfma", "-mfpmath=sse"]
+compile_args_x86 = ["-march=native", "-O3", "-msse", "-msse2", "-mfma", "-mfpmath=sse"]
+compile_args_arm = ["-O3"]
 link_args = []
 include_dirs = []
 libraries = ["m"]
@@ -15,6 +17,15 @@ libraries = ["m"]
 def build():
     cython_sources = []
     cython_sources.extend(Path("aiotone").glob("*.pyx"))
+
+    cpu_arch = platform.machine().lower()
+    if "arm" in cpu_arch:
+        compile_args = compile_args_arm
+    elif "x86" in cpu_arch or "amd64" in cpu_arch:
+        compile_args = compile_args_x86
+    else:
+        print(f"warning: unknown machine arch {cpu_arch}; assuming Intel")
+        compile_args = compile_args_x86
 
     extensions = [
         Extension(
