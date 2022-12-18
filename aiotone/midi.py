@@ -26,6 +26,7 @@ SONG_POSITION = 0b11110010
 ALL_NOTES_OFF = 0b01111011
 MOD_WHEEL = 0b00000001
 MOD_WHEEL_LSB = 0b00100001
+FOOT_PEDAL = 0b00000100
 EXPRESSION_PEDAL = 0b00001011
 EXPRESSION_PEDAL_LSB = 0b00101011
 SUSTAIN_PEDAL = 0b01000000
@@ -78,4 +79,5 @@ def silence(
     if stop:
         port.send_message([STOP])
     for channel in channels:
+        port.send_message([CONTROL_CHANGE | channel, SUSTAIN_PEDAL, 0])
         port.send_message([CONTROL_CHANGE | channel, ALL_NOTES_OFF, 0])
