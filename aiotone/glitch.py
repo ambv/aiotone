@@ -128,6 +128,15 @@ def channel_tuple_from_string(channels: str) -> tuple[int, int]:
     is_flag=True,
 )
 def main(config: str, make_config: bool) -> None:
+    """
+    Audio processor. Doesn't do anything yet besides passing data from input to output.
+
+    You can customize the ports by creating a config file.  Use `--make-config` to
+    output a new config to stdout.
+
+    Then run `python -m aiotone.glitch --config=PATH_TO_YOUR_CONFIG_FILE`.
+    """
+
     if make_config:
         with open(CURRENT_DIR / "aiotone-glitch.ini") as f:
             print(f.read())
