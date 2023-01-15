@@ -65,8 +65,18 @@ class Glitch:
         in_buffer = out_buffer
         channel_pairs = list(zip(self.out_channels, self.in_channels))
         channels = list(range(self.num_channels))
-        max_latency = 2 * self.max_latency
         lat_ringbuf_len = len(self._latency_ringbuf)
+
+        # This generator will get updates every `max_latency` seconds. In the ideal
+        # scenario each iteration would take 0.0 seconds to process so the minimal
+        # observed latency is 1 * `max_latency`.
+        #
+        # As long as a single iteration of this generator + the framework overhead
+        # don't take more than one additional `max_latency` period then the
+        # audio buffer will get populated quickly enough.  If, however, it takes
+        # more, there will an audible buffer underrun.  This is why we're using
+        # 2 * max_latency here.
+        max_latency = 2 * self.max_latency
 
         def copy_buffer():
             for offset in range(0, self._want_frames, self.num_channels):
