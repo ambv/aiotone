@@ -9,14 +9,15 @@ import asyncio
 import configparser
 from dataclasses import dataclass, field
 from pathlib import Path
+from time import monotonic
 
 import click
 import miniaudio
 import uvloop
 
+from . import profiling
 
-# We want this to be symmetrical on the + and the - side.
-INT16_MAXVALUE = 32767
+
 MAX_BUFFER = 2400  # 5 ms at 48000 Hz
 CURRENT_DIR = Path(__file__).parent
 DEBUG = False
@@ -41,14 +42,21 @@ class Glitch:
     num_channels: int
     out_channels: tuple[int, int]
     in_channels: tuple[int, int]
+    max_latency: float
     _want_frames: int = field(init=False)
     _data: list[float] = field(init=False)
-    _c: int = field(init=False)
+    _underruns: int = field(init=False)
+    _latency_ringbuf: array[float] = field(init=False)
+    _latency_ts: float = field(init=False)
+    _latency_index: int = field(init=False)
 
     def __post_init__(self) -> None:
         self._want_frames = 0
         self._data = [0] * self.num_channels
-        self._c = 0
+        self._underruns = 0
+        self._latency_index = -1
+        self._latency_ringbuf = array("f", [0.0] * 20)
+        self._latency_ts = monotonic()
 
     def audio_stream(self) -> Audio:
         buffer_format = "f"
@@ -57,26 +65,48 @@ class Glitch:
         in_buffer = out_buffer
         channel_pairs = list(zip(self.out_channels, self.in_channels))
         channels = list(range(self.num_channels))
-        while True:
-            self._c += 1
-            self._data = [0] * self.num_channels
+        max_latency = 2 * self.max_latency
+        lat_ringbuf_len = len(self._latency_ringbuf)
+
+        def copy_buffer():
             for offset in range(0, self._want_frames, self.num_channels):
                 for ch in channels:
                     out_buffer[offset + ch] = 0
                     self._data[ch] += in_buffer[offset + ch]
                 for out_ch, in_ch in channel_pairs:
                     out_buffer[offset + out_ch] = in_buffer[offset + in_ch]
-            input_bytes = yield out_buffer[: self._want_frames]
-            in_buffer = array(buffer_format, input_bytes)
-            self._want_frames = len(in_buffer)
+
+        with profiling.maybe(DEBUG):
+            while True:
+                now = monotonic()
+                lat = now - self._latency_ts
+                self._latency_ts = now
+                self._latency_index = (self._latency_index + 1) % lat_ringbuf_len
+                self._latency_ringbuf[self._latency_index] = lat
+                if lat > max_latency:
+                    self._underruns += 1
+                self._data = [0] * self.num_channels
+                copy_buffer()
+                input_bytes = yield out_buffer[: self._want_frames]
+                in_buffer = array(buffer_format, input_bytes)
+                self._want_frames = len(in_buffer)
+
+    def latency_avg(self) -> float:
+        return sum(self._latency_ringbuf) / len(self._latency_ringbuf)
 
 
 async def async_main(glitch: Glitch):
+    pad = " " * 10
     while True:
         await asyncio.sleep(0.1)
+        channels = ""
         for elem in glitch._data:
-            print(f"{elem:.2f}"[-4:].rjust(4), end=" ")
-        print(f" {glitch._want_frames} {glitch._c}" + " " * 10, end="\r", flush=True)
+            channels += f"{elem:+06.2f} "[-6:]
+        print(
+            f"{channels} {glitch._underruns} {glitch.latency_avg():.6f} {pad}",
+            end="\r",
+            flush=True,
+        )
 
 
 def channel_tuple_from_string(channels: str) -> tuple[int, int]:
@@ -160,6 +190,7 @@ def main(config: str, make_config: bool) -> None:
             num_channels=num_channels,
             in_channels=in_channels,
             out_channels=out_channels,
+            max_latency=buffer_msec / 1000,
         )
         stream = glitch.audio_stream()
         init(stream)
