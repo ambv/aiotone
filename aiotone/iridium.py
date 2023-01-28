@@ -51,6 +51,8 @@ CONFIGPARSER_FALSE = {
     for k, v in configparser.ConfigParser.BOOLEAN_STATES.items()  # type: ignore
     if v is False
 }
+# CCs used by Iridium for sending and receiving modulation
+MODULATION_CC = set(range(16, 32))
 
 
 class NoteMode(Enum):
@@ -115,12 +117,12 @@ class Performance:
 
     async def note_off_passthrough(self, note: int, velocity: int) -> None:
         await self.out(NOTE_OFF, note, velocity)
-    
+
     async def sustain_passthrough(self, value: int) -> None:
         await self.cc(SUSTAIN_PEDAL, value)
 
     async def own_note_on(self, note: int, velocity: int) -> None:
-        off = False 
+        off = False
         for i, note_sustained in enumerate(self.notes_sustained):
             if note_sustained == note:
                 self.notes_sustained.pop(i)
@@ -246,7 +248,7 @@ async def async_main(config: str) -> None:
 
     # Configure the `from_ableton` port
     try:
-        note_input, note_output= get_ports(
+        note_input, note_output = get_ports(
             cfg["note-input"]["port-name"], clock_source=True
         )
     except ValueError as port:
@@ -337,6 +339,8 @@ async def midi_consumer(
                     await performance.sustain(msg[2])
                 elif msg[1] == ALL_NOTES_OFF:
                     await performance.cc(ALL_NOTES_OFF, msg[2])
+                elif msg[1] in MODULATION_CC:
+                    await performance.cc(msg[1], msg[2])
                 else:
                     print(f"warning: unhandled CC {msg}", file=sys.stderr)
             elif t == PITCH_BEND:
