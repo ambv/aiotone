@@ -3,6 +3,8 @@ from typing import *
 
 import asyncio
 from dataclasses import dataclass, field
+import inspect
+import time
 
 
 @dataclass
@@ -18,19 +20,23 @@ class SlewGenerator:
     """
 
     name: str
-    callback: Callable[[float], None]
+    callback: Callable[[float], None] | Callable[[float], Coroutine[None, None, None]]
     value: float = 0.0
     steps: int = 128  # number of steps between each value received
-    rate: float = 2  # steps/ms
+    rate: float = 1  # steps/ms
     _new_value: Optional[float] = None
     _task: asyncio.Task = field(init=False)
     _lock: asyncio.Lock = field(init=False)
+    _requests: int = field(init=False)
+    _last_rps_check: float = field(init=False)
 
     def __post_init__(self) -> None:
         self._task = asyncio.create_task(
             self.task(), name=f"slew generator for {self.name}"
         )
         self._lock = asyncio.Lock()
+        self._requests = 0
+        self._last_rps_check = time.monotonic()
 
     def __del__(self) -> None:
         try:
@@ -43,8 +49,6 @@ class SlewGenerator:
             self._new_value = value
 
     async def task(self) -> None:
-        # type-ignores below due to https://github.com/python/mypy/issues/708
-
         steps = self.steps
         step_sleep = 1 / (1000 * self.rate)
         current_value = self.value
@@ -55,11 +59,20 @@ class SlewGenerator:
                 new_value = self._new_value
                 self._new_value = None
             step = (new_value - current_value) / steps
-            cb = self.callback  # type: ignore
-            for i in range(steps):
+            for _i in range(steps):
                 current_value += step
-                cb(current_value)  # type: ignore
-                await asyncio.sleep(step_sleep)
+                self._requests += 1
+                if self._requests % 100 == 0:
+                    now = time.monotonic()
+                    diff = now - self._last_rps_check
+                    if diff > 1:
+                        print(f"[{self.name}] RPS =", round(self._requests / diff))
+                        self._last_rps_check = now
+                        self._requests = 0
+                coro = self.callback(current_value)
+                if inspect.iscoroutine(coro):
+                    await coro
                 if self._new_value is not None:
                     break
+                await asyncio.sleep(step_sleep)
             self.value = current_value

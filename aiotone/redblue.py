@@ -8,9 +8,9 @@ from enum import Enum
 from pathlib import Path
 import sys
 import time
-from typing import Dict, List, Sequence, Tuple
+from typing import Callable, Dict, List, Sequence, Tuple
 
-from attr import dataclass, Factory
+from attrs import define, field, Factory
 import click
 from scipy.interpolate import interp1d
 import uvloop
@@ -38,6 +38,7 @@ from .midi import (
     silence,
 )
 from .notes import C, Cs, D, Ds, E, F, Fs, G, Gs, A, As, B, Db, Eb, Gb, Ab, Bb  # NoQA
+from .slew import SlewGenerator
 
 
 # types
@@ -64,7 +65,7 @@ class NoteMode(Enum):
     BLUE = 3
 
 
-@dataclass
+@define
 class Performance:
     red_port: MidiOut
     red_channel: int
@@ -93,6 +94,13 @@ class Performance:
     power_chord: bool = False
     duophon: bool = False
 
+    # Internal state
+    mod_wheel_target: Callable = field(init=False)
+    expression_pedal_target: Callable = field(init=False)
+    expression_scale: interp1d = field(init=False)
+    expression_slew: SlewGenerator = field(init=False)
+    expression_last_sent: int = field(init=False, default=-1)
+
     def __post_init__(self) -> None:
         if self.red_mod_wheel and self.blue_mod_wheel:
             self.mod_wheel_target = self.cc_both
@@ -114,6 +122,10 @@ class Performance:
 
         self.expression_scale = interp1d(
             [0, 127], [self.expression_min, self.expression_max]
+        )
+
+        self.expression_slew = SlewGenerator(
+            "expression slew", callback=self._expression_cb
         )
 
     def __attrs_post_init__(self) -> None:
@@ -294,7 +306,14 @@ class Performance:
         else:
             self.last_expression_value = value  # sic, raw value
 
-        await self.expression_pedal_target(MOD_WHEEL, scaled_value)
+        await self.expression_slew.update(scaled_value)
+
+    async def _expression_cb(self, cc_slew: float) -> None:
+        cc = int(round(cc_slew))
+        if cc == self.expression_last_sent:
+            return
+        self.expression_last_sent = cc
+        await self.expression_pedal_target(MOD_WHEEL, cc)
 
     # Raw commands
 
