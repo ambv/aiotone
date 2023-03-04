@@ -75,7 +75,7 @@ class MIDIMonitorGridApp(monome.GridApp):
     _buffer: np.ndarray = field(init=False)
     _leds: np.ndarray = field(init=False)
     _input_queue: asyncio.Queue[tuple[MidiNote, Velocity]] = field(init=False)
-    grid: monome.Grid = field(init=False)
+    grid: monome.Grid = field(init=False)  # inherited from monome.GridApp
 
     def __post_init__(self) -> None:
         super().__init__()
@@ -106,10 +106,9 @@ class MIDIMonitorGridApp(monome.GridApp):
         note = 12 * (9 - y) + x
         velocity = 72 if s else 0
         try:
-            loop = asyncio.get_running_loop()
-            loop.call_soon_threadsafe(self._input_queue.put_nowait, (note, velocity))
-        except BaseException as be:
-            click.secho(f"callback exc: {type(be)} {be}", fg="red", err=True)
+            self._input_queue.put_nowait((note, velocity))
+        except asyncio.QueueFull:
+            click.secho("Grid input queue full", fg="red", err=True)
 
     async def handle_input_queue(self) -> None:
         q = self._input_queue
@@ -120,6 +119,28 @@ class MIDIMonitorGridApp(monome.GridApp):
                 await p.note_on(note, velocity)
             else:
                 await p.note_off(note, velocity)
+
+    async def handle_leds(self) -> None:
+        fps = 0
+        last_sec = time.monotonic()
+        while True:
+            fps += 1
+            self.draw()
+            now = time.monotonic()
+            if now - last_sec >= 1:
+                self.render_fps = fps / (now - last_sec)
+                fps = 0
+                last_sec = now
+            await asyncio.sleep(0.03)
+
+    async def run(self) -> None:
+        try:
+            async with asyncio.TaskGroup() as tg:
+                tg.create_task(self.handle_input_queue())
+                tg.create_task(self.handle_leds())
+        except asyncio.CancelledError:
+            self.disconnect()
+            raise
 
     def draw(self) -> None:
         if not self.connected:
@@ -151,6 +172,13 @@ class MIDIMonitorGridApp(monome.GridApp):
                         b[y][x] = leds[x_offset + x][y_offset + y]
                 self.grid.led_level_map_raw(x_offset, y_offset, b)
 
+    def disconnect(self) -> None:
+        if not self.connected:
+            return
+
+        self.grid.led_level_all(0)
+        self.grid.disconnect()
+
 
 @define
 class Performance:
@@ -173,7 +201,6 @@ class Performance:
     sustain: Callable[[int], Coro] = field(init=False)
     note_on: Callable[[int, int], Coro] = field(init=False)
     note_off: Callable[[int, int], Coro] = field(init=False)
-    grid_app: MIDIMonitorGridApp = field(init=False)
 
     def __post_init__(self) -> None:
         if self.catch_damper:
@@ -184,7 +211,6 @@ class Performance:
             self.sustain = self.sustain_passthrough
             self.note_on = self.note_on_passthrough
             self.note_off = self.note_off_passthrough
-        self.grid_app = MIDIMonitorGridApp(self)
 
     def __attrs_post_init__(self) -> None:
         self.__post_init__()
@@ -281,26 +307,6 @@ class Performance:
 
     async def cc(self, type: int, value: int) -> None:
         self.note_output.send_message([CONTROL_CHANGE | self.out_channel, type, value])
-
-    async def grid_connect(self, port: int) -> None:
-        await self.grid_app.connect(port)
-
-    async def grid_draw(self) -> None:
-        fps = 0
-        last_sec = time.monotonic()
-        while True:
-            fps += 1
-            self.grid_app.draw()
-            now = time.monotonic()
-            if now - last_sec >= 1:
-                self.render_fps = fps / (now - last_sec)
-                fps = 0
-                last_sec = now
-            await asyncio.sleep(0.03)
-
-    def gen_background_tasks(self) -> Iterator[Callable[[], Coro]]:
-        yield self.grid_app.handle_input_queue
-        yield self.grid_draw
 
 
 @click.command()
@@ -409,12 +415,13 @@ async def async_main(config: str) -> None:
         catch_damper=cfg["note-input"].getboolean("catch-damper"),
         polyphony=cfg["note-output"].getint("polyphony"),
     )
+    grid_app = MIDIMonitorGridApp(performance)
     try:
         async with asyncio.TaskGroup() as tg:
 
             def serialosc_device_added(id, type, port):
                 if type == "monome 128":
-                    tg.create_task(performance.grid_connect(port))
+                    tg.create_task(grid_app.connect(port))
                 else:
                     print(
                         f"warning: unknown Monome device connected"
@@ -425,9 +432,8 @@ async def async_main(config: str) -> None:
             serialosc.device_added_event.add_handler(serialosc_device_added)
 
             await serialosc.connect()
-            for task in performance.gen_background_tasks():
-                tg.create_task(task())
-            await midi_consumer(queue, performance)
+            tg.create_task(grid_app.run())
+            tg.create_task(midi_consumer(queue, performance))
     except asyncio.CancelledError:
         note_input.cancel_callback()
         silence(note_output)

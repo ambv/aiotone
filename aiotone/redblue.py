@@ -106,6 +106,27 @@ class MIDIMonitorGridApp(monome.GridApp):
     def on_grid_key(self, x: int, y: int, s: int) -> None:
         pass
 
+    async def handle_leds(self) -> None:
+        fps = 0
+        last_sec = time.monotonic()
+        while True:
+            fps += 1
+            self.draw()
+            now = time.monotonic()
+            if now - last_sec >= 1:
+                self.render_fps = fps / (now - last_sec)
+                fps = 0
+                last_sec = now
+            await asyncio.sleep(0.03)
+
+    async def run(self) -> None:
+        try:
+            async with asyncio.TaskGroup() as tg:
+                tg.create_task(self.handle_leds())
+        except asyncio.CancelledError:
+            self.disconnect()
+            raise
+
     def draw(self) -> None:
         if not self.connected:
             return
@@ -133,6 +154,13 @@ class MIDIMonitorGridApp(monome.GridApp):
                     for y in range(8):
                         b[y][x] = leds[x_offset + x][y_offset + y]
                 self.grid.led_level_map_raw(x_offset, y_offset, b)
+
+    def disconnect(self) -> None:
+        if not self.connected:
+            return
+
+        self.grid.led_level_all(0)
+        self.grid.disconnect()
 
 
 @define
@@ -171,7 +199,6 @@ class Performance:
     expression_scale: interp1d = field(init=False)
     expression_slew: SlewGenerator = field(init=False)
     expression_last_sent: int = field(init=False, default=-1)
-    grid_app: MIDIMonitorGridApp = field(init=False)
 
     def __post_init__(self) -> None:
         if self.red_mod_wheel and self.blue_mod_wheel:
@@ -199,7 +226,6 @@ class Performance:
         self.expression_slew = SlewGenerator(
             "expression slew", callback=self._expression_cb
         )
-        self.grid_app = MIDIMonitorGridApp(self)
 
     def __attrs_post_init__(self) -> None:
         self.__post_init__()
@@ -413,22 +439,6 @@ class Performance:
     async def cc_none(self, type: int, value: int) -> None:
         pass
 
-    async def grid_connect(self, port: int) -> None:
-        await self.grid_app.connect(port)
-
-    async def grid_draw(self) -> None:
-        fps = 0
-        last_sec = time.monotonic()
-        while True:
-            fps += 1
-            self.grid_app.draw()
-            now = time.monotonic()
-            if now - last_sec >= 1:
-                self.render_fps = fps / (now - last_sec)
-                fps = 0
-                last_sec = now
-            await asyncio.sleep(0.03)
-
 
 @click.command()
 @click.option(
@@ -615,12 +625,13 @@ async def async_main(config: str) -> None:
         expression_min=cfg["from-ableton"].getint("expression-min"),
         expression_max=cfg["from-ableton"].getint("expression-max"),
     )
+    grid_app = MIDIMonitorGridApp(performance)
     try:
         async with asyncio.TaskGroup() as tg:
 
             def serialosc_device_added(id, type, port):
                 if type == "monome 128":
-                    tg.create_task(performance.grid_connect(port))
+                    tg.create_task(grid_app.connect(port))
                 else:
                     print(
                         f"warning: unknown Monome device connected"
@@ -631,8 +642,8 @@ async def async_main(config: str) -> None:
             serialosc.device_added_event.add_handler(serialosc_device_added)
 
             await serialosc.connect()
-            tg.create_task(performance.grid_draw())
-            await midi_consumer(queue, performance)
+            tg.create_task(grid_app.run())
+            tg.create_task(midi_consumer(queue, performance))
     except asyncio.CancelledError:
         from_ableton.cancel_callback()
         silence(to_ableton)
