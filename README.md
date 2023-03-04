@@ -8,8 +8,8 @@ Audio synthesis and MIDI processing tools in AsyncIO.
 $ git clone https://github.com/ambv/aiotone
 $ python3.8 -m venv /tmp/aiotone
 $ source /tmp/aiotone/bin/activate
-(aiotone)$ pip install Cython
-(aiotone)$ pip install -e .
+(aiotone)$ pip install Cython cymem
+(aiotone)$ pip install -e .[dev]
 (aiotone)$ python build.py
 ```
 
