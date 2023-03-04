@@ -3,18 +3,20 @@
 from __future__ import annotations
 
 import asyncio
+from collections.abc import Callable, Coroutine, Iterator
 import configparser
 from enum import Enum
 from pathlib import Path
 import sys
 import time
-from typing import Dict, List, Tuple
+from typing import List, Tuple
 
-from attr import dataclass, Factory
+from attrs import define, field, Factory
 import click
+import numpy as np
 import uvloop
 
-from .metronome import Metronome
+from . import monome
 from .midi import (
     MidiOut,
     NOTE_OFF,
@@ -43,6 +45,9 @@ EventDelta = float  # in seconds
 TimeStamp = float  # time.time()
 MidiPacket = List[int]
 MidiMessage = Tuple[MidiPacket, EventDelta, TimeStamp]
+MidiNote = int
+Velocity = int
+Coro = Coroutine[None, None, None]
 
 
 CURRENT_DIR = Path(__file__).parent
@@ -53,13 +58,101 @@ CONFIGPARSER_FALSE = {
 }
 # CCs used by Iridium for sending and receiving modulation
 MODULATION_CC = set(range(16, 32))
+WHITE_KEYS = {0, 2, 4, 5, 7, 9, 11}
 
 
 class NoteMode(Enum):
     REGULAR = 0
 
 
-@dataclass
+@define
+class MIDIMonitorGridApp(monome.GridApp):
+    performance: Performance
+    width: int = 0
+    height: int = 0
+    connected: bool = False
+    _counter: int = 0
+    _buffer: np.ndarray = field(init=False)
+    _leds: np.ndarray = field(init=False)
+    _input_queue: asyncio.Queue[tuple[MidiNote, Velocity]] = field(init=False)
+    grid: monome.Grid = field(init=False)
+
+    def __post_init__(self) -> None:
+        super().__init__()
+        self._buffer = np.zeros(8, dtype=(">i", 8))
+        self._leds = np.zeros(16, dtype=(">i", 8))
+        self._input_queue = asyncio.Queue(maxsize=128)
+
+    def __attrs_post_init__(self) -> None:
+        self.__post_init__()
+
+    async def connect(self, port: int) -> None:
+        await self.grid.connect("127.0.0.1", port)
+
+    def on_grid_ready(self) -> None:
+        self.width = self.grid.width
+        self.height = self.grid.height
+        self.connected = True
+        g = "Grid"
+        if self.grid.varibright:
+            g = "Varibright grid"
+        print(f"{g} {self.width}x{self.height} connected")
+
+    def on_grid_disconnect(self) -> None:
+        print("Grid disconnected")
+        self.connected = False
+
+    def on_grid_key(self, x: int, y: int, s: int) -> None:
+        note = 12 * (9 - y) + x
+        velocity = 72 if s else 0
+        try:
+            loop = asyncio.get_running_loop()
+            loop.call_soon_threadsafe(self._input_queue.put_nowait, (note, velocity))
+        except BaseException as be:
+            click.secho(f"callback exc: {type(be)} {be}", fg="red", err=True)
+
+    async def handle_input_queue(self) -> None:
+        q = self._input_queue
+        p = self.performance
+        while True:
+            note, velocity = await q.get()
+            if velocity:
+                await p.note_on(note, velocity)
+            else:
+                await p.note_off(note, velocity)
+
+    def draw(self) -> None:
+        if not self.connected:
+            return
+
+        leds = self._leds
+        leds[:] = 0
+        notes = {}
+        notes_down = self.performance.notes_down
+        notes_sustained = self.performance.notes_sustained
+        for note in notes_sustained:
+            notes[note] = 8
+        for note in notes_down:
+            notes[note] = 15
+        for y in range(0, 8):
+            for x in range(0, 12):
+                cur_note = 12 * (9 - y) + x
+                if n := notes.get(cur_note):
+                    leds[x][y] = n
+                else:
+                    leds[x][y] = 2 if x in WHITE_KEYS else 1
+
+        b = self._buffer
+        for x_offset in range(0, self.width, 8):
+            for y_offset in range(0, self.height, 8):
+                b[:] = 0
+                for x in range(8):
+                    for y in range(8):
+                        b[y][x] = leds[x_offset + x][y_offset + y]
+                self.grid.led_level_map_raw(x_offset, y_offset, b)
+
+
+@define
 class Performance:
     note_output: MidiOut
     in_channel: int
@@ -74,6 +167,13 @@ class Performance:
     notes_sustained: list[int] = Factory(list)
     last_expr: int = -1
     last_mod: int = -1
+    render_fps: float = 0.0
+
+    # Internal state
+    sustain: Callable[[int], Coro] = field(init=False)
+    note_on: Callable[[int, int], Coro] = field(init=False)
+    note_off: Callable[[int, int], Coro] = field(init=False)
+    grid_app: MIDIMonitorGridApp = field(init=False)
 
     def __post_init__(self) -> None:
         if self.catch_damper:
@@ -84,6 +184,7 @@ class Performance:
             self.sustain = self.sustain_passthrough
             self.note_on = self.note_on_passthrough
             self.note_off = self.note_off_passthrough
+        self.grid_app = MIDIMonitorGridApp(self)
 
     def __attrs_post_init__(self) -> None:
         self.__post_init__()
@@ -181,6 +282,26 @@ class Performance:
     async def cc(self, type: int, value: int) -> None:
         self.note_output.send_message([CONTROL_CHANGE | self.out_channel, type, value])
 
+    async def grid_connect(self, port: int) -> None:
+        await self.grid_app.connect(port)
+
+    async def grid_draw(self) -> None:
+        fps = 0
+        last_sec = time.monotonic()
+        while True:
+            fps += 1
+            self.grid_app.draw()
+            now = time.monotonic()
+            if now - last_sec >= 1:
+                self.render_fps = fps / (now - last_sec)
+                fps = 0
+                last_sec = now
+            await asyncio.sleep(0.03)
+
+    def gen_background_tasks(self) -> Iterator[Callable[[], Coro]]:
+        yield self.grid_app.handle_input_queue
+        yield self.grid_draw
+
 
 @click.command()
 @click.option(
@@ -238,7 +359,7 @@ def main(config: str, make_config: bool) -> None:
 
 async def async_main(config: str) -> None:
     queue: asyncio.Queue[MidiMessage] = asyncio.Queue(maxsize=256)
-    loop = asyncio.get_event_loop()
+    loop = asyncio.get_running_loop()
 
     cfg = configparser.ConfigParser()
     cfg.read(config)
@@ -283,7 +404,23 @@ async def async_main(config: str) -> None:
         polyphony=cfg["note-output"].getint("polyphony"),
     )
     try:
-        await midi_consumer(queue, performance)
+        async with asyncio.TaskGroup() as tg:
+
+            def serialosc_device_added(id, type, port):
+                if type == "monome 128":
+                    tg.create_task(performance.grid_connect(port))
+                else:
+                    print(
+                        f"warning: unknown Monome device connected - type {type!r}, id {id}"
+                    )
+
+            serialosc = monome.SerialOsc()
+            serialosc.device_added_event.add_handler(serialosc_device_added)
+
+            await serialosc.connect()
+            for task in performance.gen_background_tasks():
+                tg.create_task(task())
+            await midi_consumer(queue, performance)
     except asyncio.CancelledError:
         note_input.cancel_callback()
         silence(note_output)
