@@ -8,15 +8,12 @@ Audio synthesis and MIDI processing tools in AsyncIO.
 $ git clone https://github.com/ambv/aiotone
 $ python3.8 -m venv /tmp/aiotone
 $ source /tmp/aiotone/bin/activate
-(aiotone)$ poetry install
+(aiotone)$ pip install Cython
+(aiotone)$ pip install -e .
+(aiotone)$ python build.py
 ```
 
-If you don't have Poetry installed yet, check out
-https://python-poetry.org/.
-
-
 DISCLAIMER: tested on macOS only.
-
 
 ## Usage
 
@@ -34,6 +31,7 @@ DISCLAIMER: tested on macOS only.
   audio to your DAW of choice.
 
 For more information see:
+
 ```
 (aiotone)$ python -m aiotone.fmsynth --help
 ```
@@ -53,6 +51,7 @@ Available algorithms:
 - the other Mother receives expression pedal on ASSIGN CV.
 
 For more information:
+
 ```
 (aiotone)$ python -m aiotone.redblue --help
 ```
@@ -76,6 +75,7 @@ See this talk for a full tutorial: https://www.youtube.com/watch?v=02CLD-42VdI
 - the musician can transpose the generated sequences on the fly.
 
 For more information see:
+
 ```
 (aiotone)$ python -m aiotone.mothergen --help
 ```

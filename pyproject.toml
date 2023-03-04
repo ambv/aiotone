@@ -1,33 +1,63 @@
-[tool.poetry]
-name = "aiotone"
-version = "23.0.0"
-description = "Beep beep."
-authors = ["Łukasz Langa <lukasz@langa.pl>"]
-include = [{ path = "aiotone/**/*.so", format = "wheel" }]
-
-[tool.poetry.dependencies]
-python = ">=3.11"
-python-rtmidi = ">=1.3"
-uvloop = ">=0.15.2"
-click = ">=8.1"
-miniaudio = ">=1.55"
-Cython = ">=0.29.25"
-cymem = ">=2.0.6"
-pyloudnorm = ">=0.1.0"
-SoundFile = ">=0.10.3"
-attrs = ">=21.4.0"
-
-[tool.poetry.dev-dependencies]
-black = ">=22.3"
-pytest = ">=7.1"
-mypy = ">=0.950"
-flake8 = ">=4.0"
-flake8-bugbear = ">=22.4"
-
-[tool.poetry.build]
-generate-setup-file = false
-script = "build.py"
-
 [build-system]
-requires = ["poetry>=0.12", "Cython>=0.29.21"]
-build-backend = "poetry.masonry.api"
+requires = ["setuptools>=0.67.4.0", "Cython>=0.29.33", "cymem>=2.0.6"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "aiotone"
+description = "Beep beep."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "GPL-3.0-or-later" }
+keywords = ["MIDI", "Sequencer", "FM synthesizer", "asyncio", "Monome"]
+authors = [{ name = "Łukasz Langa", email = "lukasz@langa.pl" }]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
+    "Topic :: Multimedia :: Sound/Audio",
+    "Topic :: Multimedia :: Sound/Audio :: MIDI",
+    "Topic :: Multimedia :: Sound/Audio :: Mixers",
+    "Topic :: Multimedia :: Sound/Audio :: Sound Synthesis",
+    "Topic :: System :: Hardware :: Universal Serial Bus (USB) :: Audio",
+    "Topic :: Utilities",
+    "Typing :: Typed",
+]
+dependencies = [
+    "SoundFile",
+    "attrs",
+    "click",
+    "miniaudio",
+    "pyloudnorm",
+    "python-rtmidi",
+    "uvloop",
+]
+dynamic = ["version"]
+
+[project.urls]
+Documentation = "https://github.com/ambv/aiotone#readme"
+Issues = "https://github.com/ambv/aiotone/issues"
+Source = "https://github.com/ambv/aiotone"
+
+[project.scripts]
+iridium = "aiotone.iridium:main"
+redblue = "aiotone.redblue:main"
+
+[project.optional-dependencies]
+dev = ["black", "mypy", "pytest", "flake8", "flake8-bugbear"]
+
+[tool.setuptools.dynamic]
+version = { attr = "aiotone.__version__" }
+
+[tool.setuptools]
+packages = ["aiotone"]
+py-modules = ["build"]
+
+[tool.coverage.run]
+branch = true
+parallel = true
+omit = []
+
+[tool.coverage.report]
+exclude_lines = ["no cov", "if __name__ == .__main__.:", "if TYPE_CHECKING:"]
