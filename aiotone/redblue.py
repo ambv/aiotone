@@ -252,11 +252,11 @@ class Performance:
         if len(self.notes):
             last_note = list(self.notes.keys())[-1]
             if note > last_note:  # glide up
-                ptime = 64
+                p_time = 64
             elif note < last_note:  # glide down
-                ptime = 80
+                p_time = 80
             await self.cc_both(PORTAMENTO, 127)
-            await self.cc_both(PORTAMENTO_TIME, ptime)
+            await self.cc_both(PORTAMENTO_TIME, p_time)
             self.is_portamento = True
         else:
             await self.cc_both(PORTAMENTO, 0)
@@ -512,7 +512,7 @@ def main(config: str, make_config: bool) -> None:
 
             - Panning: ALL RIGHT
 
-        - an empty MIDI track to actually play the intrument
+        - an empty MIDI track to actually play the instrument
 
             - MIDI FROM: [your audio interface] Ch. 1
 
@@ -544,7 +544,7 @@ async def async_main(config: str) -> None:
     cfg.read(config)
     if cfg["from-ableton"].getint("channel") != 1:
         click.secho("from-ableton channel must be 1, sorry")
-        raise click.Abort
+        raise click.Abort from None
 
     # Configure the `from_ableton` port
     try:
@@ -553,7 +553,7 @@ async def async_main(config: str) -> None:
         )
     except ValueError as port:
         click.secho(f"from-ableton port {port} not connected", fg="red", err=True)
-        raise click.Abort
+        raise click.Abort from None
 
     def midi_callback(msg, data=None):
         sent_time = time.time()
@@ -575,7 +575,7 @@ async def async_main(config: str) -> None:
             to_mother_red = get_out_port(cfg["to-mother-red"]["port-name"])
         except ValueError as port:
             click.secho(f"{port} not connected", fg="red", err=True)
-            raise click.Abort
+            raise click.Abort from None
 
     # Configure the `to_mother_blue` port
     if cfg["from-ableton"]["port-name"] == cfg["to-mother-blue"]["port-name"]:
@@ -587,12 +587,12 @@ async def async_main(config: str) -> None:
             to_mother_blue = get_out_port(cfg["to-mother-blue"]["port-name"])
         except ValueError as port:
             click.secho(f"{port} not connected", fg="red", err=True)
-            raise click.Abort
+            raise click.Abort from None
 
-    porta_mode = cfg["from-ableton"]["portamento"]
-    if porta_mode not in PORTAMENTO_MODES:
+    portamento_mode = cfg["from-ableton"]["portamento"]
+    if portamento_mode not in PORTAMENTO_MODES:
         click.secho(
-            f"from-ableton/portamento mode not recognized. Got {porta_mode!r}, "
+            f"from-ableton/portamento mode not recognized. Got {portamento_mode!r}, "
             f"expected one of {', '.join(PORTAMENTO_MODES)}",
             fg="red",
             err=True,
@@ -623,7 +623,8 @@ async def async_main(config: str) -> None:
                     tg.create_task(performance.grid_connect(port))
                 else:
                     print(
-                        f"warning: unknown Monome device connected - type {type!r}, id {id}"
+                        f"warning: unknown Monome device connected"
+                        f" - type {type!r}, id {id}"
                     )
 
             serialosc = monome.SerialOsc()

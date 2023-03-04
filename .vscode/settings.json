@@ -8,5 +8,19 @@
   "python.linting.mypyEnabled": true,
   "python.pythonPath": "/Users/ambv/.venvs/aiotone/bin/python",
   "C_Cpp.intelliSenseEngineFallback": "Enabled",
-  "cmake.configureOnOpen": false
+  "cmake.configureOnOpen": false,
+  "cSpell.words": [
+    "AFTERTOUCH",
+    "aiotone",
+    "Coro",
+    "duophon",
+    "duophonic",
+    "interp",
+    "leds",
+    "monome",
+    "redblue",
+    "secho",
+    "serialosc",
+    "Varibright"
+  ]
 }

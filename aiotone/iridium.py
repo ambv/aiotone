@@ -318,35 +318,41 @@ class Performance:
 )
 def main(config: str, make_config: bool) -> None:
     """
-    This module works around some bugs in Waldorf Iridium Keyboard. It works around the
-    following bugs:
+    This module works around some bugs in Waldorf Iridium Keyboard. It works around
+    the following bugs:
 
     BUG: Iridium Keyboard sends back CC4 MIDI messages it receives on USB MIDI;
-    BUG: when it receives CC64 0, Iridium Keyboard sends back NOTE OFF messages over USB MIDI
-         for notes that were held by the sustain pedal;
-    BUG: Iridium Keyboard blindly assigns new voices to the same note being played when
-         the sustain pedal is held down (CC64 >= 64), this makes the sound muddy but more importantly
-         wastes polyphonic voices which leads to the bugs below being a common occurrence;
-    BUG: when all voices of polyphony are used and the player plays two notes, Iridium Keyboard
-         assigns both notes to the same least-recently-used voice. In effect only one new note plays.
-         This is especially annoying and noticeable when playing with two hands: one hand plays
-         a bass line and the other hand plays a melody in higher register;
-    BUG: when the player holds the sustain pedal down, and holds a bass note with the left hand, and
-         plays, say, triplets with the other hand, soon enough the voices of polyphony will be
-         exhausted and the bass note will be cut because it's the "least-recently-used" voice, even
-         if the triplets only ever used three keys.
+    BUG: when it receives CC64 0, Iridium Keyboard sends back NOTE OFF messages
+         over USB MIDI for notes that were held by the sustain pedal;
+    BUG: Iridium Keyboard blindly assigns new voices to the same note being
+         played when the sustain pedal is held down (CC64 >= 64), this makes the
+         sound muddy but more importantly wastes polyphonic voices which leads to the
+         bugs below being a common occurrence;
+    BUG: when all voices of polyphony are used and the player plays two notes,
+         Iridium Keyboard assigns both notes to the same least-recently-used voice.
+         In effect only one new note plays.  This is especially annoying and
+         noticeable when playing with two hands: one hand plays a bass line and the
+         other hand plays a melody in higher register;
+    BUG: when the player holds the sustain pedal down, and holds a bass note
+         with the left hand, and plays, say, triplets with the other hand, soon
+         enough the voices of polyphony will be exhausted and the bass note will be
+         cut because it's the "least-recently-used" voice, even if the triplets only
+         ever used three keys.
 
-    This module works around those problems by implementing "catch-damper", essentially its own
-    implementation of the sustain pedal that never passes CC 64 to Iridium Keyboard at all. Instead
-    it implements behavior of holding notes, and sustaining notes by the pedal, and playing over the
-    same sustained note (which first sends a NOTE OFF to the previous voice that played the same
-    note). Additionally, this module deduplicates MIDI CC4 and CC1 messages, working around the
-    USB MIDI loop that Iridium Keyboard introduces.
+    This module works around those problems by implementing "catch-damper",
+    essentially its own implementation of the sustain pedal that never passes CC
+    64 to Iridium Keyboard at all. Instead it implements behavior of holding
+    notes, and sustaining notes by the pedal, and playing over the same
+    sustained note (which first sends a NOTE OFF to the previous voice that
+    played the same note). Additionally, this module deduplicates MIDI CC4 and
+    CC1 messages, working around the USB MIDI loop that Iridium Keyboard
+    introduces.
 
-    You can use this module either as a MIDI filter for either "MIDI From" fields on Ableton MIDI
-    tracks or "MIDI To" fields on External Instruments. In either case, you still want to disable
-    record arming of the Iridium track in Ableton Live when playing back MIDI content you recorded
-    because the MIDI loop *will* play back CC4 messages.
+    You can use this module either as a MIDI filter for either "MIDI From"
+    fields on Ableton MIDI tracks or "MIDI To" fields on External Instruments.
+    In either case, you still want to disable record arming of the Iridium track
+    in Ableton Live when playing back MIDI content you recorded because the MIDI
+    loop *will* play back CC4 messages.
     """
     if make_config:
         with open(CURRENT_DIR / "aiotone-iridium.ini") as f:
@@ -374,7 +380,7 @@ async def async_main(config: str) -> None:
         )
     except ValueError as port:
         click.secho(f"from-ableton port {port} not connected", fg="red", err=True)
-        raise click.Abort
+        raise click.Abort from None
 
     def midi_callback(msg, data=None):
         sent_time = time.time()
@@ -393,7 +399,7 @@ async def async_main(config: str) -> None:
             note_output = get_out_port(cfg["note-output"]["port-name"])
         except ValueError as port:
             click.secho(f"{port} not connected", fg="red", err=True)
-            raise click.Abort
+            raise click.Abort from None
 
     performance = Performance(
         note_output=note_output,
@@ -411,7 +417,8 @@ async def async_main(config: str) -> None:
                     tg.create_task(performance.grid_connect(port))
                 else:
                     print(
-                        f"warning: unknown Monome device connected - type {type!r}, id {id}"
+                        f"warning: unknown Monome device connected"
+                        f" - type {type!r}, id {id}"
                     )
 
             serialosc = monome.SerialOsc()
