@@ -137,7 +137,7 @@ class Grid(Device):
         self.ready_event.add_handler(self._set_varibright)
 
     def _set_varibright(self):
-        if not re.match("^m\d+$", self.id):
+        if not re.match(r"^m\d+$", self.id):
             self.varibright = False
 
     def _on_grid_key(self, addr, path, x, y, s):
