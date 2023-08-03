@@ -6,6 +6,7 @@ import asyncio
 from collections.abc import Callable, Coroutine, Iterator
 import configparser
 from enum import Enum
+import os
 from pathlib import Path
 import sys
 import time
@@ -17,6 +18,7 @@ import numpy as np
 import uvloop
 
 from . import monome
+from . import profiling
 from .midi import (
     MidiOut,
     NOTE_OFF,
@@ -30,8 +32,10 @@ from .midi import (
     MOD_WHEEL,
     FOOT_PEDAL,
     SUSTAIN_PEDAL,
+    EXPRESSION_PEDAL,
     PITCH_BEND,
     ALL_NOTES_OFF,
+    ALL_SOUND_OFF,
     STRIP_CHANNEL,
     get_ports,
     get_out_port,
@@ -50,6 +54,7 @@ Velocity = int
 Coro = Coroutine[None, None, None]
 
 
+DEBUG = False
 CURRENT_DIR = Path(__file__).parent
 CONFIGPARSER_FALSE = {
     k
@@ -237,7 +242,8 @@ class Performance:
         if self.last_expr == value:
             return
         self.last_expr = value
-        await self.cc(FOOT_PEDAL, value)
+        # await self.cc(FOOT_PEDAL, value)
+        await self.cc(EXPRESSION_PEDAL, value)
 
     async def note_on_passthrough(self, note: int, velocity: int) -> None:
         await self.out(NOTE_ON, note, velocity)
@@ -329,7 +335,9 @@ def main(config: str, make_config: bool) -> None:
 
     BUG: Iridium Keyboard sends back CC4 MIDI messages it receives on USB MIDI;
     BUG: when it receives CC64 0, Iridium Keyboard sends back NOTE OFF messages
-         over USB MIDI for notes that were held by the sustain pedal;
+         over USB MIDI for notes that were held by the sustain pedal. It already sent
+         NOTE OFF once for those notes when the player lifted their fingers while still
+         holding the sustain pedal.
     BUG: Iridium Keyboard blindly assigns new voices to the same note being
          played when the sustain pedal is held down (CC64 >= 64), this makes the
          sound muddy but more importantly wastes polyphonic voices which leads to the
@@ -351,8 +359,8 @@ def main(config: str, make_config: bool) -> None:
     notes, and sustaining notes by the pedal, and playing over the same
     sustained note (which first sends a NOTE OFF to the previous voice that
     played the same note). Additionally, this module deduplicates MIDI CC4 and
-    CC1 messages, working around the USB MIDI loop that Iridium Keyboard
-    introduces.
+    CC1 messages, as well as translates incoming CC4 into CC11, working around
+    a nasty USB MIDI loop that Iridium Keyboard introduces.
 
     You can use this module either as a MIDI filter for either "MIDI From"
     fields on Ableton MIDI tracks or "MIDI To" fields on External Instruments.
@@ -365,8 +373,11 @@ def main(config: str, make_config: bool) -> None:
             print(f.read())
         return
 
-    asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
-    asyncio.run(async_main(config))
+    if not DEBUG:
+        uvloop.install()
+    print(os.getpid())
+    with profiling.maybe(DEBUG):
+        asyncio.run(async_main(config))
 
 
 async def async_main(config: str) -> None:
@@ -434,9 +445,27 @@ async def async_main(config: str) -> None:
             await serialosc.connect()
             tg.create_task(grid_app.run())
             tg.create_task(midi_consumer(queue, performance))
+            # tg.create_task(stress_test(queue))
     except asyncio.CancelledError:
         note_input.cancel_callback()
         silence(note_output)
+
+
+async def stress_test(queue: asyncio.Queue[MidiMessage]) -> None:
+    i = 0
+    while True:
+        i += 1
+        if i % 64 == 0:
+            msg = [176, 64, 64]
+        elif i % 32 == 0:
+            msg = [176, 64, 0]
+        else:
+            msg = [176, 4, i % 128]
+        await queue.put((msg, 0, time.time()))
+        if i % 10000 == 0:
+            await asyncio.sleep(3)
+        else:
+            await asyncio.sleep(0.001)
 
 
 async def midi_consumer(
@@ -483,14 +512,18 @@ async def midi_consumer(
             elif t == CONTROL_CHANGE:
                 if msg[1] == MOD_WHEEL:
                     await performance.mod_wheel(msg[2])
-                elif msg[1] == FOOT_PEDAL:
+                elif msg[1] == FOOT_PEDAL or msg[1] == EXPRESSION_PEDAL:
                     await performance.expression(msg[2])
                 elif msg[1] == SUSTAIN_PEDAL:
                     await performance.sustain(msg[2])
-                elif msg[1] == ALL_NOTES_OFF:
-                    await performance.cc(ALL_NOTES_OFF, msg[2])
                 elif msg[1] in MODULATION_CC:
                     await performance.cc(msg[1], msg[2])
+                elif msg[1] == ALL_NOTES_OFF:
+                    await performance.cc(ALL_NOTES_OFF, msg[2])
+                    await performance.cc(SUSTAIN_PEDAL, 0)
+                elif msg[1] == ALL_SOUND_OFF:
+                    await performance.cc(ALL_SOUND_OFF, msg[2])
+                    await performance.cc(SUSTAIN_PEDAL, 0)
                 else:
                     print(f"warning: unhandled CC {msg}", file=sys.stderr)
             elif t == PITCH_BEND:
