@@ -19,7 +19,6 @@ def main(file: list[str]) -> None:
             data, rate = audiofile.read(p)
             meter = pyln.Meter(rate)
             loudness = meter.integrated_loudness(data)
-            breakpoint()
             print(f"{p}  =  {loudness:.3f}")
         else:
             print(f"{p} does not exist", file=sys.stderr)
