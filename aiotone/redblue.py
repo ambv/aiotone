@@ -30,6 +30,7 @@ from .midi import (
     MOD_WHEEL,
     EXPRESSION_PEDAL,
     SUSTAIN_PEDAL,
+    FOOT_PEDAL,
     PORTAMENTO,
     PORTAMENTO_TIME,
     PITCH_BEND,
@@ -692,7 +693,7 @@ async def midi_consumer(
             elif t == CONTROL_CHANGE:
                 if msg[1] == MOD_WHEEL:
                     await performance.mod_wheel(msg[2])
-                elif msg[1] == EXPRESSION_PEDAL:
+                elif msg[1] == EXPRESSION_PEDAL or msg[1] == FOOT_PEDAL:
                     await performance.expression(msg[2])
                 elif msg[1] == SUSTAIN_PEDAL:
                     if await performance.damper_portamento(msg[2]):
