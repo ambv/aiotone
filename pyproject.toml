@@ -45,7 +45,7 @@ iridium = "aiotone.iridium:main"
 redblue = "aiotone.redblue:main"
 
 [project.optional-dependencies]
-dev = ["black", "mypy", "pytest", "flake8", "flake8-bugbear"]
+dev = ["black", "mypy", "pytest", "ruff"]
 
 [tool.setuptools.dynamic]
 version = { attr = "aiotone.__version__" }
