@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import asyncio
-from collections.abc import Callable, Coroutine, Iterator
+from collections.abc import Callable, Coroutine
 import configparser
 from enum import Enum
 import os
@@ -102,6 +102,9 @@ class MIDIMonitorGridApp(monome.GridApp):
         if self.grid.varibright:
             g = "Varibright grid"
         print(f"{g} {self.width}x{self.height} connected")
+        if self.height > 8:
+            print("Constraining to first 8 rows")
+            self.height = 8
 
     def on_grid_disconnect(self) -> None:
         print("Grid disconnected")
@@ -412,11 +415,14 @@ async def async_main(config: str) -> None:
     note_input.set_callback(midi_callback)
 
     if cfg["note-input"]["port-name"] != cfg["note-output"]["port-name"]:
-        try:
-            note_output = get_out_port(cfg["note-output"]["port-name"])
-        except ValueError as port:
-            click.secho(f"{port} not connected", fg="red", err=True)
-            raise click.Abort from None
+        while True:
+            try:
+                note_output = get_out_port(cfg["note-output"]["port-name"])
+            except ValueError as port:
+                click.secho(f"{port} not connected, waiting...", fg="red", err=True)
+                await asyncio.sleep(1.0)
+            else:
+                break
 
     performance = Performance(
         note_output=note_output,
@@ -431,7 +437,7 @@ async def async_main(config: str) -> None:
         async with asyncio.TaskGroup() as tg:
 
             def serialosc_device_added(id, type, port):
-                if type == "monome 128":
+                if type == "monome 128" or type == "monome zero":
                     tg.create_task(grid_app.connect(port))
                 else:
                     print(
@@ -525,7 +531,7 @@ async def midi_consumer(
                     await performance.cc(ALL_SOUND_OFF, msg[2])
                     await performance.cc(SUSTAIN_PEDAL, 0)
                 else:
-                    print(f"warning: unhandled CC {msg}", file=sys.stderr)
+                    print(f"warning: unhandled CC {msg[1]}", file=sys.stderr)
             elif t == PITCH_BEND:
                 await performance.out(PITCH_BEND, msg[1], msg[2])
             else:
