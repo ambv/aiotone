@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
+from functools import partial
 import os
 from pathlib import Path
 import subprocess
 import sys
 import tempfile
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Callable
 
 import soundfile as sf
 
@@ -15,7 +16,7 @@ stderr = sys.stderr
 
 
 if TYPE_CHECKING:
-    import numpy as np
+    import numpy.typing as npt
 
 
 def duration_str(duration: float) -> str:
@@ -24,7 +25,11 @@ def duration_str(duration: float) -> str:
     return f"{minutes}:{seconds:0<.3f}"
 
 
-def read(path: Path) -> tuple[np.array, int]:
+def empty() -> None:
+    return None
+
+
+def read(path: Path, quiet: bool = False) -> tuple[npt.NDArray, int]:
     """Return an tuple with a numpy array of samples and the sample rate.
 
     The numpy array contains all channels and the contents is normalized
@@ -40,7 +45,16 @@ def read(path: Path) -> tuple[np.array, int]:
     ntf = tempfile.NamedTemporaryFile(suffix=".aiff")
     out_path = Path(ntf.name)
     ntf.close()
-    print(f"Converting {path} to {out_path.name}... ", end="", flush=True, file=stderr)
+    convert_message: Callable[[], None] = partial(
+        print,
+        f"Converting {path} to {out_path.name}... ",
+        end="",
+        flush=True,
+        file=stderr,
+    )
+    if not quiet:
+        convert_message()
+        convert_message = empty
     try:
         subprocess.run(
             [
@@ -59,6 +73,7 @@ def read(path: Path) -> tuple[np.array, int]:
             capture_output=True,
         )
     except subprocess.CalledProcessError as cpe:
+        convert_message()
         print("failed.", file=stderr)
         for word in cpe.cmd:
             if " " in word:
@@ -71,14 +86,17 @@ def read(path: Path) -> tuple[np.array, int]:
             print(cpe.stderr.decode(), file=stderr)
         raise exc from None
     except FileNotFoundError:
+        convert_message()
         print("failed; ffmpeg not installed.", file=stderr)
         raise exc from None
     try:
         data, rate = sf.read(out_path)
     except RuntimeError:
+        convert_message()
         print("failed.", file=stderr)
         raise exc from None
     else:
-        print("success.", file=stderr)
+        if not quiet:
+            print("success.", file=stderr)
         os.unlink(out_path)
         return data, rate
