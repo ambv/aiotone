@@ -37,6 +37,7 @@ from .midi import (
     ALL_NOTES_OFF,
     ALL_SOUND_OFF,
     STRIP_CHANNEL,
+    GET_CHANNEL,
     get_ports,
     get_out_port,
     silence,
@@ -226,6 +227,9 @@ class Performance:
     async def clock(self) -> None:
         self.note_output.send_message([CLOCK])
 
+    def clock_eager(self) -> None:
+        self.note_output.send_message([CLOCK])
+
     async def start(self) -> None:
         if self.start_stop:
             self.note_output.send_message([START])
@@ -389,9 +393,6 @@ async def async_main(config: str) -> None:
 
     cfg = configparser.ConfigParser()
     cfg.read(config)
-    if cfg["note-input"].getint("channel") != 1:
-        click.secho("from-ableton channel must be 1, sorry")
-        raise click.Abort
 
     # Configure the `from_ableton` port
     try:
@@ -482,61 +483,65 @@ async def midi_consumer(
     system_realtime = {START, STOP, SONG_POSITION}
     notes = {NOTE_ON, NOTE_OFF}
     handled_types = system_realtime | notes | {CONTROL_CHANGE}
+    in_ch = performance.in_channel - 1
     while True:
         msg, delta, sent_time = await queue.get()
         latency = time.time() - sent_time
-        # Note hack below. We are matching the default which is channel 1 only.
-        # This is what we want.
         t = msg[0]
         if t == CLOCK:
-            await performance.clock()
-        else:
-            st = t & STRIP_CHANNEL
-            if st == STRIP_CHANNEL:  # system realtime message didn't have a channel
-                st = t
-            if __debug__ and st == t:
-                fg = "white"
-                if t in system_realtime:
-                    fg = "blue"
-                elif t == CONTROL_CHANGE:
-                    fg = "green"
-                elif t == POLY_AFTERTOUCH:
-                    fg = "magenta"
-                click.secho(
-                    f"{msg}\tevent delta: {delta:.4f}\tlatency: {latency:.4f}", fg=fg
-                )
-            if t == START:
-                await performance.start()
-            elif t == STOP:
-                await performance.stop()
-            elif t == NOTE_ON:
-                await performance.note_on(msg[1], msg[2])
-            elif t == NOTE_OFF:
-                await performance.note_off(msg[1], msg[2])
-            elif t == POLY_AFTERTOUCH:
-                await performance.at(msg[1], msg[2])
-            elif t == CONTROL_CHANGE:
-                if msg[1] == MOD_WHEEL:
-                    await performance.mod_wheel(msg[2])
-                elif msg[1] == FOOT_PEDAL or msg[1] == EXPRESSION_PEDAL:
-                    await performance.expression(msg[2])
-                elif msg[1] == SUSTAIN_PEDAL:
-                    await performance.sustain(msg[2])
-                elif msg[1] in MODULATION_CC:
-                    await performance.cc(msg[1], msg[2])
-                elif msg[1] == ALL_NOTES_OFF:
-                    await performance.cc(ALL_NOTES_OFF, msg[2])
-                    await performance.cc(SUSTAIN_PEDAL, 0)
-                elif msg[1] == ALL_SOUND_OFF:
-                    await performance.cc(ALL_SOUND_OFF, msg[2])
-                    await performance.cc(SUSTAIN_PEDAL, 0)
-                else:
-                    print(f"warning: unhandled CC {msg[1]}", file=sys.stderr)
-            elif t == PITCH_BEND:
-                await performance.out(PITCH_BEND, msg[1], msg[2])
+            performance.clock_eager()
+            continue
+
+        st = t & STRIP_CHANNEL
+        if st == STRIP_CHANNEL:  # system realtime message didn't have a channel
+            st = t
+        elif t & GET_CHANNEL != in_ch:
+            click.secho(f"skipping {msg} not on channel {in_ch}: {t & GET_CHANNEL}")
+            continue
+
+        if __debug__:
+            fg = "white"
+            if st in system_realtime:
+                fg = "blue"
+            elif st == CONTROL_CHANGE:
+                fg = "green"
+            elif st == POLY_AFTERTOUCH:
+                fg = "magenta"
+            click.secho(
+                f"{msg}\tevent delta: {delta:.4f}\tlatency: {latency:.4f}", fg=fg
+            )
+        if st == START:
+            await performance.start()
+        elif st == STOP:
+            await performance.stop()
+        elif st == NOTE_ON:
+            await performance.note_on(msg[1], msg[2])
+        elif st == NOTE_OFF:
+            await performance.note_off(msg[1], msg[2])
+        elif st == POLY_AFTERTOUCH:
+            await performance.at(msg[1], msg[2])
+        elif st == CONTROL_CHANGE:
+            if msg[1] == MOD_WHEEL:
+                await performance.mod_wheel(msg[2])
+            elif msg[1] == FOOT_PEDAL or msg[1] == EXPRESSION_PEDAL:
+                await performance.expression(msg[2])
+            elif msg[1] == SUSTAIN_PEDAL:
+                await performance.sustain(msg[2])
+            elif msg[1] in MODULATION_CC:
+                await performance.cc(msg[1], msg[2])
+            elif msg[1] == ALL_NOTES_OFF:
+                await performance.cc(ALL_NOTES_OFF, msg[2])
+                await performance.cc(SUSTAIN_PEDAL, 0)
+            elif msg[1] == ALL_SOUND_OFF:
+                await performance.cc(ALL_SOUND_OFF, msg[2])
+                await performance.cc(SUSTAIN_PEDAL, 0)
             else:
-                if st not in handled_types:
-                    print(f"warning: unhandled event {msg}", file=sys.stderr)
+                print(f"warning: unhandled CC {msg[1]}", file=sys.stderr)
+        elif st == PITCH_BEND:
+            await performance.out(PITCH_BEND, msg[1], msg[2])
+        else:
+            if st not in handled_types:
+                print(f"warning: unhandled event {msg}", file=sys.stderr)
 
 
 if __name__ == "__main__":
