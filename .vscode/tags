@@ -1,0 +1,158 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
+!_TAG_PROGRAM_NAME	Exuberant Ctags	//
+!_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
+!_TAG_PROGRAM_VERSION	5.8	//
+A	../aiotone/notes.py	/^A = [33]$/;"	kind:variable	line:10
+ALL_CHANNELS	../aiotone/midi.py	/^ALL_CHANNELS = range(16)$/;"	kind:variable	line:36
+ALL_NOTES_OFF	../aiotone/midi.py	/^ALL_NOTES_OFF = 0b01111011$/;"	kind:variable	line:25
+Ab	../aiotone/notes.py	/^Ab = Gs$/;"	kind:variable	line:17
+As	../aiotone/notes.py	/^As = [34]$/;"	kind:variable	line:11
+B	../aiotone/notes.py	/^B = [35]$/;"	kind:variable	line:12
+Bb	../aiotone/notes.py	/^Bb = As$/;"	kind:variable	line:18
+C	../aiotone/notes.py	/^C = [24]$/;"	kind:variable	line:1
+CHAN_AFTERTOUCH	../aiotone/midi.py	/^CHAN_AFTERTOUCH = 0b11010000$/;"	kind:variable	line:14
+CLOCK	../aiotone/midi.py	/^CLOCK = 0b11111000$/;"	kind:variable	line:19
+CONFIGPARSER_FALSE	../aiotone/redblue.py	/^CONFIGPARSER_FALSE = {$/;"	kind:variable	line:48
+CONTROL_CHANGE	../aiotone/midi.py	/^CONTROL_CHANGE = 0b10110000$/;"	kind:variable	line:12
+CURRENT_DIR	../aiotone/redblue.py	/^CURRENT_DIR = Path(__file__).parent$/;"	kind:variable	line:47
+Countdown	../aiotone/metronome.py	/^class Countdown(asyncio.Future):$/;"	kind:class	line:9
+Cs	../aiotone/notes.py	/^Cs = [25]$/;"	kind:variable	line:2
+D	../aiotone/notes.py	/^D = [26]$/;"	kind:variable	line:3
+Db	../aiotone/notes.py	/^Db = Cs$/;"	kind:variable	line:14
+Ds	../aiotone/notes.py	/^Ds = [27]$/;"	kind:variable	line:4
+E	../aiotone/notes.py	/^E = [28]$/;"	kind:variable	line:5
+EXPRESSION_PEDAL	../aiotone/midi.py	/^EXPRESSION_PEDAL = 0b00001011$/;"	kind:variable	line:27
+Eb	../aiotone/notes.py	/^Eb = Ds$/;"	kind:variable	line:15
+EventDelta	../aiotone/circuits.py	/^EventDelta = float  # in seconds$/;"	kind:variable	line:29
+EventDelta	../aiotone/redblue.py	/^EventDelta = float  # in seconds$/;"	kind:variable	line:41
+F	../aiotone/notes.py	/^F = [29]$/;"	kind:variable	line:6
+Factory	../aiotone/circuits.py	/^from attr import dataclass, Factory$/;"	kind:namespace	line:10
+Factory	../aiotone/metronome.py	/^from attr import dataclass, Factory$/;"	kind:namespace	line:6
+Factory	../aiotone/redblue.py	/^from attr import dataclass, Factory$/;"	kind:namespace	line:12
+Fs	../aiotone/notes.py	/^Fs = [30]$/;"	kind:variable	line:7
+G	../aiotone/notes.py	/^G = [31]$/;"	kind:variable	line:8
+Gb	../aiotone/notes.py	/^Gb = Fs$/;"	kind:variable	line:16
+Gs	../aiotone/notes.py	/^Gs = [32]$/;"	kind:variable	line:9
+Iterable	../aiotone/midi.py	/^from typing import Iterable, Tuple$/;"	kind:namespace	line:3
+List	../aiotone/circuits.py	/^from typing import List, Optional, Tuple$/;"	kind:namespace	line:8
+List	../aiotone/metronome.py	/^from typing import List$/;"	kind:namespace	line:4
+List	../aiotone/redblue.py	/^from typing import List, Sequence, Set, Tuple$/;"	kind:namespace	line:10
+MOD_WHEEL	../aiotone/midi.py	/^MOD_WHEEL = 0b00000001$/;"	kind:variable	line:26
+Metronome	../aiotone/circuits.py	/^from .metronome import Metronome$/;"	kind:namespace	line:14
+Metronome	../aiotone/metronome.py	/^class Metronome:$/;"	kind:class	line:21
+Metronome	../aiotone/redblue.py	/^from .metronome import Metronome$/;"	kind:namespace	line:16
+MidiIn	../aiotone/midi.py	/^from rtmidi import MidiIn, MidiOut$/;"	kind:namespace	line:5
+MidiMessage	../aiotone/circuits.py	/^MidiMessage = Tuple[MidiPacket, EventDelta, TimeStamp]$/;"	kind:variable	line:32
+MidiMessage	../aiotone/redblue.py	/^MidiMessage = Tuple[MidiPacket, EventDelta, TimeStamp]$/;"	kind:variable	line:44
+MidiOut	../aiotone/midi.py	/^from rtmidi import MidiIn, MidiOut$/;"	kind:namespace	line:5
+MidiPacket	../aiotone/circuits.py	/^MidiPacket = List[int]$/;"	kind:variable	line:31
+MidiPacket	../aiotone/redblue.py	/^MidiPacket = List[int]$/;"	kind:variable	line:43
+NOTE_OFF	../aiotone/midi.py	/^NOTE_OFF = 0b10000000$/;"	kind:variable	line:9
+NOTE_ON	../aiotone/midi.py	/^NOTE_ON = 0b10010000$/;"	kind:variable	line:10
+Optional	../aiotone/circuits.py	/^from typing import List, Optional, Tuple$/;"	kind:namespace	line:8
+PANIC	../aiotone/midi.py	/^PANIC = 0b11111111$/;"	kind:variable	line:18
+PITCH_BEND	../aiotone/midi.py	/^PITCH_BEND = 0b11100000$/;"	kind:variable	line:15
+POLY_AFTERTOUCH	../aiotone/midi.py	/^POLY_AFTERTOUCH = 0b10100000$/;"	kind:variable	line:11
+PORTAMENTO	../aiotone/midi.py	/^PORTAMENTO = 0b01000001$/;"	kind:variable	line:29
+PORTAMENTO_MODES	../aiotone/redblue.py	/^PORTAMENTO_MODES = {"legato"} | SUSTAIN_PEDAL_PORTAMENTO | CONFIGPARSER_FALSE$/;"	kind:variable	line:54
+PORTAMENTO_TIME	../aiotone/midi.py	/^PORTAMENTO_TIME = 0b00000101$/;"	kind:variable	line:30
+PROGRAM_CHANGE	../aiotone/midi.py	/^PROGRAM_CHANGE = 0b11000000$/;"	kind:variable	line:13
+Path	../aiotone/redblue.py	/^from pathlib import Path$/;"	kind:namespace	line:7
+Performance	../aiotone/circuits.py	/^class Performance:$/;"	kind:class	line:36
+Performance	../aiotone/redblue.py	/^class Performance:$/;"	kind:class	line:58
+SONG_POSITION	../aiotone/midi.py	/^SONG_POSITION = 0b11110010$/;"	kind:variable	line:22
+START	../aiotone/midi.py	/^START = 0b11111010$/;"	kind:variable	line:20
+STOP	../aiotone/midi.py	/^STOP = 0b11111100$/;"	kind:variable	line:21
+STRIP_CHANNEL	../aiotone/midi.py	/^STRIP_CHANNEL = 0b11110000$/;"	kind:variable	line:33
+SUSTAIN_PEDAL	../aiotone/midi.py	/^SUSTAIN_PEDAL = 0b01000000$/;"	kind:variable	line:28
+SUSTAIN_PEDAL_PORTAMENTO	../aiotone/redblue.py	/^SUSTAIN_PEDAL_PORTAMENTO = {"sustain", "damper"}$/;"	kind:variable	line:53
+SYSEX	../aiotone/midi.py	/^SYSEX = 0b11110000$/;"	kind:variable	line:16
+SYSEX_RT	../aiotone/midi.py	/^SYSEX_RT = 0b11111000$/;"	kind:variable	line:17
+Sequence	../aiotone/redblue.py	/^from typing import List, Sequence, Set, Tuple$/;"	kind:namespace	line:10
+Set	../aiotone/redblue.py	/^from typing import List, Sequence, Set, Tuple$/;"	kind:namespace	line:10
+TimeStamp	../aiotone/circuits.py	/^TimeStamp = float  # time.time()$/;"	kind:variable	line:30
+TimeStamp	../aiotone/redblue.py	/^TimeStamp = float  # time.time()$/;"	kind:variable	line:42
+Tuple	../aiotone/circuits.py	/^from typing import List, Optional, Tuple$/;"	kind:namespace	line:8
+Tuple	../aiotone/midi.py	/^from typing import Iterable, Tuple$/;"	kind:namespace	line:3
+Tuple	../aiotone/redblue.py	/^from typing import List, Sequence, Set, Tuple$/;"	kind:namespace	line:10
+__init__	../aiotone/metronome.py	/^    def __init__(self, value: int, *, loop=None) -> None:$/;"	kind:member	line:10
+__init__.py	../tests/__init__.py	1;"	kind:file	line:1
+__version__	../tests/__init__.py	/^__version__ = "19.9.0"$/;"	kind:variable	line:1
+__version__	../tests/test_aiotone.py	/^from aiotone import __version__$/;"	kind:namespace	line:1
+analog_synth	../aiotone/circuits.py	/^async def analog_synth(performance: Performance) -> None:$/;"	kind:function	line:192
+annotations	../aiotone/circuits.py	/^from __future__ import annotations$/;"	kind:namespace	line:2
+annotations	../aiotone/metronome.py	/^from __future__ import annotations$/;"	kind:namespace	line:1
+annotations	../aiotone/midi.py	/^from __future__ import annotations$/;"	kind:namespace	line:1
+annotations	../aiotone/redblue.py	/^from __future__ import annotations$/;"	kind:namespace	line:3
+arpeggiator	../aiotone/circuits.py	/^    async def arpeggiator() -> None:$/;"	kind:function	line:202
+async_main	../aiotone/circuits.py	/^async def async_main() -> None:$/;"	kind:function	line:99
+async_main	../aiotone/redblue.py	/^async def async_main(config: str) -> None:$/;"	kind:function	line:272
+asyncio	../aiotone/circuits.py	/^import asyncio$/;"	kind:namespace	line:4
+asyncio	../aiotone/metronome.py	/^import asyncio$/;"	kind:namespace	line:3
+asyncio	../aiotone/redblue.py	/^import asyncio$/;"	kind:namespace	line:5
+bass_drum	../aiotone/circuits.py	/^    async def bass_drum() -> None:$/;"	kind:function	line:174
+blue	../aiotone/redblue.py	/^    async def blue(self, event: int, note: int, volume: int) -> None:$/;"	kind:member	line:159
+both	../aiotone/redblue.py	/^    async def both(self, event: int, note: int, volume: int) -> None:$/;"	kind:member	line:162
+cc_blue	../aiotone/redblue.py	/^    async def cc_blue(self, type: int, value: int) -> None:$/;"	kind:member	line:169
+cc_both	../aiotone/redblue.py	/^    async def cc_both(self, type: int, value: int) -> None:$/;"	kind:member	line:172
+cc_red	../aiotone/redblue.py	/^    async def cc_red(self, type: int, value: int) -> None:$/;"	kind:member	line:166
+circuits.py	../aiotone/circuits.py	1;"	kind:file	line:1
+click	../aiotone/circuits.py	/^import click$/;"	kind:namespace	line:11
+click	../aiotone/redblue.py	/^import click$/;"	kind:namespace	line:13
+clock	../aiotone/redblue.py	/^    async def clock(self) -> None:$/;"	kind:member	line:97
+configparser	../aiotone/redblue.py	/^import configparser$/;"	kind:namespace	line:6
+damper_portamento	../aiotone/redblue.py	/^    async def damper_portamento(self, value: int) -> bool:$/;"	kind:member	line:123
+dataclass	../aiotone/circuits.py	/^from attr import dataclass, Factory$/;"	kind:namespace	line:10
+dataclass	../aiotone/metronome.py	/^from attr import dataclass, Factory$/;"	kind:namespace	line:6
+dataclass	../aiotone/redblue.py	/^from attr import dataclass, Factory$/;"	kind:namespace	line:12
+default	../aiotone/redblue.py	/^    default=str(CURRENT_DIR \/ "aiotone-redblue.ini"),$/;"	kind:variable	line:181
+drum_machine	../aiotone/circuits.py	/^async def drum_machine(performance: Performance) -> None:$/;"	kind:function	line:168
+get_out_port	../aiotone/midi.py	/^def get_out_port(port_name: str) -> MidiOut:$/;"	kind:function	line:60
+get_ports	../aiotone/midi.py	/^def get_ports(port_name: str, *, clock_source: bool = False) -> Tuple[MidiIn, MidiOut]:$/;"	kind:function	line:39
+help	../aiotone/redblue.py	/^    help="Read configuration from this file",$/;"	kind:variable	line:180
+help	../aiotone/redblue.py	/^    help="Write a new configuration file to standard output",$/;"	kind:variable	line:187
+hihats	../aiotone/circuits.py	/^    async def hihats() -> None:$/;"	kind:function	line:183
+is_flag	../aiotone/redblue.py	/^    is_flag=True,$/;"	kind:variable	line:188
+itertools	../aiotone/circuits.py	/^import itertools$/;"	kind:namespace	line:5
+key_note	../aiotone/circuits.py	/^    async def key_note() -> None:$/;"	kind:function	line:198
+legato_portamento	../aiotone/redblue.py	/^    async def legato_portamento(self) -> None:$/;"	kind:member	line:112
+main	../aiotone/circuits.py	/^def main() -> None:$/;"	kind:function	line:73
+main	../aiotone/redblue.py	/^def main(config: str, make_config: bool) -> None:$/;"	kind:function	line:190
+metronome.py	../aiotone/metronome.py	1;"	kind:file	line:1
+midi.py	../aiotone/midi.py	1;"	kind:file	line:1
+midi_callback	../aiotone/circuits.py	/^    def midi_callback(msg, data=None):$/;"	kind:function	line:110
+midi_callback	../aiotone/redblue.py	/^    def midi_callback(msg, data=None):$/;"	kind:function	line:291
+midi_consumer	../aiotone/circuits.py	/^async def midi_consumer($/;"	kind:function	line:133
+midi_consumer	../aiotone/redblue.py	/^async def midi_consumer($/;"	kind:function	line:352
+note_off	../aiotone/redblue.py	/^    async def note_off(self, note: int) -> None:$/;"	kind:member	line:144
+note_on	../aiotone/redblue.py	/^    async def note_on(self, note: int, volume: int) -> None:$/;"	kind:member	line:140
+notes.py	../aiotone/notes.py	1;"	kind:file	line:1
+play	../aiotone/circuits.py	/^    async def play($/;"	kind:member	line:52
+play	../aiotone/redblue.py	/^    async def play($/;"	kind:member	line:71
+play_bass	../aiotone/circuits.py	/^    async def play_bass($/;"	kind:member	line:47
+play_drum	../aiotone/circuits.py	/^    async def play_drum($/;"	kind:member	line:42
+random	../aiotone/circuits.py	/^import random$/;"	kind:namespace	line:6
+red	../aiotone/redblue.py	/^    async def red(self, event: int, note: int, volume: int) -> None:$/;"	kind:member	line:156
+redblue.py	../aiotone/redblue.py	1;"	kind:file	line:1
+reset	../aiotone/metronome.py	/^    async def reset(self) -> None:$/;"	kind:member	line:36
+send_once	../aiotone/redblue.py	/^    def send_once(self, message: Sequence[int]) -> None:$/;"	kind:member	line:90
+show_default	../aiotone/redblue.py	/^    show_default=True,$/;"	kind:variable	line:183
+silence	../aiotone/midi.py	/^def silence($/;"	kind:function	line:71
+snare_drum	../aiotone/circuits.py	/^    async def snare_drum() -> None:$/;"	kind:function	line:178
+start	../aiotone/redblue.py	/^    async def start(self) -> None:$/;"	kind:member	line:100
+stop	../aiotone/redblue.py	/^    async def stop(self) -> None:$/;"	kind:member	line:105
+sys	../aiotone/redblue.py	/^import sys$/;"	kind:namespace	line:8
+test_aiotone.py	../tests/test_aiotone.py	1;"	kind:file	line:1
+test_version	../tests/test_aiotone.py	/^def test_version():$/;"	kind:function	line:4
+tick	../aiotone/metronome.py	/^    async def tick(self) -> None:$/;"	kind:member	line:44
+tick	../aiotone/metronome.py	/^    def tick(self) -> None:$/;"	kind:member	line:14
+time	../aiotone/circuits.py	/^import time$/;"	kind:namespace	line:7
+time	../aiotone/redblue.py	/^import time$/;"	kind:namespace	line:9
+type	../aiotone/redblue.py	/^    type=click.Path(exists=True, file_okay=True, dir_okay=False),$/;"	kind:variable	line:182
+uvloop	../aiotone/circuits.py	/^import uvloop$/;"	kind:namespace	line:12
+uvloop	../aiotone/redblue.py	/^import uvloop$/;"	kind:namespace	line:14
+wait	../aiotone/circuits.py	/^    async def wait(self, pulses: int) -> None:$/;"	kind:member	line:68
+wait	../aiotone/metronome.py	/^    async def wait(self, pulses: int) -> None:$/;"	kind:member	line:27
+wait	../aiotone/redblue.py	/^    async def wait(self, pulses: int) -> None:$/;"	kind:member	line:87
