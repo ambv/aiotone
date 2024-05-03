@@ -44,6 +44,7 @@ Source = "https://github.com/ambv/aiotone"
 iridium = "aiotone.iridium:main"
 redblue = "aiotone.redblue:main"
 loudness = "aiotone.loudness:main"
+als_to_cue = "aiotone.als_to_cue:main"
 
 [project.optional-dependencies]
 dev = ["black", "mypy", "pytest", "ruff"]
