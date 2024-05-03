@@ -27,6 +27,7 @@ from .midi import (
     STOP,
     SONG_POSITION,
     CONTROL_CHANGE,
+    POLY_AFTERTOUCH,
     MOD_WHEEL,
     EXPRESSION_PEDAL,
     SUSTAIN_PEDAL,
@@ -330,7 +331,7 @@ class Performance:
             was_accent and len(self.notes) > 0
         ) or volume >= self.accent_volume
         if self.is_accent != was_accent:
-            await self.expression(self.last_expression_value)
+            await self.expression(self.last_expression_value, self.is_accent)
 
         if self.power_chord:
             self.notes[note] = NoteMode.POWER
@@ -398,15 +399,19 @@ class Performance:
     async def mod_wheel(self, value: int) -> None:
         await self.mod_wheel_target(MOD_WHEEL, value)
 
-    async def expression(self, value: int) -> None:
+    async def expression(self, value: int, accent: bool | None = None) -> None:
         scaled_value = int(self.expression_scale(value))
+        slew_value: float | tuple[float, float] = scaled_value
 
-        if self.is_accent:
-            scaled_value = min(scaled_value + 32, 127)
-        else:
-            self.last_expression_value = value  # sic, raw value
+        self.last_expression_value = value  # sic, raw value
 
-        await self.expression_slew.update(scaled_value)
+        if accent is not None:
+            if accent:
+                slew_value = (min(scaled_value + 32, 127), scaled_value)
+                print("[accent slew]", slew_value)
+                await self._expression_cb(slew_value[0])
+
+        await self.expression_slew.update(slew_value)
 
     async def _expression_cb(self, cc_slew: float) -> None:
         cc = int(round(cc_slew))
@@ -414,6 +419,9 @@ class Performance:
             return
         self.expression_last_sent = cc
         await self.expression_pedal_target(MOD_WHEEL, cc)
+
+    async def at(self, note: int, value: int) -> None:
+        pass
 
     # Raw commands
 
@@ -690,6 +698,8 @@ async def midi_consumer(
             elif t == NOTE_OFF:
                 await performance.note_off(msg[1])
                 await performance.legato_portamento(msg[1])
+            elif t == POLY_AFTERTOUCH:
+                await performance.at(msg[1], msg[2])
             elif t == CONTROL_CHANGE:
                 if msg[1] == MOD_WHEEL:
                     await performance.mod_wheel(msg[2])

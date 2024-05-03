@@ -24,7 +24,7 @@ class SlewGenerator:
     value: float = 0.0
     steps: int = 128  # number of steps between each value received
     rate: float = 1  # steps/ms
-    _new_value: Optional[float] = None
+    _new_value: float | tuple[float, float] | None = None
     _task: asyncio.Task = field(init=False)
     _lock: asyncio.Lock = field(init=False)
     _requests: int = field(init=False)
@@ -44,7 +44,7 @@ class SlewGenerator:
         except BaseException:
             pass
 
-    async def update(self, value: float) -> None:
+    async def update(self, value: float | tuple[float, float]) -> None:
         async with self._lock:
             self._new_value = value
 
@@ -56,7 +56,10 @@ class SlewGenerator:
             while self._new_value is None:
                 await asyncio.sleep(step_sleep)
             async with self._lock:
-                new_value = self._new_value
+                if isinstance(self._new_value, tuple):
+                    current_value, new_value = self._new_value
+                else:
+                    new_value = self._new_value
                 self._new_value = None
             step = (new_value - current_value) / steps
             for _i in range(steps):
