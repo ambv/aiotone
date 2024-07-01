@@ -116,7 +116,7 @@ class MIDIMonitorGridApp(monome.GridApp):
             self.draw()
             now = time.monotonic()
             if now - last_sec >= 1:
-                self.render_fps = fps / (now - last_sec)
+                self.performance.render_fps = fps / (now - last_sec)
                 fps = 0
                 last_sec = now
             await asyncio.sleep(0.03)
@@ -175,6 +175,7 @@ class Performance:
     blue_channel: int
     blue_mod_wheel: bool
     blue_expression_pedal: bool
+    pass_clock: bool
     start_stop: bool
     portamento: str
     damper_portamento_max: int
@@ -259,7 +260,8 @@ class Performance:
             bp.send_message(message)
 
     async def clock(self) -> None:
-        self.send_once([CLOCK])
+        if self.pass_clock:
+            self.send_once([CLOCK])
 
     async def start(self) -> None:
         if self.start_stop:
@@ -623,6 +625,7 @@ async def async_main(config: str) -> None:
         blue_port=to_mother_blue,
         red_channel=cfg["to-mother-red"].getint("channel") - 1,
         blue_channel=cfg["to-mother-blue"].getint("channel") - 1,
+        pass_clock=cfg["from-ableton"].getboolean("pass-clock"),
         start_stop=cfg["from-ableton"].getboolean("start-stop"),
         portamento=cfg["from-ableton"]["portamento"],
         red_mod_wheel=cfg["to-mother-red"].getboolean("mod-wheel"),
