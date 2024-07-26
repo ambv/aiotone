@@ -1,3 +1,6 @@
+"""This test program uses miniaudio to capture audio from Blackhole channels 1 and 2,
+and passes it through to Blackhole channels 3 and 4."""
+
 from __future__ import annotations
 
 from array import array
@@ -10,7 +13,6 @@ playback_name = "BlackHole 16ch"
 capture_name = "BlackHole 16ch"
 playback_channels = 16
 capture_channels = 16
-buffer_samples = 1024
 devices = miniaudio.Devices()
 
 
@@ -35,33 +37,54 @@ def get_buffer_format() -> Literal["i", "l", "f"]:
     raise LookupError("This is an unsupported machine.")
 
 
-def print_buffer() -> Generator[array[int], array[int], None]:
-    buffer_size = buffer_samples * capture_channels
-    buffer_format = get_buffer_format()
-    buffer = array(buffer_format, [0] * buffer_size)
+def move_audio(in_buffer: array[float], out_buffer: array[float]) -> None:
+    for offset in range(0, len(out_buffer), capture_channels):
+        for ch in range(capture_channels):
+            if ch == 2:
+                out_buffer[offset + ch] = in_buffer[offset + 0]
+            elif ch == 3:
+                out_buffer[offset + ch] = in_buffer[offset + 1]
+            else:
+                out_buffer[offset + ch] = 0.0
+
+
+def print_buffer() -> Generator[memoryview | array[float] | bytes, bytes, None]:
     nan = float("nan")
+    buffer_format = get_buffer_format()
+    input_bytes = yield b""
+    out_buffer: array[float] = array(buffer_format, input_bytes)
+    out_mem = memoryview(out_buffer)
+    buffer_size = len(out_buffer)
     while True:
         # NOTE: `input_bytes` is always a bytearray;
         # we need to convert to array.array manually.
-        input_bytes = yield buffer
-        buffer = array(buffer_format, input_bytes)
-        buffer_state = ""
+        in_buffer: array[float] = array(buffer_format, input_bytes)
+        in_buffer_state = ""
         saw_nan = False
-        chan_sum = [0] * capture_channels
-        for offset in range(0, len(buffer), capture_channels):
+        chan_sum = [0.0] * capture_channels
+        for offset in range(0, len(in_buffer), capture_channels):
             for ch in range(capture_channels):
-                chan_sum[ch] += buffer[offset + ch]
-                if buffer[offset + ch] is nan:
+                chan_sum[ch] += in_buffer[offset + ch]
+                if in_buffer[offset + ch] is nan:
                     saw_nan = True
-        for ch in range(capture_channels):
-            buffer_state += f"{chan_sum[ch]:+010.2f} "
+        if buffer_format == "f":
+            for ch in range(capture_channels):
+                in_buffer_state += f"{chan_sum[ch]:+010.6f} "
+        else:
+            for ch in range(capture_channels):
+                in_buffer_state += f"{chan_sum[ch]:+010.2f} "
         print(
-            f"{buffer.typecode} {buffer.buffer_info()} {buffer_state}" + " " * 3,
+            f"{in_buffer.typecode}{out_buffer.typecode}"
+            f" {in_buffer.buffer_info()} {out_buffer.buffer_info()}"
+            f" {in_buffer.itemsize} {out_buffer.itemsize}"
+            f" {in_buffer_state}" + " " * 3,
             end="\r",
             flush=True,
         )
         if saw_nan:
             print("!")
+        move_audio(in_buffer, out_buffer)
+        input_bytes = yield out_mem
 
 
 if __name__ == "__main__":
@@ -87,6 +110,6 @@ if __name__ == "__main__":
     with device as dev:
         stream = print_buffer()
         next(stream)
-        dev.start(stream)
+        dev.start(stream)  # type: ignore[arg-type]
         while True:
             time.sleep(0.1)
