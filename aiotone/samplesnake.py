@@ -13,7 +13,7 @@ from typing import Generator, Literal
 import click
 import miniaudio
 
-from .array_perf import update_buffer
+from .array_perf import update_buffer, move_audio
 from . import midi
 
 
@@ -51,7 +51,7 @@ def get_buffer_format() -> Literal["i", "l", "f"]:
     raise LookupError("This is an unsupported machine.")
 
 
-def move_audio(
+def move_audio_py(
     in_buffer: array[float],
     in_l: int,
     in_r: int,

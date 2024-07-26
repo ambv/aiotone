@@ -4,9 +4,15 @@
 {
     "distutils": {
         "depends": [],
+        "extra_compile_args": [
+            "-O3"
+        ],
+        "libraries": [
+            "m"
+        ],
         "name": "aiotone.array_perf",
         "sources": [
-            "/Users/ambv/Documents/Python/aiotone/aiotone/array_perf.pyx"
+            "aiotone/array_perf.pyx"
         ]
     },
     "module_name": "aiotone.array_perf"
@@ -2131,6 +2137,9 @@ static CYTHON_INLINE int resize_smart(arrayobject *self, Py_ssize_t n) {
 /* CIntFromPy.proto */
 static CYTHON_INLINE int __Pyx_PyInt_As_int(PyObject *);
 
+/* CIntToPy.proto */
+static CYTHON_INLINE PyObject* __Pyx_PyInt_From_int(int value);
+
 /* FormatTypeName.proto */
 #if CYTHON_COMPILING_IN_LIMITED_API
 typedef PyObject *__Pyx_TypeName;
@@ -2284,17 +2293,34 @@ static PyObject *__pyx_builtin_range;
 static PyObject *__pyx_builtin_MemoryError;
 /* #### Code section: string_decls ### */
 static const char __pyx_k_i[] = "i";
-static const char __pyx_k__3[] = "?";
+static const char __pyx_k__5[] = "?";
+static const char __pyx_k_ch[] = "ch";
 static const char __pyx_k_arr[] = "arr";
+static const char __pyx_k_None[] = "None";
 static const char __pyx_k_data[] = "data";
+static const char __pyx_k_in_l[] = "in_l";
+static const char __pyx_k_in_r[] = "in_r";
 static const char __pyx_k_main[] = "__main__";
 static const char __pyx_k_name[] = "__name__";
 static const char __pyx_k_test[] = "__test__";
+static const char __pyx_k_out_l[] = "out_l";
+static const char __pyx_k_out_r[] = "out_r";
 static const char __pyx_k_range[] = "range";
+static const char __pyx_k_ch_len[] = "ch_len";
+static const char __pyx_k_offset[] = "offset";
+static const char __pyx_k_return[] = "return";
+static const char __pyx_k_out_len[] = "out_len";
 static const char __pyx_k_raw_arr[] = "raw_arr";
+static const char __pyx_k_in_buffer[] = "in_buffer";
+static const char __pyx_k_move_audio[] = "move_audio";
+static const char __pyx_k_out_buffer[] = "out_buffer";
 static const char __pyx_k_MemoryError[] = "MemoryError";
+static const char __pyx_k_channel_sum[] = "channel_sum";
 static const char __pyx_k_is_coroutine[] = "_is_coroutine";
+static const char __pyx_k_in_buffer_raw[] = "in_buffer_raw";
 static const char __pyx_k_update_buffer[] = "update_buffer";
+static const char __pyx_k_out_buffer_raw[] = "out_buffer_raw";
+static const char __pyx_k_channel_sum_raw[] = "channel_sum_raw";
 static const char __pyx_k_aiotone_array_perf[] = "aiotone.array_perf";
 static const char __pyx_k_asyncio_coroutines[] = "asyncio.coroutines";
 static const char __pyx_k_cline_in_traceback[] = "cline_in_traceback";
@@ -2303,6 +2329,7 @@ static const char __pyx_k_aiotone_array_perf_pyx[] = "aiotone/array_perf.pyx";
 static int __pyx_pf_7cpython_5array_5array___getbuffer__(arrayobject *__pyx_v_self, Py_buffer *__pyx_v_info, CYTHON_UNUSED int __pyx_v_flags); /* proto */
 static void __pyx_pf_7cpython_5array_5array_2__releasebuffer__(CYTHON_UNUSED arrayobject *__pyx_v_self, Py_buffer *__pyx_v_info); /* proto */
 static PyObject *__pyx_pf_7aiotone_10array_perf_update_buffer(CYTHON_UNUSED PyObject *__pyx_self, arrayobject *__pyx_v_arr, PyObject *__pyx_v_data); /* proto */
+static PyObject *__pyx_pf_7aiotone_10array_perf_2move_audio(CYTHON_UNUSED PyObject *__pyx_self, arrayobject *__pyx_v_in_buffer, int __pyx_v_in_l, int __pyx_v_in_r, arrayobject *__pyx_v_out_buffer, int __pyx_v_out_l, int __pyx_v_out_r, arrayobject *__pyx_v_channel_sum); /* proto */
 /* #### Code section: late_includes ### */
 /* #### Code section: module_state ### */
 typedef struct {
@@ -2429,23 +2456,42 @@ typedef struct {
   #if CYTHON_USE_MODULE_STATE
   #endif
   PyObject *__pyx_n_s_MemoryError;
-  PyObject *__pyx_n_s__3;
+  PyObject *__pyx_n_s_None;
+  PyObject *__pyx_n_s__5;
   PyObject *__pyx_n_s_aiotone_array_perf;
   PyObject *__pyx_kp_s_aiotone_array_perf_pyx;
   PyObject *__pyx_n_s_arr;
   PyObject *__pyx_n_s_asyncio_coroutines;
+  PyObject *__pyx_n_s_ch;
+  PyObject *__pyx_n_s_ch_len;
+  PyObject *__pyx_n_s_channel_sum;
+  PyObject *__pyx_n_s_channel_sum_raw;
   PyObject *__pyx_n_s_cline_in_traceback;
   PyObject *__pyx_n_s_data;
   PyObject *__pyx_n_s_i;
+  PyObject *__pyx_n_s_in_buffer;
+  PyObject *__pyx_n_s_in_buffer_raw;
+  PyObject *__pyx_n_s_in_l;
+  PyObject *__pyx_n_s_in_r;
   PyObject *__pyx_n_s_is_coroutine;
   PyObject *__pyx_n_s_main;
+  PyObject *__pyx_n_s_move_audio;
   PyObject *__pyx_n_s_name;
+  PyObject *__pyx_n_s_offset;
+  PyObject *__pyx_n_s_out_buffer;
+  PyObject *__pyx_n_s_out_buffer_raw;
+  PyObject *__pyx_n_s_out_l;
+  PyObject *__pyx_n_s_out_len;
+  PyObject *__pyx_n_s_out_r;
   PyObject *__pyx_n_s_range;
   PyObject *__pyx_n_s_raw_arr;
+  PyObject *__pyx_n_s_return;
   PyObject *__pyx_n_s_test;
   PyObject *__pyx_n_s_update_buffer;
   PyObject *__pyx_tuple_;
+  PyObject *__pyx_tuple__3;
   PyObject *__pyx_codeobj__2;
+  PyObject *__pyx_codeobj__4;
 } __pyx_mstate;
 
 #if CYTHON_USE_MODULE_STATE
@@ -2493,23 +2539,42 @@ static int __pyx_m_clear(PyObject *m) {
   Py_CLEAR(clear_module_state->__pyx_ptype_7cpython_7complex_complex);
   Py_CLEAR(clear_module_state->__pyx_ptype_7cpython_5array_array);
   Py_CLEAR(clear_module_state->__pyx_n_s_MemoryError);
-  Py_CLEAR(clear_module_state->__pyx_n_s__3);
+  Py_CLEAR(clear_module_state->__pyx_n_s_None);
+  Py_CLEAR(clear_module_state->__pyx_n_s__5);
   Py_CLEAR(clear_module_state->__pyx_n_s_aiotone_array_perf);
   Py_CLEAR(clear_module_state->__pyx_kp_s_aiotone_array_perf_pyx);
   Py_CLEAR(clear_module_state->__pyx_n_s_arr);
   Py_CLEAR(clear_module_state->__pyx_n_s_asyncio_coroutines);
+  Py_CLEAR(clear_module_state->__pyx_n_s_ch);
+  Py_CLEAR(clear_module_state->__pyx_n_s_ch_len);
+  Py_CLEAR(clear_module_state->__pyx_n_s_channel_sum);
+  Py_CLEAR(clear_module_state->__pyx_n_s_channel_sum_raw);
   Py_CLEAR(clear_module_state->__pyx_n_s_cline_in_traceback);
   Py_CLEAR(clear_module_state->__pyx_n_s_data);
   Py_CLEAR(clear_module_state->__pyx_n_s_i);
+  Py_CLEAR(clear_module_state->__pyx_n_s_in_buffer);
+  Py_CLEAR(clear_module_state->__pyx_n_s_in_buffer_raw);
+  Py_CLEAR(clear_module_state->__pyx_n_s_in_l);
+  Py_CLEAR(clear_module_state->__pyx_n_s_in_r);
   Py_CLEAR(clear_module_state->__pyx_n_s_is_coroutine);
   Py_CLEAR(clear_module_state->__pyx_n_s_main);
+  Py_CLEAR(clear_module_state->__pyx_n_s_move_audio);
   Py_CLEAR(clear_module_state->__pyx_n_s_name);
+  Py_CLEAR(clear_module_state->__pyx_n_s_offset);
+  Py_CLEAR(clear_module_state->__pyx_n_s_out_buffer);
+  Py_CLEAR(clear_module_state->__pyx_n_s_out_buffer_raw);
+  Py_CLEAR(clear_module_state->__pyx_n_s_out_l);
+  Py_CLEAR(clear_module_state->__pyx_n_s_out_len);
+  Py_CLEAR(clear_module_state->__pyx_n_s_out_r);
   Py_CLEAR(clear_module_state->__pyx_n_s_range);
   Py_CLEAR(clear_module_state->__pyx_n_s_raw_arr);
+  Py_CLEAR(clear_module_state->__pyx_n_s_return);
   Py_CLEAR(clear_module_state->__pyx_n_s_test);
   Py_CLEAR(clear_module_state->__pyx_n_s_update_buffer);
   Py_CLEAR(clear_module_state->__pyx_tuple_);
+  Py_CLEAR(clear_module_state->__pyx_tuple__3);
   Py_CLEAR(clear_module_state->__pyx_codeobj__2);
+  Py_CLEAR(clear_module_state->__pyx_codeobj__4);
   return 0;
 }
 #endif
@@ -2535,23 +2600,42 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
   Py_VISIT(traverse_module_state->__pyx_ptype_7cpython_7complex_complex);
   Py_VISIT(traverse_module_state->__pyx_ptype_7cpython_5array_array);
   Py_VISIT(traverse_module_state->__pyx_n_s_MemoryError);
-  Py_VISIT(traverse_module_state->__pyx_n_s__3);
+  Py_VISIT(traverse_module_state->__pyx_n_s_None);
+  Py_VISIT(traverse_module_state->__pyx_n_s__5);
   Py_VISIT(traverse_module_state->__pyx_n_s_aiotone_array_perf);
   Py_VISIT(traverse_module_state->__pyx_kp_s_aiotone_array_perf_pyx);
   Py_VISIT(traverse_module_state->__pyx_n_s_arr);
   Py_VISIT(traverse_module_state->__pyx_n_s_asyncio_coroutines);
+  Py_VISIT(traverse_module_state->__pyx_n_s_ch);
+  Py_VISIT(traverse_module_state->__pyx_n_s_ch_len);
+  Py_VISIT(traverse_module_state->__pyx_n_s_channel_sum);
+  Py_VISIT(traverse_module_state->__pyx_n_s_channel_sum_raw);
   Py_VISIT(traverse_module_state->__pyx_n_s_cline_in_traceback);
   Py_VISIT(traverse_module_state->__pyx_n_s_data);
   Py_VISIT(traverse_module_state->__pyx_n_s_i);
+  Py_VISIT(traverse_module_state->__pyx_n_s_in_buffer);
+  Py_VISIT(traverse_module_state->__pyx_n_s_in_buffer_raw);
+  Py_VISIT(traverse_module_state->__pyx_n_s_in_l);
+  Py_VISIT(traverse_module_state->__pyx_n_s_in_r);
   Py_VISIT(traverse_module_state->__pyx_n_s_is_coroutine);
   Py_VISIT(traverse_module_state->__pyx_n_s_main);
+  Py_VISIT(traverse_module_state->__pyx_n_s_move_audio);
   Py_VISIT(traverse_module_state->__pyx_n_s_name);
+  Py_VISIT(traverse_module_state->__pyx_n_s_offset);
+  Py_VISIT(traverse_module_state->__pyx_n_s_out_buffer);
+  Py_VISIT(traverse_module_state->__pyx_n_s_out_buffer_raw);
+  Py_VISIT(traverse_module_state->__pyx_n_s_out_l);
+  Py_VISIT(traverse_module_state->__pyx_n_s_out_len);
+  Py_VISIT(traverse_module_state->__pyx_n_s_out_r);
   Py_VISIT(traverse_module_state->__pyx_n_s_range);
   Py_VISIT(traverse_module_state->__pyx_n_s_raw_arr);
+  Py_VISIT(traverse_module_state->__pyx_n_s_return);
   Py_VISIT(traverse_module_state->__pyx_n_s_test);
   Py_VISIT(traverse_module_state->__pyx_n_s_update_buffer);
   Py_VISIT(traverse_module_state->__pyx_tuple_);
+  Py_VISIT(traverse_module_state->__pyx_tuple__3);
   Py_VISIT(traverse_module_state->__pyx_codeobj__2);
+  Py_VISIT(traverse_module_state->__pyx_codeobj__4);
   return 0;
 }
 #endif
@@ -2679,23 +2763,42 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
 #if CYTHON_USE_MODULE_STATE
 #endif
 #define __pyx_n_s_MemoryError __pyx_mstate_global->__pyx_n_s_MemoryError
-#define __pyx_n_s__3 __pyx_mstate_global->__pyx_n_s__3
+#define __pyx_n_s_None __pyx_mstate_global->__pyx_n_s_None
+#define __pyx_n_s__5 __pyx_mstate_global->__pyx_n_s__5
 #define __pyx_n_s_aiotone_array_perf __pyx_mstate_global->__pyx_n_s_aiotone_array_perf
 #define __pyx_kp_s_aiotone_array_perf_pyx __pyx_mstate_global->__pyx_kp_s_aiotone_array_perf_pyx
 #define __pyx_n_s_arr __pyx_mstate_global->__pyx_n_s_arr
 #define __pyx_n_s_asyncio_coroutines __pyx_mstate_global->__pyx_n_s_asyncio_coroutines
+#define __pyx_n_s_ch __pyx_mstate_global->__pyx_n_s_ch
+#define __pyx_n_s_ch_len __pyx_mstate_global->__pyx_n_s_ch_len
+#define __pyx_n_s_channel_sum __pyx_mstate_global->__pyx_n_s_channel_sum
+#define __pyx_n_s_channel_sum_raw __pyx_mstate_global->__pyx_n_s_channel_sum_raw
 #define __pyx_n_s_cline_in_traceback __pyx_mstate_global->__pyx_n_s_cline_in_traceback
 #define __pyx_n_s_data __pyx_mstate_global->__pyx_n_s_data
 #define __pyx_n_s_i __pyx_mstate_global->__pyx_n_s_i
+#define __pyx_n_s_in_buffer __pyx_mstate_global->__pyx_n_s_in_buffer
+#define __pyx_n_s_in_buffer_raw __pyx_mstate_global->__pyx_n_s_in_buffer_raw
+#define __pyx_n_s_in_l __pyx_mstate_global->__pyx_n_s_in_l
+#define __pyx_n_s_in_r __pyx_mstate_global->__pyx_n_s_in_r
 #define __pyx_n_s_is_coroutine __pyx_mstate_global->__pyx_n_s_is_coroutine
 #define __pyx_n_s_main __pyx_mstate_global->__pyx_n_s_main
+#define __pyx_n_s_move_audio __pyx_mstate_global->__pyx_n_s_move_audio
 #define __pyx_n_s_name __pyx_mstate_global->__pyx_n_s_name
+#define __pyx_n_s_offset __pyx_mstate_global->__pyx_n_s_offset
+#define __pyx_n_s_out_buffer __pyx_mstate_global->__pyx_n_s_out_buffer
+#define __pyx_n_s_out_buffer_raw __pyx_mstate_global->__pyx_n_s_out_buffer_raw
+#define __pyx_n_s_out_l __pyx_mstate_global->__pyx_n_s_out_l
+#define __pyx_n_s_out_len __pyx_mstate_global->__pyx_n_s_out_len
+#define __pyx_n_s_out_r __pyx_mstate_global->__pyx_n_s_out_r
 #define __pyx_n_s_range __pyx_mstate_global->__pyx_n_s_range
 #define __pyx_n_s_raw_arr __pyx_mstate_global->__pyx_n_s_raw_arr
+#define __pyx_n_s_return __pyx_mstate_global->__pyx_n_s_return
 #define __pyx_n_s_test __pyx_mstate_global->__pyx_n_s_test
 #define __pyx_n_s_update_buffer __pyx_mstate_global->__pyx_n_s_update_buffer
 #define __pyx_tuple_ __pyx_mstate_global->__pyx_tuple_
+#define __pyx_tuple__3 __pyx_mstate_global->__pyx_tuple__3
 #define __pyx_codeobj__2 __pyx_mstate_global->__pyx_codeobj__2
+#define __pyx_codeobj__4 __pyx_mstate_global->__pyx_codeobj__4
 /* #### Code section: module_code ### */
 
 /* "cpython/complex.pxd":19
@@ -3637,7 +3740,7 @@ static CYTHON_INLINE void __pyx_f_7cpython_5array_zero(arrayobject *__pyx_v_self
  * 
  * @cython.boundscheck(False)             # <<<<<<<<<<<<<<
  * @cython.wraparound(False)
- * def update_buffer(array.array arr, bytearray data):
+ * @cython.nonecheck(False)
  */
 
 /* Python wrapper */
@@ -3738,8 +3841,8 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_arr), __pyx_ptype_7cpython_5array_array, 1, "arr", 0))) __PYX_ERR(0, 7, __pyx_L1_error)
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_data), (&PyByteArray_Type), 1, "data", 1))) __PYX_ERR(0, 7, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_arr), __pyx_ptype_7cpython_5array_array, 1, "arr", 0))) __PYX_ERR(0, 8, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_data), (&PyByteArray_Type), 1, "data", 1))) __PYX_ERR(0, 8, __pyx_L1_error)
   __pyx_r = __pyx_pf_7aiotone_10array_perf_update_buffer(__pyx_self, __pyx_v_arr, __pyx_v_data);
 
   /* function exit code */
@@ -3771,8 +3874,8 @@ static PyObject *__pyx_pf_7aiotone_10array_perf_update_buffer(CYTHON_UNUSED PyOb
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("update_buffer", 1);
 
-  /* "aiotone/array_perf.pyx":8
- * @cython.wraparound(False)
+  /* "aiotone/array_perf.pyx":9
+ * @cython.nonecheck(False)
  * def update_buffer(array.array arr, bytearray data):
  *     cdef unsigned char *raw_arr = arr.data.as_uchars             # <<<<<<<<<<<<<<
  *     for i in range(len(data)):
@@ -3781,25 +3884,28 @@ static PyObject *__pyx_pf_7aiotone_10array_perf_update_buffer(CYTHON_UNUSED PyOb
   __pyx_t_1 = __pyx_v_arr->data.as_uchars;
   __pyx_v_raw_arr = __pyx_t_1;
 
-  /* "aiotone/array_perf.pyx":9
+  /* "aiotone/array_perf.pyx":10
  * def update_buffer(array.array arr, bytearray data):
  *     cdef unsigned char *raw_arr = arr.data.as_uchars
  *     for i in range(len(data)):             # <<<<<<<<<<<<<<
  *         raw_arr[i] = data[i]
+ * 
  */
   if (unlikely(__pyx_v_data == Py_None)) {
     PyErr_SetString(PyExc_TypeError, "object of type 'NoneType' has no len()");
-    __PYX_ERR(0, 9, __pyx_L1_error)
+    __PYX_ERR(0, 10, __pyx_L1_error)
   }
-  __pyx_t_2 = __Pyx_PyByteArray_GET_SIZE(__pyx_v_data); if (unlikely(__pyx_t_2 == ((Py_ssize_t)-1))) __PYX_ERR(0, 9, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyByteArray_GET_SIZE(__pyx_v_data); if (unlikely(__pyx_t_2 == ((Py_ssize_t)-1))) __PYX_ERR(0, 10, __pyx_L1_error)
   __pyx_t_3 = __pyx_t_2;
   for (__pyx_t_4 = 0; __pyx_t_4 < __pyx_t_3; __pyx_t_4+=1) {
     __pyx_v_i = __pyx_t_4;
 
-    /* "aiotone/array_perf.pyx":10
+    /* "aiotone/array_perf.pyx":11
  *     cdef unsigned char *raw_arr = arr.data.as_uchars
  *     for i in range(len(data)):
  *         raw_arr[i] = data[i]             # <<<<<<<<<<<<<<
+ * 
+ * 
  */
     (__pyx_v_raw_arr[__pyx_v_i]) = ((unsigned char)(PyByteArray_AS_STRING(__pyx_v_data)[__pyx_v_i]));
   }
@@ -3809,7 +3915,7 @@ static PyObject *__pyx_pf_7aiotone_10array_perf_update_buffer(CYTHON_UNUSED PyOb
  * 
  * @cython.boundscheck(False)             # <<<<<<<<<<<<<<
  * @cython.wraparound(False)
- * def update_buffer(array.array arr, bytearray data):
+ * @cython.nonecheck(False)
  */
 
   /* function exit code */
@@ -3817,6 +3923,412 @@ static PyObject *__pyx_pf_7aiotone_10array_perf_update_buffer(CYTHON_UNUSED PyOb
   goto __pyx_L0;
   __pyx_L1_error:;
   __Pyx_AddTraceback("aiotone.array_perf.update_buffer", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = NULL;
+  __pyx_L0:;
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "aiotone/array_perf.pyx":14
+ * 
+ * 
+ * @cython.boundscheck(False)             # <<<<<<<<<<<<<<
+ * @cython.wraparound(False)
+ * @cython.nonecheck(False)
+ */
+
+/* Python wrapper */
+static PyObject *__pyx_pw_7aiotone_10array_perf_3move_audio(PyObject *__pyx_self, 
+#if CYTHON_METH_FASTCALL
+PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
+#else
+PyObject *__pyx_args, PyObject *__pyx_kwds
+#endif
+); /*proto*/
+static PyMethodDef __pyx_mdef_7aiotone_10array_perf_3move_audio = {"move_audio", (PyCFunction)(void*)(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_7aiotone_10array_perf_3move_audio, __Pyx_METH_FASTCALL|METH_KEYWORDS, 0};
+static PyObject *__pyx_pw_7aiotone_10array_perf_3move_audio(PyObject *__pyx_self, 
+#if CYTHON_METH_FASTCALL
+PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
+#else
+PyObject *__pyx_args, PyObject *__pyx_kwds
+#endif
+) {
+  arrayobject *__pyx_v_in_buffer = 0;
+  int __pyx_v_in_l;
+  int __pyx_v_in_r;
+  arrayobject *__pyx_v_out_buffer = 0;
+  int __pyx_v_out_l;
+  int __pyx_v_out_r;
+  arrayobject *__pyx_v_channel_sum = 0;
+  #if !CYTHON_METH_FASTCALL
+  CYTHON_UNUSED Py_ssize_t __pyx_nargs;
+  #endif
+  CYTHON_UNUSED PyObject *const *__pyx_kwvalues;
+  PyObject* values[7] = {0,0,0,0,0,0,0};
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  PyObject *__pyx_r = 0;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("move_audio (wrapper)", 0);
+  #if !CYTHON_METH_FASTCALL
+  #if CYTHON_ASSUME_SAFE_MACROS
+  __pyx_nargs = PyTuple_GET_SIZE(__pyx_args);
+  #else
+  __pyx_nargs = PyTuple_Size(__pyx_args); if (unlikely(__pyx_nargs < 0)) return NULL;
+  #endif
+  #endif
+  __pyx_kwvalues = __Pyx_KwValues_FASTCALL(__pyx_args, __pyx_nargs);
+  {
+    PyObject **__pyx_pyargnames[] = {&__pyx_n_s_in_buffer,&__pyx_n_s_in_l,&__pyx_n_s_in_r,&__pyx_n_s_out_buffer,&__pyx_n_s_out_l,&__pyx_n_s_out_r,&__pyx_n_s_channel_sum,0};
+    if (__pyx_kwds) {
+      Py_ssize_t kw_args;
+      switch (__pyx_nargs) {
+        case  7: values[6] = __Pyx_Arg_FASTCALL(__pyx_args, 6);
+        CYTHON_FALLTHROUGH;
+        case  6: values[5] = __Pyx_Arg_FASTCALL(__pyx_args, 5);
+        CYTHON_FALLTHROUGH;
+        case  5: values[4] = __Pyx_Arg_FASTCALL(__pyx_args, 4);
+        CYTHON_FALLTHROUGH;
+        case  4: values[3] = __Pyx_Arg_FASTCALL(__pyx_args, 3);
+        CYTHON_FALLTHROUGH;
+        case  3: values[2] = __Pyx_Arg_FASTCALL(__pyx_args, 2);
+        CYTHON_FALLTHROUGH;
+        case  2: values[1] = __Pyx_Arg_FASTCALL(__pyx_args, 1);
+        CYTHON_FALLTHROUGH;
+        case  1: values[0] = __Pyx_Arg_FASTCALL(__pyx_args, 0);
+        CYTHON_FALLTHROUGH;
+        case  0: break;
+        default: goto __pyx_L5_argtuple_error;
+      }
+      kw_args = __Pyx_NumKwargs_FASTCALL(__pyx_kwds);
+      switch (__pyx_nargs) {
+        case  0:
+        if (likely((values[0] = __Pyx_GetKwValue_FASTCALL(__pyx_kwds, __pyx_kwvalues, __pyx_n_s_in_buffer)) != 0)) {
+          (void)__Pyx_Arg_NewRef_FASTCALL(values[0]);
+          kw_args--;
+        }
+        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 14, __pyx_L3_error)
+        else goto __pyx_L5_argtuple_error;
+        CYTHON_FALLTHROUGH;
+        case  1:
+        if (likely((values[1] = __Pyx_GetKwValue_FASTCALL(__pyx_kwds, __pyx_kwvalues, __pyx_n_s_in_l)) != 0)) {
+          (void)__Pyx_Arg_NewRef_FASTCALL(values[1]);
+          kw_args--;
+        }
+        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 14, __pyx_L3_error)
+        else {
+          __Pyx_RaiseArgtupleInvalid("move_audio", 1, 7, 7, 1); __PYX_ERR(0, 14, __pyx_L3_error)
+        }
+        CYTHON_FALLTHROUGH;
+        case  2:
+        if (likely((values[2] = __Pyx_GetKwValue_FASTCALL(__pyx_kwds, __pyx_kwvalues, __pyx_n_s_in_r)) != 0)) {
+          (void)__Pyx_Arg_NewRef_FASTCALL(values[2]);
+          kw_args--;
+        }
+        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 14, __pyx_L3_error)
+        else {
+          __Pyx_RaiseArgtupleInvalid("move_audio", 1, 7, 7, 2); __PYX_ERR(0, 14, __pyx_L3_error)
+        }
+        CYTHON_FALLTHROUGH;
+        case  3:
+        if (likely((values[3] = __Pyx_GetKwValue_FASTCALL(__pyx_kwds, __pyx_kwvalues, __pyx_n_s_out_buffer)) != 0)) {
+          (void)__Pyx_Arg_NewRef_FASTCALL(values[3]);
+          kw_args--;
+        }
+        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 14, __pyx_L3_error)
+        else {
+          __Pyx_RaiseArgtupleInvalid("move_audio", 1, 7, 7, 3); __PYX_ERR(0, 14, __pyx_L3_error)
+        }
+        CYTHON_FALLTHROUGH;
+        case  4:
+        if (likely((values[4] = __Pyx_GetKwValue_FASTCALL(__pyx_kwds, __pyx_kwvalues, __pyx_n_s_out_l)) != 0)) {
+          (void)__Pyx_Arg_NewRef_FASTCALL(values[4]);
+          kw_args--;
+        }
+        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 14, __pyx_L3_error)
+        else {
+          __Pyx_RaiseArgtupleInvalid("move_audio", 1, 7, 7, 4); __PYX_ERR(0, 14, __pyx_L3_error)
+        }
+        CYTHON_FALLTHROUGH;
+        case  5:
+        if (likely((values[5] = __Pyx_GetKwValue_FASTCALL(__pyx_kwds, __pyx_kwvalues, __pyx_n_s_out_r)) != 0)) {
+          (void)__Pyx_Arg_NewRef_FASTCALL(values[5]);
+          kw_args--;
+        }
+        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 14, __pyx_L3_error)
+        else {
+          __Pyx_RaiseArgtupleInvalid("move_audio", 1, 7, 7, 5); __PYX_ERR(0, 14, __pyx_L3_error)
+        }
+        CYTHON_FALLTHROUGH;
+        case  6:
+        if (likely((values[6] = __Pyx_GetKwValue_FASTCALL(__pyx_kwds, __pyx_kwvalues, __pyx_n_s_channel_sum)) != 0)) {
+          (void)__Pyx_Arg_NewRef_FASTCALL(values[6]);
+          kw_args--;
+        }
+        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 14, __pyx_L3_error)
+        else {
+          __Pyx_RaiseArgtupleInvalid("move_audio", 1, 7, 7, 6); __PYX_ERR(0, 14, __pyx_L3_error)
+        }
+      }
+      if (unlikely(kw_args > 0)) {
+        const Py_ssize_t kwd_pos_args = __pyx_nargs;
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "move_audio") < 0)) __PYX_ERR(0, 14, __pyx_L3_error)
+      }
+    } else if (unlikely(__pyx_nargs != 7)) {
+      goto __pyx_L5_argtuple_error;
+    } else {
+      values[0] = __Pyx_Arg_FASTCALL(__pyx_args, 0);
+      values[1] = __Pyx_Arg_FASTCALL(__pyx_args, 1);
+      values[2] = __Pyx_Arg_FASTCALL(__pyx_args, 2);
+      values[3] = __Pyx_Arg_FASTCALL(__pyx_args, 3);
+      values[4] = __Pyx_Arg_FASTCALL(__pyx_args, 4);
+      values[5] = __Pyx_Arg_FASTCALL(__pyx_args, 5);
+      values[6] = __Pyx_Arg_FASTCALL(__pyx_args, 6);
+    }
+    __pyx_v_in_buffer = ((arrayobject *)values[0]);
+    __pyx_v_in_l = __Pyx_PyInt_As_int(values[1]); if (unlikely((__pyx_v_in_l == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 19, __pyx_L3_error)
+    __pyx_v_in_r = __Pyx_PyInt_As_int(values[2]); if (unlikely((__pyx_v_in_r == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 20, __pyx_L3_error)
+    __pyx_v_out_buffer = ((arrayobject *)values[3]);
+    __pyx_v_out_l = __Pyx_PyInt_As_int(values[4]); if (unlikely((__pyx_v_out_l == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 22, __pyx_L3_error)
+    __pyx_v_out_r = __Pyx_PyInt_As_int(values[5]); if (unlikely((__pyx_v_out_r == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 23, __pyx_L3_error)
+    __pyx_v_channel_sum = ((arrayobject *)values[6]);
+  }
+  goto __pyx_L6_skip;
+  __pyx_L5_argtuple_error:;
+  __Pyx_RaiseArgtupleInvalid("move_audio", 1, 7, 7, __pyx_nargs); __PYX_ERR(0, 14, __pyx_L3_error)
+  __pyx_L6_skip:;
+  goto __pyx_L4_argument_unpacking_done;
+  __pyx_L3_error:;
+  {
+    Py_ssize_t __pyx_temp;
+    for (__pyx_temp=0; __pyx_temp < (Py_ssize_t)(sizeof(values)/sizeof(values[0])); ++__pyx_temp) {
+      __Pyx_Arg_XDECREF_FASTCALL(values[__pyx_temp]);
+    }
+  }
+  __Pyx_AddTraceback("aiotone.array_perf.move_audio", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_RefNannyFinishContext();
+  return NULL;
+  __pyx_L4_argument_unpacking_done:;
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_in_buffer), __pyx_ptype_7cpython_5array_array, 1, "in_buffer", 0))) __PYX_ERR(0, 18, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_out_buffer), __pyx_ptype_7cpython_5array_array, 1, "out_buffer", 0))) __PYX_ERR(0, 21, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_channel_sum), __pyx_ptype_7cpython_5array_array, 1, "channel_sum", 0))) __PYX_ERR(0, 24, __pyx_L1_error)
+  __pyx_r = __pyx_pf_7aiotone_10array_perf_2move_audio(__pyx_self, __pyx_v_in_buffer, __pyx_v_in_l, __pyx_v_in_r, __pyx_v_out_buffer, __pyx_v_out_l, __pyx_v_out_r, __pyx_v_channel_sum);
+
+  /* function exit code */
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  __pyx_r = NULL;
+  __pyx_L0:;
+  {
+    Py_ssize_t __pyx_temp;
+    for (__pyx_temp=0; __pyx_temp < (Py_ssize_t)(sizeof(values)/sizeof(values[0])); ++__pyx_temp) {
+      __Pyx_Arg_XDECREF_FASTCALL(values[__pyx_temp]);
+    }
+  }
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static PyObject *__pyx_pf_7aiotone_10array_perf_2move_audio(CYTHON_UNUSED PyObject *__pyx_self, arrayobject *__pyx_v_in_buffer, int __pyx_v_in_l, int __pyx_v_in_r, arrayobject *__pyx_v_out_buffer, int __pyx_v_out_l, int __pyx_v_out_r, arrayobject *__pyx_v_channel_sum) {
+  int __pyx_v_offset;
+  int __pyx_v_ch;
+  int __pyx_v_ch_len;
+  int __pyx_v_out_len;
+  float *__pyx_v_in_buffer_raw;
+  float *__pyx_v_out_buffer_raw;
+  float *__pyx_v_channel_sum_raw;
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  Py_ssize_t __pyx_t_1;
+  float *__pyx_t_2;
+  int __pyx_t_3;
+  int __pyx_t_4;
+  int __pyx_t_5;
+  int __pyx_t_6;
+  int __pyx_t_7;
+  int __pyx_t_8;
+  int __pyx_t_9;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("move_audio", 1);
+
+  /* "aiotone/array_perf.pyx":28
+ *     cdef int offset
+ *     cdef int ch
+ *     cdef int ch_len = len(channel_sum)             # <<<<<<<<<<<<<<
+ *     cdef int out_len = len(out_buffer)
+ *     cdef float *in_buffer_raw = in_buffer.data.as_floats
+ */
+  if (unlikely(((PyObject *)__pyx_v_channel_sum) == Py_None)) {
+    PyErr_SetString(PyExc_TypeError, "object of type 'NoneType' has no len()");
+    __PYX_ERR(0, 28, __pyx_L1_error)
+  }
+  __pyx_t_1 = Py_SIZE(((PyObject *)__pyx_v_channel_sum)); if (unlikely(__pyx_t_1 == ((Py_ssize_t)-1))) __PYX_ERR(0, 28, __pyx_L1_error)
+  __pyx_v_ch_len = __pyx_t_1;
+
+  /* "aiotone/array_perf.pyx":29
+ *     cdef int ch
+ *     cdef int ch_len = len(channel_sum)
+ *     cdef int out_len = len(out_buffer)             # <<<<<<<<<<<<<<
+ *     cdef float *in_buffer_raw = in_buffer.data.as_floats
+ *     cdef float *out_buffer_raw = out_buffer.data.as_floats
+ */
+  if (unlikely(((PyObject *)__pyx_v_out_buffer) == Py_None)) {
+    PyErr_SetString(PyExc_TypeError, "object of type 'NoneType' has no len()");
+    __PYX_ERR(0, 29, __pyx_L1_error)
+  }
+  __pyx_t_1 = Py_SIZE(((PyObject *)__pyx_v_out_buffer)); if (unlikely(__pyx_t_1 == ((Py_ssize_t)-1))) __PYX_ERR(0, 29, __pyx_L1_error)
+  __pyx_v_out_len = __pyx_t_1;
+
+  /* "aiotone/array_perf.pyx":30
+ *     cdef int ch_len = len(channel_sum)
+ *     cdef int out_len = len(out_buffer)
+ *     cdef float *in_buffer_raw = in_buffer.data.as_floats             # <<<<<<<<<<<<<<
+ *     cdef float *out_buffer_raw = out_buffer.data.as_floats
+ *     cdef float *channel_sum_raw = channel_sum.data.as_floats
+ */
+  __pyx_t_2 = __pyx_v_in_buffer->data.as_floats;
+  __pyx_v_in_buffer_raw = __pyx_t_2;
+
+  /* "aiotone/array_perf.pyx":31
+ *     cdef int out_len = len(out_buffer)
+ *     cdef float *in_buffer_raw = in_buffer.data.as_floats
+ *     cdef float *out_buffer_raw = out_buffer.data.as_floats             # <<<<<<<<<<<<<<
+ *     cdef float *channel_sum_raw = channel_sum.data.as_floats
+ * 
+ */
+  __pyx_t_2 = __pyx_v_out_buffer->data.as_floats;
+  __pyx_v_out_buffer_raw = __pyx_t_2;
+
+  /* "aiotone/array_perf.pyx":32
+ *     cdef float *in_buffer_raw = in_buffer.data.as_floats
+ *     cdef float *out_buffer_raw = out_buffer.data.as_floats
+ *     cdef float *channel_sum_raw = channel_sum.data.as_floats             # <<<<<<<<<<<<<<
+ * 
+ *     for offset from 0 <= offset < out_len by ch_len:
+ */
+  __pyx_t_2 = __pyx_v_channel_sum->data.as_floats;
+  __pyx_v_channel_sum_raw = __pyx_t_2;
+
+  /* "aiotone/array_perf.pyx":34
+ *     cdef float *channel_sum_raw = channel_sum.data.as_floats
+ * 
+ *     for offset from 0 <= offset < out_len by ch_len:             # <<<<<<<<<<<<<<
+ *         for ch in range(ch_len):
+ *             channel_sum_raw[ch] += abs(in_buffer_raw[offset + ch])
+ */
+  __pyx_t_3 = __pyx_v_out_len;
+  __pyx_t_4 = __pyx_v_ch_len;
+  for (__pyx_v_offset = 0; __pyx_v_offset < __pyx_t_3; __pyx_v_offset+=__pyx_t_4) {
+
+    /* "aiotone/array_perf.pyx":35
+ * 
+ *     for offset from 0 <= offset < out_len by ch_len:
+ *         for ch in range(ch_len):             # <<<<<<<<<<<<<<
+ *             channel_sum_raw[ch] += abs(in_buffer_raw[offset + ch])
+ * 
+ */
+    __pyx_t_5 = __pyx_v_ch_len;
+    __pyx_t_6 = __pyx_t_5;
+    for (__pyx_t_7 = 0; __pyx_t_7 < __pyx_t_6; __pyx_t_7+=1) {
+      __pyx_v_ch = __pyx_t_7;
+
+      /* "aiotone/array_perf.pyx":36
+ *     for offset from 0 <= offset < out_len by ch_len:
+ *         for ch in range(ch_len):
+ *             channel_sum_raw[ch] += abs(in_buffer_raw[offset + ch])             # <<<<<<<<<<<<<<
+ * 
+ *             if ch == out_l:
+ */
+      __pyx_t_8 = __pyx_v_ch;
+      (__pyx_v_channel_sum_raw[__pyx_t_8]) = ((__pyx_v_channel_sum_raw[__pyx_t_8]) + fabsf((__pyx_v_in_buffer_raw[(__pyx_v_offset + __pyx_v_ch)])));
+
+      /* "aiotone/array_perf.pyx":38
+ *             channel_sum_raw[ch] += abs(in_buffer_raw[offset + ch])
+ * 
+ *             if ch == out_l:             # <<<<<<<<<<<<<<
+ *                 out_buffer_raw[offset + ch] = in_buffer_raw[offset + in_l]
+ *             elif ch == out_r:
+ */
+      __pyx_t_9 = (__pyx_v_ch == __pyx_v_out_l);
+      if (__pyx_t_9) {
+
+        /* "aiotone/array_perf.pyx":39
+ * 
+ *             if ch == out_l:
+ *                 out_buffer_raw[offset + ch] = in_buffer_raw[offset + in_l]             # <<<<<<<<<<<<<<
+ *             elif ch == out_r:
+ *                 out_buffer_raw[offset + ch] = in_buffer_raw[offset + in_r]
+ */
+        (__pyx_v_out_buffer_raw[(__pyx_v_offset + __pyx_v_ch)]) = (__pyx_v_in_buffer_raw[(__pyx_v_offset + __pyx_v_in_l)]);
+
+        /* "aiotone/array_perf.pyx":38
+ *             channel_sum_raw[ch] += abs(in_buffer_raw[offset + ch])
+ * 
+ *             if ch == out_l:             # <<<<<<<<<<<<<<
+ *                 out_buffer_raw[offset + ch] = in_buffer_raw[offset + in_l]
+ *             elif ch == out_r:
+ */
+        goto __pyx_L7;
+      }
+
+      /* "aiotone/array_perf.pyx":40
+ *             if ch == out_l:
+ *                 out_buffer_raw[offset + ch] = in_buffer_raw[offset + in_l]
+ *             elif ch == out_r:             # <<<<<<<<<<<<<<
+ *                 out_buffer_raw[offset + ch] = in_buffer_raw[offset + in_r]
+ *             else:
+ */
+      __pyx_t_9 = (__pyx_v_ch == __pyx_v_out_r);
+      if (__pyx_t_9) {
+
+        /* "aiotone/array_perf.pyx":41
+ *                 out_buffer_raw[offset + ch] = in_buffer_raw[offset + in_l]
+ *             elif ch == out_r:
+ *                 out_buffer_raw[offset + ch] = in_buffer_raw[offset + in_r]             # <<<<<<<<<<<<<<
+ *             else:
+ *                 out_buffer_raw[offset + ch] = 0.0
+ */
+        (__pyx_v_out_buffer_raw[(__pyx_v_offset + __pyx_v_ch)]) = (__pyx_v_in_buffer_raw[(__pyx_v_offset + __pyx_v_in_r)]);
+
+        /* "aiotone/array_perf.pyx":40
+ *             if ch == out_l:
+ *                 out_buffer_raw[offset + ch] = in_buffer_raw[offset + in_l]
+ *             elif ch == out_r:             # <<<<<<<<<<<<<<
+ *                 out_buffer_raw[offset + ch] = in_buffer_raw[offset + in_r]
+ *             else:
+ */
+        goto __pyx_L7;
+      }
+
+      /* "aiotone/array_perf.pyx":43
+ *                 out_buffer_raw[offset + ch] = in_buffer_raw[offset + in_r]
+ *             else:
+ *                 out_buffer_raw[offset + ch] = 0.0             # <<<<<<<<<<<<<<
+ */
+      /*else*/ {
+        (__pyx_v_out_buffer_raw[(__pyx_v_offset + __pyx_v_ch)]) = 0.0;
+      }
+      __pyx_L7:;
+    }
+  }
+
+  /* "aiotone/array_perf.pyx":14
+ * 
+ * 
+ * @cython.boundscheck(False)             # <<<<<<<<<<<<<<
+ * @cython.wraparound(False)
+ * @cython.nonecheck(False)
+ */
+
+  /* function exit code */
+  __pyx_r = Py_None; __Pyx_INCREF(Py_None);
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  __Pyx_AddTraceback("aiotone.array_perf.move_audio", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
@@ -3841,19 +4353,36 @@ static PyMethodDef __pyx_methods[] = {
 static int __Pyx_CreateStringTabAndInitStrings(void) {
   __Pyx_StringTabEntry __pyx_string_tab[] = {
     {&__pyx_n_s_MemoryError, __pyx_k_MemoryError, sizeof(__pyx_k_MemoryError), 0, 0, 1, 1},
-    {&__pyx_n_s__3, __pyx_k__3, sizeof(__pyx_k__3), 0, 0, 1, 1},
+    {&__pyx_n_s_None, __pyx_k_None, sizeof(__pyx_k_None), 0, 0, 1, 1},
+    {&__pyx_n_s__5, __pyx_k__5, sizeof(__pyx_k__5), 0, 0, 1, 1},
     {&__pyx_n_s_aiotone_array_perf, __pyx_k_aiotone_array_perf, sizeof(__pyx_k_aiotone_array_perf), 0, 0, 1, 1},
     {&__pyx_kp_s_aiotone_array_perf_pyx, __pyx_k_aiotone_array_perf_pyx, sizeof(__pyx_k_aiotone_array_perf_pyx), 0, 0, 1, 0},
     {&__pyx_n_s_arr, __pyx_k_arr, sizeof(__pyx_k_arr), 0, 0, 1, 1},
     {&__pyx_n_s_asyncio_coroutines, __pyx_k_asyncio_coroutines, sizeof(__pyx_k_asyncio_coroutines), 0, 0, 1, 1},
+    {&__pyx_n_s_ch, __pyx_k_ch, sizeof(__pyx_k_ch), 0, 0, 1, 1},
+    {&__pyx_n_s_ch_len, __pyx_k_ch_len, sizeof(__pyx_k_ch_len), 0, 0, 1, 1},
+    {&__pyx_n_s_channel_sum, __pyx_k_channel_sum, sizeof(__pyx_k_channel_sum), 0, 0, 1, 1},
+    {&__pyx_n_s_channel_sum_raw, __pyx_k_channel_sum_raw, sizeof(__pyx_k_channel_sum_raw), 0, 0, 1, 1},
     {&__pyx_n_s_cline_in_traceback, __pyx_k_cline_in_traceback, sizeof(__pyx_k_cline_in_traceback), 0, 0, 1, 1},
     {&__pyx_n_s_data, __pyx_k_data, sizeof(__pyx_k_data), 0, 0, 1, 1},
     {&__pyx_n_s_i, __pyx_k_i, sizeof(__pyx_k_i), 0, 0, 1, 1},
+    {&__pyx_n_s_in_buffer, __pyx_k_in_buffer, sizeof(__pyx_k_in_buffer), 0, 0, 1, 1},
+    {&__pyx_n_s_in_buffer_raw, __pyx_k_in_buffer_raw, sizeof(__pyx_k_in_buffer_raw), 0, 0, 1, 1},
+    {&__pyx_n_s_in_l, __pyx_k_in_l, sizeof(__pyx_k_in_l), 0, 0, 1, 1},
+    {&__pyx_n_s_in_r, __pyx_k_in_r, sizeof(__pyx_k_in_r), 0, 0, 1, 1},
     {&__pyx_n_s_is_coroutine, __pyx_k_is_coroutine, sizeof(__pyx_k_is_coroutine), 0, 0, 1, 1},
     {&__pyx_n_s_main, __pyx_k_main, sizeof(__pyx_k_main), 0, 0, 1, 1},
+    {&__pyx_n_s_move_audio, __pyx_k_move_audio, sizeof(__pyx_k_move_audio), 0, 0, 1, 1},
     {&__pyx_n_s_name, __pyx_k_name, sizeof(__pyx_k_name), 0, 0, 1, 1},
+    {&__pyx_n_s_offset, __pyx_k_offset, sizeof(__pyx_k_offset), 0, 0, 1, 1},
+    {&__pyx_n_s_out_buffer, __pyx_k_out_buffer, sizeof(__pyx_k_out_buffer), 0, 0, 1, 1},
+    {&__pyx_n_s_out_buffer_raw, __pyx_k_out_buffer_raw, sizeof(__pyx_k_out_buffer_raw), 0, 0, 1, 1},
+    {&__pyx_n_s_out_l, __pyx_k_out_l, sizeof(__pyx_k_out_l), 0, 0, 1, 1},
+    {&__pyx_n_s_out_len, __pyx_k_out_len, sizeof(__pyx_k_out_len), 0, 0, 1, 1},
+    {&__pyx_n_s_out_r, __pyx_k_out_r, sizeof(__pyx_k_out_r), 0, 0, 1, 1},
     {&__pyx_n_s_range, __pyx_k_range, sizeof(__pyx_k_range), 0, 0, 1, 1},
     {&__pyx_n_s_raw_arr, __pyx_k_raw_arr, sizeof(__pyx_k_raw_arr), 0, 0, 1, 1},
+    {&__pyx_n_s_return, __pyx_k_return, sizeof(__pyx_k_return), 0, 0, 1, 1},
     {&__pyx_n_s_test, __pyx_k_test, sizeof(__pyx_k_test), 0, 0, 1, 1},
     {&__pyx_n_s_update_buffer, __pyx_k_update_buffer, sizeof(__pyx_k_update_buffer), 0, 0, 1, 1},
     {0, 0, 0, 0, 0, 0, 0}
@@ -3862,7 +4391,7 @@ static int __Pyx_CreateStringTabAndInitStrings(void) {
 }
 /* #### Code section: cached_builtins ### */
 static CYTHON_SMALL_CODE int __Pyx_InitCachedBuiltins(void) {
-  __pyx_builtin_range = __Pyx_GetBuiltinName(__pyx_n_s_range); if (!__pyx_builtin_range) __PYX_ERR(0, 9, __pyx_L1_error)
+  __pyx_builtin_range = __Pyx_GetBuiltinName(__pyx_n_s_range); if (!__pyx_builtin_range) __PYX_ERR(0, 10, __pyx_L1_error)
   __pyx_builtin_MemoryError = __Pyx_GetBuiltinName(__pyx_n_s_MemoryError); if (!__pyx_builtin_MemoryError) __PYX_ERR(2, 120, __pyx_L1_error)
   return 0;
   __pyx_L1_error:;
@@ -3879,12 +4408,24 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  * 
  * @cython.boundscheck(False)             # <<<<<<<<<<<<<<
  * @cython.wraparound(False)
- * def update_buffer(array.array arr, bytearray data):
+ * @cython.nonecheck(False)
  */
   __pyx_tuple_ = PyTuple_Pack(4, __pyx_n_s_arr, __pyx_n_s_data, __pyx_n_s_raw_arr, __pyx_n_s_i); if (unlikely(!__pyx_tuple_)) __PYX_ERR(0, 5, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple_);
   __Pyx_GIVEREF(__pyx_tuple_);
   __pyx_codeobj__2 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 4, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple_, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_aiotone_array_perf_pyx, __pyx_n_s_update_buffer, 5, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__2)) __PYX_ERR(0, 5, __pyx_L1_error)
+
+  /* "aiotone/array_perf.pyx":14
+ * 
+ * 
+ * @cython.boundscheck(False)             # <<<<<<<<<<<<<<
+ * @cython.wraparound(False)
+ * @cython.nonecheck(False)
+ */
+  __pyx_tuple__3 = PyTuple_Pack(14, __pyx_n_s_in_buffer, __pyx_n_s_in_l, __pyx_n_s_in_r, __pyx_n_s_out_buffer, __pyx_n_s_out_l, __pyx_n_s_out_r, __pyx_n_s_channel_sum, __pyx_n_s_offset, __pyx_n_s_ch, __pyx_n_s_ch_len, __pyx_n_s_out_len, __pyx_n_s_in_buffer_raw, __pyx_n_s_out_buffer_raw, __pyx_n_s_channel_sum_raw); if (unlikely(!__pyx_tuple__3)) __PYX_ERR(0, 14, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__3);
+  __Pyx_GIVEREF(__pyx_tuple__3);
+  __pyx_codeobj__4 = (PyObject*)__Pyx_PyCode_New(7, 0, 0, 14, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__3, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_aiotone_array_perf_pyx, __pyx_n_s_move_audio, 14, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__4)) __PYX_ERR(0, 14, __pyx_L1_error)
   __Pyx_RefNannyFinishContext();
   return 0;
   __pyx_L1_error:;
@@ -4165,6 +4706,7 @@ static CYTHON_SMALL_CODE int __pyx_pymod_exec_array_perf(PyObject *__pyx_pyinit_
   #endif
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
+  PyObject *__pyx_t_3 = NULL;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
@@ -4285,28 +4827,46 @@ if (!__Pyx_RefNanny) {
  * 
  * @cython.boundscheck(False)             # <<<<<<<<<<<<<<
  * @cython.wraparound(False)
- * def update_buffer(array.array arr, bytearray data):
+ * @cython.nonecheck(False)
  */
   __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_7aiotone_10array_perf_1update_buffer, 0, __pyx_n_s_update_buffer, NULL, __pyx_n_s_aiotone_array_perf, __pyx_d, ((PyObject *)__pyx_codeobj__2)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 5, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_update_buffer, __pyx_t_2) < 0) __PYX_ERR(0, 5, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
+  /* "aiotone/array_perf.pyx":14
+ * 
+ * 
+ * @cython.boundscheck(False)             # <<<<<<<<<<<<<<
+ * @cython.wraparound(False)
+ * @cython.nonecheck(False)
+ */
+  __pyx_t_2 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 14, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_return, __pyx_n_s_None) < 0) __PYX_ERR(0, 14, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_7aiotone_10array_perf_3move_audio, 0, __pyx_n_s_move_audio, NULL, __pyx_n_s_aiotone_array_perf, __pyx_d, ((PyObject *)__pyx_codeobj__4)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 14, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_3, __pyx_t_2);
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_move_audio, __pyx_t_3) < 0) __PYX_ERR(0, 14, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+
   /* "aiotone/array_perf.pyx":1
  * import cython             # <<<<<<<<<<<<<<
  * 
  * from cpython cimport array
  */
-  __pyx_t_2 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_test, __pyx_t_2) < 0) __PYX_ERR(0, 1, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_t_3 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_test, __pyx_t_3) < 0) __PYX_ERR(0, 1, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
 
   /*--- Wrapped vars code ---*/
 
   goto __pyx_L0;
   __pyx_L1_error:;
   __Pyx_XDECREF(__pyx_t_2);
+  __Pyx_XDECREF(__pyx_t_3);
   if (__pyx_m) {
     if (__pyx_d && stringtab_initialized) {
       __Pyx_AddTraceback("init aiotone.array_perf", __pyx_clineno, __pyx_lineno, __pyx_filename);
@@ -6945,6 +7505,70 @@ raise_neg_overflow:
     return (int) -1;
 }
 
+/* CIntToPy */
+static CYTHON_INLINE PyObject* __Pyx_PyInt_From_int(int value) {
+#ifdef __Pyx_HAS_GCC_DIAGNOSTIC
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wconversion"
+#endif
+    const int neg_one = (int) -1, const_zero = (int) 0;
+#ifdef __Pyx_HAS_GCC_DIAGNOSTIC
+#pragma GCC diagnostic pop
+#endif
+    const int is_unsigned = neg_one > const_zero;
+    if (is_unsigned) {
+        if (sizeof(int) < sizeof(long)) {
+            return PyInt_FromLong((long) value);
+        } else if (sizeof(int) <= sizeof(unsigned long)) {
+            return PyLong_FromUnsignedLong((unsigned long) value);
+#ifdef HAVE_LONG_LONG
+        } else if (sizeof(int) <= sizeof(unsigned PY_LONG_LONG)) {
+            return PyLong_FromUnsignedLongLong((unsigned PY_LONG_LONG) value);
+#endif
+        }
+    } else {
+        if (sizeof(int) <= sizeof(long)) {
+            return PyInt_FromLong((long) value);
+#ifdef HAVE_LONG_LONG
+        } else if (sizeof(int) <= sizeof(PY_LONG_LONG)) {
+            return PyLong_FromLongLong((PY_LONG_LONG) value);
+#endif
+        }
+    }
+    {
+        int one = 1; int little = (int)*(unsigned char *)&one;
+        unsigned char *bytes = (unsigned char *)&value;
+#if !CYTHON_COMPILING_IN_LIMITED_API && PY_VERSION_HEX < 0x030d0000
+        return _PyLong_FromByteArray(bytes, sizeof(int),
+                                     little, !is_unsigned);
+#else
+        PyObject *from_bytes, *result = NULL;
+        PyObject *py_bytes = NULL, *arg_tuple = NULL, *kwds = NULL, *order_str = NULL;
+        from_bytes = PyObject_GetAttrString((PyObject*)&PyLong_Type, "from_bytes");
+        if (!from_bytes) return NULL;
+        py_bytes = PyBytes_FromStringAndSize((char*)bytes, sizeof(int));
+        if (!py_bytes) goto limited_bad;
+        order_str = PyUnicode_FromString(little ? "little" : "big");
+        if (!order_str) goto limited_bad;
+        arg_tuple = PyTuple_Pack(2, py_bytes, order_str);
+        if (!arg_tuple) goto limited_bad;
+        if (!is_unsigned) {
+            kwds = PyDict_New();
+            if (!kwds) goto limited_bad;
+            if (PyDict_SetItemString(kwds, "signed", __Pyx_NewRef(Py_True))) goto limited_bad;
+        }
+        result = PyObject_Call(from_bytes, arg_tuple, kwds);
+        limited_bad:
+        Py_XDECREF(kwds);
+        Py_XDECREF(arg_tuple);
+        Py_XDECREF(order_str);
+        Py_XDECREF(py_bytes);
+        Py_XDECREF(from_bytes);
+        return result;
+#endif
+    }
+}
+
 /* FormatTypeName */
 #if CYTHON_COMPILING_IN_LIMITED_API
 static __Pyx_TypeName
@@ -6955,7 +7579,7 @@ __Pyx_PyType_GetName(PyTypeObject* tp)
     if (unlikely(name == NULL) || unlikely(!PyUnicode_Check(name))) {
         PyErr_Clear();
         Py_XDECREF(name);
-        name = __Pyx_NewRef(__pyx_n_s__3);
+        name = __Pyx_NewRef(__pyx_n_s__5);
     }
     return name;
 }
