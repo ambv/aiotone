@@ -43,11 +43,12 @@ ALL_CHANNELS = range(16)
 
 
 def get_ports(port_name: str, *, clock_source: bool = False) -> Tuple[MidiIn, MidiOut]:
-    midi_in = MidiIn()
-    midi_out = MidiOut()
+    return get_input(port_name, clock_source=clock_source), get_output(port_name)
 
+
+def get_input(port_name: str, *, clock_source: bool = False) -> MidiIn:
+    midi_in = MidiIn()
     midi_in_ports = midi_in.get_ports()
-    midi_out_ports = midi_out.get_ports()
     try:
         midi_in.open_port(midi_in_ports.index(port_name))
     except ValueError:
@@ -55,15 +56,11 @@ def get_ports(port_name: str, *, clock_source: bool = False) -> Tuple[MidiIn, Mi
 
     if clock_source:
         midi_in.ignore_types(timing=False)
-    try:
-        midi_out.open_port(midi_out_ports.index(port_name))
-    except ValueError:
-        raise ValueError(port_name) from None
 
-    return midi_in, midi_out
+    return midi_in
 
 
-def get_out_port(port_name: str) -> MidiOut:
+def get_output(port_name: str) -> MidiOut:
     midi_out = MidiOut()
     midi_out_ports = midi_out.get_ports()
     try:
@@ -72,6 +69,9 @@ def get_out_port(port_name: str) -> MidiOut:
         raise ValueError(port_name) from None
 
     return midi_out
+
+
+get_out_port = get_output
 
 
 def silence(
