@@ -8,6 +8,8 @@ import miniaudio
 import time
 from typing import Generator, Literal
 
+from aiotone.array_perf import update_buffer
+
 
 playback_name = "BlackHole 16ch"
 capture_name = "BlackHole 16ch"
@@ -54,11 +56,10 @@ def print_buffer() -> Generator[memoryview | array[float] | bytes, bytes, None]:
     input_bytes = yield b""
     out_buffer: array[float] = array(buffer_format, input_bytes)
     out_mem = memoryview(out_buffer)
-    buffer_size = len(out_buffer)
+    # NOTE: `input_bytes` is always a bytearray;
+    # we need to convert to array.array manually.
+    in_buffer: array[float] = array(buffer_format, input_bytes)
     while True:
-        # NOTE: `input_bytes` is always a bytearray;
-        # we need to convert to array.array manually.
-        in_buffer: array[float] = array(buffer_format, input_bytes)
         in_buffer_state = ""
         saw_nan = False
         chan_sum = [0.0] * capture_channels
@@ -85,28 +86,20 @@ def print_buffer() -> Generator[memoryview | array[float] | bytes, bytes, None]:
             print("!")
         move_audio(in_buffer, out_buffer)
         input_bytes = yield out_mem
+        update_buffer(in_buffer, input_bytes)
 
 
 if __name__ == "__main__":
-    if False:
-        device = miniaudio.CaptureDevice(
-            sample_rate=48000,
-            buffersize_msec=1,
-            device_id=capture_id,
-            input_format=miniaudio.SampleFormat.FLOAT32,
-            nchannels=capture_channels,
-        )
-    else:
-        device = miniaudio.DuplexStream(
-            sample_rate=48000,
-            buffersize_msec=1,
-            playback_device_id=playback_id,
-            playback_format=miniaudio.SampleFormat.FLOAT32,
-            playback_channels=playback_channels,
-            capture_device_id=capture_id,
-            capture_format=miniaudio.SampleFormat.FLOAT32,
-            capture_channels=capture_channels,
-        )
+    device = miniaudio.DuplexStream(
+        sample_rate=48000,
+        buffersize_msec=2,
+        playback_device_id=playback_id,
+        playback_format=miniaudio.SampleFormat.FLOAT32,
+        playback_channels=playback_channels,
+        capture_device_id=capture_id,
+        capture_format=miniaudio.SampleFormat.FLOAT32,
+        capture_channels=capture_channels,
+    )
     with device as dev:
         stream = print_buffer()
         next(stream)
