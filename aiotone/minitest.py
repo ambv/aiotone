@@ -4,6 +4,7 @@ and passes it through to Blackhole channels 3 and 4."""
 from __future__ import annotations
 
 from array import array
+import gc
 import miniaudio
 import time
 from typing import Generator, Literal
@@ -100,9 +101,14 @@ if __name__ == "__main__":
         capture_format=miniaudio.SampleFormat.FLOAT32,
         capture_channels=capture_channels,
     )
+
     with device as dev:
         stream = print_buffer()
         next(stream)
+
+        gc.freeze()  # decrease the pool of garbage-collected memory
+
         dev.start(stream)  # type: ignore[arg-type]
+
         while True:
             time.sleep(0.1)
