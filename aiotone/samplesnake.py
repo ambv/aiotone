@@ -21,7 +21,7 @@ from typing import Generator, Literal
 import click
 import miniaudio
 
-from .array_perf import update_buffer, move_audio
+from .array_perf import update_buffer, move_audio, record_audio
 from . import midi, notes
 
 
@@ -99,9 +99,6 @@ def record_audio_py(
         out_offset += 2
 
 
-record_audio = record_audio_py
-
-
 def move_audio_py(
     in_buffer: array[float],
     in_l: int,
@@ -157,10 +154,14 @@ def process_audio(
             if not SILENCE.is_set():
                 silent_iterations += 1
                 if silent_iterations >= 50:
-                    click.secho(f"\nSaving {RECORDED_FILE_NAME}")
-                    save_recorded_audio(
-                        record_buffer[:record_offset], sample_rate, 2, sample_directory
-                    )
+                    if CAN_RECORD.is_set():
+                        click.secho(f"\nSaving {RECORDED_FILE_NAME}")
+                        save_recorded_audio(
+                            record_buffer[:record_offset],
+                            sample_rate,
+                            2,
+                            sample_directory,
+                        )
                     update_buffer(record_buffer, record_buffer_zero_bytes)
                     silent_iterations = 0
                     record_offset = -1
@@ -168,6 +169,7 @@ def process_audio(
                     CAN_RECORD.clear()
         else:
             SILENCE.clear()
+            silent_iterations = 0
             if record_offset == -1 and CAN_RECORD.is_set():
                 click.secho(f"\nRecording {RECORDED_FILE_NAME}")
                 record_offset = 0
