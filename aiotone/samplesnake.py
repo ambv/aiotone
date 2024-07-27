@@ -1,4 +1,11 @@
-"""Multisampler."""
+"""Multisampler.
+
+NEXT STEPS:
+- [x] play a note via MIDI with some set velocity
+- [ ] record the sample until silence
+- [ ] left and right silence trim
+- [ ] save a WAV file
+"""
 
 from __future__ import annotations
 
@@ -6,6 +13,7 @@ from array import array
 import configparser
 import gc
 from pathlib import Path
+import re
 from threading import Event
 import time
 from typing import Generator, Literal
@@ -14,7 +22,7 @@ import click
 import miniaudio
 
 from .array_perf import update_buffer, move_audio
-from . import midi
+from . import midi, notes
 
 
 # types
@@ -126,8 +134,63 @@ def process_audio(
             chan_sum[ch] = 0.0
 
 
+def play_notes(
+    midi_out: midi.MidiOut, channel: int, sampling: configparser.SectionProxy
+) -> None:
+    hold = sampling.getseconds("hold")
+    cooldown = sampling.getseconds("cooldown")
+    midi.silence(midi_out, channels=[channel])
+    for note in sampling.getnotes("notes"):
+        for octave in sorted(sampling.getintlist("octaves")):
+            for velocity in sorted(sampling.getintlist("velocities")):
+                click.secho("\nWaiting for silence...", fg="blue")
+                SILENCE.wait()
+                time.sleep(cooldown)
+                n = note[octave]
+                n_str = notes.note_to_name[n]
+                click.secho(f"\n{n_str} NOTE ON at {velocity}...", fg="green")
+                midi_out.send_message([midi.NOTE_ON | channel, n, velocity])
+                time.sleep(hold)
+                midi_out.send_message([midi.NOTE_OFF | channel, n, velocity])
+                click.secho(f"\n{n_str} NOTE OFF...", fg="yellow")
+    click.secho("\nWaiting for silence...", fg="blue")
+    SILENCE.wait()
+    click.secho("\nAll notes done.", fg="magenta")
+
+
+def convert_intlist(s: str) -> list[int]:
+    return [int(n.strip()) for n in s.split(",")]
+
+
 def convert_channels(s: str) -> list[int]:
     return [int(ch.strip()) - 1 for ch in s.split(",")]
+
+
+def convert_notes(s: str) -> list[notes.Notes]:
+    names = [n.strip() for n in s.split(",")]
+    result = []
+    for name in names:
+        name = name.replace("#", "s")
+        note = getattr(notes, name)
+        if note not in notes.all_notes:
+            raise ValueError(f"not a note: {name}")
+        result.append(note)
+    return result
+
+
+SECOND_RE = re.compile(r"^\s*(?P<num>\d+(\.\d+)?)(?P<unit>[mu]?s)\s*$")
+
+
+def convert_seconds(s: str) -> float:
+    if match := SECOND_RE.match(s):
+        num = float(match.group("num"))
+        unit = match.group("unit")
+        if unit == "us":
+            return num / 1_000_000
+        if unit == "ms":
+            return num / 1_000
+        return num
+    return float(s.strip())
 
 
 @click.command()
@@ -154,7 +217,14 @@ def main(config: str, make_config: bool) -> None:
         print(CONFIG.read_text())
         return
 
-    cfg = configparser.ConfigParser(converters={"channels": convert_channels})
+    cfg = configparser.ConfigParser(
+        converters={
+            "channels": convert_channels,
+            "notes": convert_notes,
+            "intlist": convert_intlist,
+            "seconds": convert_seconds,
+        },
+    )
     cfg.read(config)
     audio_in = cfg["audio-in"]
     audio_out = cfg["audio-out"]
@@ -203,6 +273,12 @@ def main(config: str, make_config: bool) -> None:
         click.secho(f"midi-out port {port} not connected", fg="red", err=True)
         raise click.Abort
 
+    try:
+        midi_channel = cfg["midi-out"].getint("channel") - 1
+    except (ValueError, TypeError):
+        click.secho("midi-out channel must be an integer", fg="red", err=True)
+        raise click.Abort
+
     with audio_device as audio:
         stream = process_audio(
             capture_channel_count,
@@ -214,8 +290,7 @@ def main(config: str, make_config: bool) -> None:
         gc.freeze()  # decrease the pool of garbage-collected memory
         audio.start(stream)  # type: ignore[arg-type]
 
-        while True:
-            time.sleep(0.1)
+        play_notes(midi_out, midi_channel, sampling)
 
 
 if __name__ == "__main__":
