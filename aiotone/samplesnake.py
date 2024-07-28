@@ -274,7 +274,9 @@ def convert_seconds(s: str) -> float:
 )
 def main(config: str, make_config: bool) -> None:
     """
-    You can customize the ports by creating a config file.  Use `--make-config` to
+    Automatic multisampling via MIDI.
+
+    You configure the sampling process with a config file.  Use `--make-config` to
     output a new config to stdout.
 
     Then run `python -m aiotone.samplesnake --config=PATH_TO_YOUR_CONFIG_FILE`.

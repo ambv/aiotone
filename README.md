@@ -80,6 +80,44 @@ For more information see:
 (aiotone)$ python -m aiotone.mothergen --help
 ```
 
+### Automatic multisampling into 32-bit float WAVs
+
+```
+(aiotone)$ python -m aiotone.samplesnake --help
+```
+
+Long story short: this enables you to automatically record many samples
+of different note pitches and velocities for use with a sample player,
+especially handy to export nice VST sounds for use with hardware
+samplers.
+
+Caveats:
+
+- only really tested on an M1 Mac;
+- this is realtime, in case of buffer underruns the resulting sample
+  will be empty;
+- not well suited for recording analog stuff with a high noise floor;
+- only records 32-bit float stereo samples, convert after if needed;
+- silence detection is very primitive and there's no smart sample
+  trimming (you can try `aiotone.sampletrim` after).
+
+How to use:
+
+- open up your DAW like Ableton Live, create a MIDI track with your VST
+  of choice;
+- select MIDI input on the track to be a virtual MIDI port like
+  "IAC aiotone" (see "Help, how do I use this?" if you're not sure what
+  I'm talking about);
+- select the audio output on the track to be BlackHole channels 1-2;
+- (optional) if you want to hear audio processed by the script, create
+  an audio track in the DAW taking input from BlackHole channels 3-4;
+- create a `samplesnake` INI file and configure the `[sampling]` section
+  where you specify the output directory, file name prefixes, and what
+  notes, octaves, and velocities should be played. "hold" is how long
+  a note is held, "cooldown" is how much time to give for the file to
+  be saved before the next note, "silence-threshold" is when to
+  automatically consider signal start and signal end for each sample.
+
 ## Help, how do I use this?
 
 You will need to figure out the names of your MIDI ports
@@ -88,3 +126,13 @@ You will need to figure out the names of your MIDI ports
 You can run `python -m aiotone.lsdev` to list all the audio
 and MIDI ports detected on your system, so that you know what
 to enter in your `.ini` configuration file.
+
+Many scripts here use virtual MIDI ports built into macOS. To configure
+one, open "Audio MIDI Setup", open the "MIDI Studio" screen, find the
+red IAC object there, double-click it, and add a port using "+". A port
+with one input and one output is enough. Scripts here use a port called
+"aiotone", which is visible in `lsdev` as "IAC aiotone".
+
+Some scripts here rely on virtual audio I/O called
+[BlackHole](https://github.com/ExistentialAudio/BlackHole/), which is
+open-source and available for the Mac.
