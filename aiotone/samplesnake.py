@@ -1,11 +1,4 @@
-"""Multisampler.
-
-NEXT STEPS:
-- [x] play a note via MIDI with some set velocity
-- [x] record the sample until silence
-- [ ] left and right silence trim
-- [x] save a WAV file
-"""
+"""Multisampler.  Plays MIDI notes, records results to stereo 32-bit float WAV files."""
 
 from __future__ import annotations
 
@@ -16,7 +9,7 @@ from pathlib import Path
 import re
 from threading import Event
 import time
-from typing import Generator, Literal
+from typing import Generator
 
 import click
 import miniaudio
@@ -50,15 +43,6 @@ def get_device(devices: list[dict[str, object]], name: str) -> str:
             print(dev)
             return dev["id"]  # type: ignore
     raise LookupError(name)
-
-
-def get_buffer_format() -> Literal["i", "l", "f"]:
-    for letter in "fil":
-        empty = array(letter)
-        if empty.itemsize == 4:
-            return letter  # type: ignore
-
-    raise LookupError("This is an unsupported machine.")
 
 
 def save_recorded_audio(
@@ -131,7 +115,7 @@ def process_audio(
     sample_directory: Path,
 ) -> Generator[memoryview | array[float] | bytes, bytes, None]:
     nan = float("nan")
-    buffer_format = get_buffer_format()
+    buffer_format = "f"
     input_bytes = yield b""
     out_buffer: array[float] = array(buffer_format, input_bytes)
     out_mem = memoryview(out_buffer)
@@ -225,7 +209,7 @@ def play_notes(
                 click.secho("\nWaiting for silence...", fg="blue")
                 SILENCE.wait()
                 time.sleep(cooldown)
-                RECORDED_FILE_NAME = f"{n_str}-{velocity}"
+                RECORDED_FILE_NAME = f"{n_str}-v{velocity}"
                 if prefix := sampling.get("sample-name-prefix"):
                     RECORDED_FILE_NAME = f"{prefix}-{RECORDED_FILE_NAME}"
                 CAN_RECORD.set()
