@@ -35,7 +35,7 @@ def freq_from_pcm(pcm, window, step, channels):
         # https://lo.calho.st/posts/numpy-spectrogram/
         result = result[: window // 2]
         result = numpy.absolute(result) * 2.0 / window
-        # result = (20 * numpy.log10(result)).clip(-120)
+        result = result.clip(-120)
         yield result
         offset += step
 
@@ -66,6 +66,13 @@ def convert_channels_to_list(channels):
     default=8,
     help="Brightness multiplier",
 )
+@click.option(
+    "-c",
+    "--channels",
+    type=convert_channels_to_list,
+    default=None,
+    help="A comma-separated list of channels to use",
+)
 def main(
     file,
     window=4800,
@@ -87,7 +94,6 @@ def main(
 
     colors = convert_html_to_hsv(colors)
     color_buckets = colors_to_buckets(colors, min=0, max=1)
-    channels = convert_channels_to_list(channels)
 
     audio_data, audio_rate = audiofile.read(file)
     audio_channels = audio_data.shape[1]
@@ -96,6 +102,7 @@ def main(
     window = window or audio_rate
     step = step or int(round(audio_rate / fps))
     channels = channels or list(range(audio_channels))
+    channels_str = ",".join(str(c) for c in channels)
 
     print(file)
     print("     duration:", audiofile.duration_str(audio_duration))
@@ -129,7 +136,7 @@ def main(
 
     print("Creating in-memory PNG image", end="\r")
     i = Image.fromarray(rgb, mode="RGB")
-    img_path = Path(file).stem + f".b{brightness}.png"
+    img_path = Path(file).stem + f".b{brightness}.c{channels_str}.png"
     print("Saving image to", img_path, " " * 10, end="\r")
     i.save(img_path)
     print("Saved image to", img_path, " " * 10)
