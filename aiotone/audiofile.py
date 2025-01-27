@@ -29,7 +29,9 @@ def empty() -> None:
     return None
 
 
-def read(path: Path, quiet: bool = False) -> tuple[npt.NDArray, int]:
+def read(
+    path: Path, quiet: bool = False, print: Callable[..., None] = print
+) -> tuple[npt.NDArray, int]:
     """Return an tuple with a numpy array of samples and the sample rate.
 
     The numpy array contains all channels and the contents is normalized
