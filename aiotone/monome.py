@@ -1,3 +1,5 @@
+# pymonome - library for interfacing with monome devices
+#
 # Copyright (c) 2011-2019 Artem Popov <artfwo@gmail.com>
 # Copyright (c) 2023 Łukasz Langa <lukasz@langa.pl>
 #
@@ -61,13 +63,17 @@ class Device(aiosc.OSCProtocol):
         self.add_handler("/sys/disconnect", self._on_sys_disconnect)
         self.add_handler("/sys/{id,size,host,port,prefix,rotation}", self._on_sys_info)
 
+        self.connected = False
         self.transport = None
+
         self.prefix = prefix
+
         self.ready_event = Event()
         self.disconnect_event = Event()
-        self._unset_info_properties()
 
-    def _unset_info_properties(self):
+        self._reset_info_properties()
+
+    def _reset_info_properties(self):
         self.id = None
         self.width = None
         self.height = None
@@ -90,6 +96,7 @@ class Device(aiosc.OSCProtocol):
             self.rotation = args[0]
 
         if self._info_properties_set():
+            self.connected = True
             self.ready_event.dispatch()
 
     def connection_made(self, transport):
@@ -119,8 +126,9 @@ class Device(aiosc.OSCProtocol):
 
     def disconnect(self):
         self.disconnect_event.dispatch()
-        self._unset_info_properties()
+        self._reset_info_properties()
         self.transport.close()
+        self.connected = False
 
 
 class Grid(Device):
@@ -137,7 +145,7 @@ class Grid(Device):
         self.ready_event.add_handler(self._set_varibright)
 
     def _set_varibright(self):
-        if not re.match(r"^m\d+$", self.id):
+        if not re.match(r"^m\d+$", self.id, flags=re.IGNORECASE):
             self.varibright = False
 
     def _on_grid_key(self, addr, path, x, y, s):
@@ -659,6 +667,7 @@ class GridSection:
     def splitter_ready(self):
         self.width = self.section_width
         self.height = self.section_height
+        self.rotation = 0
         self.ready_event.dispatch()
 
     def splitter_disconnect(self):

@@ -110,6 +110,12 @@ def parse_message(packet):
         elif t == "f":
             len = 4
             value, tail = struct.unpack(">f", tail[:len])[0], tail[len:]
+        elif t == "d":
+            len = 8
+            value, tail = struct.unpack(">d", tail[:len])[0], tail[len:]
+        elif t == "h":
+            len = 8
+            value, tail = struct.unpack(">q", tail[:len])[0], tail[len:]
         elif t == "s":
             value, tail = read_string(tail)
         elif t == "b":
@@ -199,6 +205,18 @@ class OSCProtocol(asyncio.DatagramProtocol):
             for pattern, handler in handlers.items():
                 self.add_handler(pattern, handler)
 
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, exc_type, exc_value, traceback):
+        self.transport.close()
+
+    @classmethod
+    async def connect(cls, **kwargs):
+        loop = asyncio.get_running_loop()
+        transport, protocol = await loop.create_datagram_endpoint(cls, **kwargs)
+        return protocol
+
     def add_handler(self, pattern, handler):
         pattern_re = re.compile(translate_pattern(pattern))
         self._handlers.append((pattern_re, handler))
@@ -218,10 +236,7 @@ class OSCProtocol(asyncio.DatagramProtocol):
         return self.transport.sendto(pack_message(path, *args), addr=addr)
 
 
-async def send(target, path, *args, loop=None):
-    loop = loop or asyncio.get_running_loop()
-    transport, protocol = await loop.create_datagram_endpoint(
-        OSCProtocol, remote_addr=target
-    )
-    protocol.send(path, *args)
-    transport.close()
+async def connect(**kwargs):
+    loop = asyncio.get_running_loop()
+    transport, protocol = await loop.create_datagram_endpoint(OSCProtocol, **kwargs)
+    return protocol
