@@ -19,5 +19,8 @@
     "secho",
     "serialosc",
     "Varibright"
-  ]
+  ],
+  "editor.fontSize": 14,
+  "github.copilot.editor.enableAutoCompletions": false,
+  "github.copilot.inlineSuggest.enable": false
 }
