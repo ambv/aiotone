@@ -31,7 +31,9 @@ dependencies = [
     "miniaudio",
     "pyloudnorm",
     "python-rtmidi",
+    "structlog",
     "uvloop",
+    "websockets",
 ]
 dynamic = ["version"]
 
@@ -45,6 +47,7 @@ iridium = "aiotone.iridium:main"
 redblue = "aiotone.redblue:main"
 loudness = "aiotone.loudness:main"
 als_to_cue = "aiotone.als_to_cue:main"
+serialosc_ws = "aiotone.serialosc_ws:main"
 
 [project.optional-dependencies]
 dev = ["black", "mypy", "pytest", "ruff"]
