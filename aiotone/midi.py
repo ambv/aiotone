@@ -82,3 +82,11 @@ def silence(
     for channel in channels:
         port.send_message([CONTROL_CHANGE | channel, SUSTAIN_PEDAL, 0])
         port.send_message([CONTROL_CHANGE | channel, ALL_NOTES_OFF, 0])
+
+
+def float_to_msb_lsb(value: float) -> tuple[int, int]:
+    value = max(0.0, min(1.0, value))
+    int_value = int(round(value * 16383))
+    msb = (int_value >> 7) & 0x7F
+    lsb = int_value & 0x7F
+    return msb, lsb
