@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+import configparser
+import time
 from typing import Iterable, Tuple
 
+import click
 from rtmidi import MidiIn, MidiOut
 
 
@@ -69,6 +72,48 @@ def get_output(port_name: str) -> MidiOut:
         raise ValueError(port_name) from None
 
     return midi_out
+
+
+def _keep_trying(exc, on_error, callable, *args, **kwargs):
+    while True:
+        try:
+            return callable(*args, **kwargs)
+        except exc:
+            click.secho(on_error, fg="magenta", err=True)
+            time.sleep(1)
+
+
+def resolve_ports(
+    cfg: configparser.ConfigParser,
+) -> tuple[dict[str, MidiIn], dict[str, MidiOut]]:
+    inputs = {}
+    outputs = {}
+    for name, section in cfg.items():
+        port_name = section.get("port-name")
+        if not port_name:
+            continue
+        if name.startswith("from-"):
+            if port_name in inputs:
+                continue
+            inputs[port_name] = _keep_trying(
+                ValueError,
+                f"{name} port {port_name} not connected",
+                get_input,
+                port_name,
+                clock_source=True,
+            )
+        elif name.startswith("to-"):
+            if port_name in outputs:
+                continue
+            outputs[port_name] = _keep_trying(
+                ValueError,
+                f"{name} port {port_name} not connected",
+                get_output,
+                port_name,
+            )
+        else:
+            click.secho(f"port-name in an unsupported section {name}", err=True)
+    return inputs, outputs
 
 
 get_out_port = get_output
