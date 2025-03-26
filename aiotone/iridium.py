@@ -38,6 +38,9 @@ from .midi import (
     ALL_SOUND_OFF,
     STRIP_CHANNEL,
     GET_CHANNEL,
+    BANK_SELECT,
+    BANK_SELECT_LSB,
+    PROGRAM_CHANGE,
     get_ports,
     get_out_port,
     silence,
@@ -63,7 +66,7 @@ CONFIGPARSER_FALSE = {
     if v is False
 }
 # CCs used by Iridium for sending and receiving modulation
-MODULATION_CC = set(range(16, 32))
+MODULATION_CC = set(range(16, 32)) | {BANK_SELECT, BANK_SELECT_LSB}
 WHITE_KEYS = {0, 2, 4, 5, 7, 9, 11}
 
 
@@ -321,6 +324,12 @@ class Performance:
     async def cc(self, type: int, value: int) -> None:
         self.note_output.send_message([CONTROL_CHANGE | self.out_channel, type, value])
 
+    async def pc(self, program: int) -> None:
+        self.note_output.send_message([PROGRAM_CHANGE | self.out_channel, program])
+
+    async def bend(self, msb: int, lsb: int) -> None:
+        self.note_output.send_message([PITCH_BEND | self.out_channel, msb, lsb])
+
 
 @click.command()
 @click.option(
@@ -538,7 +547,9 @@ async def midi_consumer(
             else:
                 print(f"warning: unhandled CC {msg[1]}", file=sys.stderr)
         elif st == PITCH_BEND:
-            await performance.out(PITCH_BEND, msg[1], msg[2])
+            await performance.bend(msg[1], msg[2])
+        elif st == PROGRAM_CHANGE:
+            await performance.pc(msg[1])
         else:
             if st not in handled_types:
                 print(f"warning: unhandled event {msg}", file=sys.stderr)
