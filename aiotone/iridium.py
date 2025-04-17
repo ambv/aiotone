@@ -15,6 +15,7 @@ from typing import List, Tuple
 from attrs import define, field, Factory
 import click
 import numpy as np
+from scipy.interpolate import interp1d
 import uvloop
 
 from . import monome
@@ -200,6 +201,8 @@ class Performance:
     start_stop: bool
     catch_damper: bool
     polyphony: int
+    expression_min: int
+    expression_max: int
 
     # Current state of the performance
     is_sustain: bool = False
@@ -213,6 +216,7 @@ class Performance:
     sustain: Callable[[int], Coro] = field(init=False)
     note_on: Callable[[int, int], Coro] = field(init=False)
     note_off: Callable[[int, int], Coro] = field(init=False)
+    expression_scale: interp1d = field(init=False)
 
     def __post_init__(self) -> None:
         if self.catch_damper:
@@ -223,6 +227,12 @@ class Performance:
             self.sustain = self.sustain_passthrough
             self.note_on = self.note_on_passthrough
             self.note_off = self.note_off_passthrough
+        self.expression_scale = interp1d(
+            [self.expression_min, self.expression_max],
+            [0, 127],
+            bounds_error=False,
+            fill_value=(0, 127),
+        )
 
     def __attrs_post_init__(self) -> None:
         self.__post_init__()
@@ -249,11 +259,13 @@ class Performance:
         await self.cc(MOD_WHEEL, value)
 
     async def expression(self, value: int) -> None:
-        if self.last_expr == value:
+        scaled_value = int(self.expression_scale(value))
+        if self.last_expr == scaled_value:
             return
-        self.last_expr = value
-        # await self.cc(FOOT_PEDAL, value)
-        await self.cc(EXPRESSION_PEDAL, value)
+        self.last_expr = scaled_value
+        print(f"expr scaled from {value} to {scaled_value}")
+        # await self.cc(FOOT_PEDAL, scaled_value)
+        await self.cc(EXPRESSION_PEDAL, scaled_value)
 
     async def note_on_passthrough(self, note: int, velocity: int) -> None:
         await self.out(NOTE_ON, note, velocity)
@@ -441,6 +453,8 @@ async def async_main(config: str) -> None:
         start_stop=cfg["note-input"].getboolean("start-stop"),
         catch_damper=cfg["note-input"].getboolean("catch-damper"),
         polyphony=cfg["note-output"].getint("polyphony"),
+        expression_min=cfg["note-input"].getint("expression-min"),
+        expression_max=cfg["note-input"].getint("expression-max"),
     )
     grid_app = MIDIMonitorGridApp(performance)
     try:
