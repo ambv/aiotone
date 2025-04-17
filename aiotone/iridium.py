@@ -263,7 +263,6 @@ class Performance:
         if self.last_expr == scaled_value:
             return
         self.last_expr = scaled_value
-        print(f"expr scaled from {value} to {scaled_value}")
         # await self.cc(FOOT_PEDAL, scaled_value)
         await self.cc(EXPRESSION_PEDAL, scaled_value)
 
