@@ -72,6 +72,8 @@ class NoteMode(Enum):
 
 @define
 class MIDIMonitorGridApp(monome.GridApp):
+    """Display currently held notes on a Monome grid. Also allows playback."""
+
     performance: Performance
     width: int = 0
     height: int = 0
